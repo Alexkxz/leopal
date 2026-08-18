@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LectoVoz</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <section class="login-screen" id="login-screen">
+      <form class="login-card" id="login-form">
+        <p class="eyebrow">Lectura activa</p>
+        <h1>LectoVoz</h1>
+        <p class="login-copy">Entra al juego para guardar tu avance.</p>
+        <label for="student-name">Alumno</label>
+        <input id="student-name" autocomplete="name" required placeholder="Nombre del alumno" />
+        <label for="student-group">Grupo</label>
+        <input id="student-group" required placeholder="Ej. 1A" />
+        <button class="primary full" type="submit">Entrar al juego</button>
+        <a class="teacher-link" href="teacher.html">Panel del maestro</a>
+      </form>
+    </section>
+
+    <main class="app">
+      <section class="practice" aria-labelledby="app-title">
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">Juego didactico de lectura</p>
+            <h1 id="app-title">LectoVoz</h1>
+          </div>
+          <div class="player-strip">
+            <div>
+              <span>Jugador</span>
+              <strong id="current-student">Invitado</strong>
+            </div>
+            <div>
+              <span>Puntos</span>
+              <strong id="score-count">0</strong>
+            </div>
+            <div class="status" id="mic-status">Microfono detenido</div>
+          </div>
+        </div>
+
+        <div class="reader" aria-live="polite">
+          <div class="level-row">
+            <label for="level-select">Nivel</label>
+            <select id="level-select">
+              <option value="silabas">Silabas</option>
+              <option value="palabras_cortas">Palabras pequenas</option>
+              <option value="palabras_medianas">Palabras medianas</option>
+              <option value="palabras_largas">Palabras grandes</option>
+              <option value="frases_cortas">Frases 3 a 5</option>
+              <option value="frases_medianas">Frases 5 a 8</option>
+              <option value="frases_largas">Frases 8 a 10</option>
+            </select>
+          </div>
+
+          <div class="prompt-shell">
+            <div id="prompt" class="prompt"></div>
+          </div>
+
+          <div class="meter" aria-hidden="true">
+            <div id="meter-fill"></div>
+          </div>
+
+          <p class="feedback" id="feedback">
+            Presiona iniciar y permite el microfono. Despues lee en voz alta.
+          </p>
+
+          <div class="controls">
+            <button id="start-btn" class="primary">Iniciar lectura</button>
+            <button id="next-btn" class="secondary">Siguiente</button>
+            <button id="logout-btn" class="secondary">Salir</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side">
+        <h2>Panel docente</h2>
+        <a class="teacher-link compact" href="teacher.html">Ver registros completos</a>
+        <div class="stat">
+          <span>Correctas</span>
+          <strong id="correct-count">0</strong>
+        </div>
+        <div class="stat">
+          <span>Errores</span>
+          <strong id="error-count">0</strong>
+        </div>
+        <div class="heard">
+          <span>Escuchado</span>
+          <p id="heard-text">-</p>
+        </div>
+        <div class="audio-panel">
+          <div>
+            <span>Ruido</span>
+            <div class="mini-meter"><i id="noise-level"></i></div>
+          </div>
+          <div>
+            <span>Voz</span>
+            <div class="mini-meter"><i id="voice-level"></i></div>
+          </div>
+          <div class="confidence">
+            <span>Confianza</span>
+            <strong id="confidence-level">-</strong>
+          </div>
+        </div>
+        <label class="custom-label" for="custom-text">Texto personalizado</label>
+        <textarea id="custom-text" rows="4" placeholder="Escribe una palabra o frase para practicar"></textarea>
+        <button id="use-custom" class="secondary full">Usar texto</button>
+      </aside>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

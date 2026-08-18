@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeoPal IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&family=Lexend:wght@600;700;800&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;margin:0;padding:0}:root{--blue:#4A90D9;--blue2:#3570B0;--red:#FF6B6B;--red2:#c94f4f;--green:#6BCB77;--green2:#4D9A57;--yellow:#FFD93D;--text:#2C3E50;--muted:#7F8C8D;--modal-bg:rgba(30,50,80,0.6);--cborder:#CBE3F7;--ibg:#F0F8FF;--iborder:#B0D4F1;--thead:#E8F4FD;--trow2:#F5FBFF}body{font-family:'Nunito',sans-serif;background:linear-gradient(160deg,#C9E8FF 0%,#E8F4FD 55%,#D6F5E3 100%);color:var(--text);min-height:100vh;overflow-x:hidden}.screen{display:none;width:100%;min-height:100vh;flex-direction:column;align-items:center;justify-content:flex-start;padding:24px 16px}.screen.active{display:flex}#s-intro{justify-content:center}.card{background:#fff;border-radius:32px;border:2px solid var(--cborder);padding:32px 28px 26px;max-width:440px;width:100%;box-shadow:0 8px 40px rgba(74,144,217,0.10)}.logo{font-family:'Fredoka One',cursive;font-size:2.5rem;color:var(--blue);text-align:center;line-height:1;margin-bottom:2px}.logo span{color:var(--red)}.logo-sub{text-align:center;font-size:0.75rem;font-weight:800;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:18px}.badge-row{display:flex;justify-content:center;gap:6px;margin-bottom:18px;flex-wrap:wrap}.badge{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--cborder);border-radius:20px;padding:3px 9px;font-size:0.7rem;font-weight:800;color:var(--blue2);background:linear-gradient(135deg,#e8f4fd,#d6f5e3)}.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1.4s infinite}@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}.flabel{font-size:0.76rem;font-weight:800;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px}.fgroup{margin-bottom:14px}input[type=text]{width:100%;padding:11px 15px;border-radius:13px;border:1.5px solid var(--iborder);background:var(--ibg);font-family:'Nunito',sans-serif;font-size:0.97rem;font-weight:600;color:var(--text);outline:none;transition:border 0.2s}input[type=text]:focus{border-color:var(--blue)}.diff-row,.qty-row{display:grid;gap:8px;margin-top:4px}.diff-row{grid-template-columns:repeat(3,1fr)}.qty-row{grid-template-columns:repeat(4,1fr)}.opt-btn{padding:9px 4px;border-radius:13px;border:2px solid var(--iborder);background:var(--ibg);font-family:'Nunito',sans-serif;font-size:0.84rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all 0.15s;text-align:center}.opt-btn:hover{border-color:var(--blue);color:var(--blue)}.opt-btn.sel{border-color:var(--blue);background:var(--blue);color:#fff}.opt-btn.sel.g{border-color:var(--green2);background:var(--green2)}.opt-btn .sub{display:block;font-size:0.7rem;opacity:0.85;margin-top:1px}.btn-go{width:100%;padding:14px;border-radius:17px;border:none;background:linear-gradient(135deg,var(--red),#FF8E53);color:#fff;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;cursor:pointer;margin-top:10px;transition:transform 0.15s,box-shadow 0.15s;box-shadow:0 4px 18px rgba(255,107,107,0.28)}.btn-go:hover{transform:translateY(-2px)}.btn-go:disabled{opacity:0.5;cursor:not-allowed;transform:none}.status-msg{text-align:center;font-size:0.78rem;font-weight:700;padding:7px 12px;border-radius:10px;margin-top:9px;display:none}.status-msg.warn{background:#FFF3CD;color:#795548;display:block}.status-msg.ok{background:#D6F5E3;color:#2e7d32;display:block}.status-msg.err{background:#FFE5E5;color:#c62828;display:block}.link-btn{background:none;border:none;font-family:'Nunito',sans-serif;font-size:0.82rem;color:var(--blue);font-weight:700;cursor:pointer;text-decoration:underline;margin-top:11px;display:block;text-align:center;width:100%}#s-game{padding:0}.gtop{width:100%;background:#fff;border-bottom:1.5px solid var(--cborder);padding:8px 13px;display:flex;align-items:center;gap:7px;position:sticky;top:0;z-index:10}.g-player{font-size:0.85rem;font-weight:800;color:var(--blue);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.g-score{font-size:0.78rem;font-weight:700;color:var(--muted);white-space:nowrap}.nn-ind{font-size:0.7rem;font-weight:800;color:var(--green2);white-space:nowrap;display:flex;align-items:center;gap:3px}.pause-btn{background:var(--ibg);border:1.5px solid var(--iborder);border-radius:9px;padding:4px 10px;font-family:'Nunito',sans-serif;font-size:0.8rem;font-weight:700;color:var(--text);cursor:pointer;white-space:nowrap}.attempts-bar{display:flex;gap:6px;justify-content:center;padding:8px 14px;background:#fff;border-bottom:1.5px solid var(--cborder)}.attempt-dot{width:28px;height:10px;border-radius:5px;background:#e8f4fd;border:1.5px solid var(--cborder);transition:background 0.2s}.attempt-dot.used{background:var(--red);border-color:var(--red2)}.attempt-dot.left{background:var(--green);border-color:var(--green2)}.gbody{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 16px;gap:14px;width:100%;min-height:calc(100vh - 85px)}.prog-txt{font-size:0.8rem;color:var(--muted);font-weight:700;letter-spacing:0.04em}.word-card{background:#fff;border-radius:26px;border:2.5px solid var(--cborder);padding:28px 32px;text-align:center;min-width:250px;max-width:350px;width:100%;box-shadow:0 6px 28px rgba(74,144,217,0.09)}.word-txt{font-family:'Lexend',sans-serif;font-size:2.9rem;font-weight:800;color:var(--text);line-height:1.2;letter-spacing:0.04em}.nn-cbar-wrap{margin-top:12px;background:#e8f4fd;border-radius:7px;height:5px;overflow:hidden}.nn-cbar{height:5px;border-radius:7px;background:linear-gradient(90deg,var(--blue),var(--green));transition:width 0.5s}.nn-clbl{font-size:0.66rem;font-weight:700;color:var(--muted);margin-top:3px;text-align:right}.audio-meter{width:100%;max-width:260px;display:flex;flex-direction:column;gap:4px}.meter-row{display:flex;align-items:center;gap:6px;font-size:0.68rem;font-weight:700;color:var(--muted)}.meter-bar-bg{flex:1;background:#e8f4fd;border-radius:4px;height:6px;overflow:hidden}.meter-bar{height:6px;border-radius:4px;transition:width 0.08s;background:var(--green)}.meter-bar.noise{background:var(--yellow)}.meter-bar.voice{background:var(--blue)}.nbadge{font-size:0.66rem;font-weight:800;padding:2px 7px;border-radius:9px;display:inline-block;white-space:nowrap}.nbadge.low{background:#D6F5E3;color:#2e7d32}.nbadge.med{background:#FFF3CD;color:#795548}.nbadge.high{background:#FFE5E5;color:#c62828}.rtag{font-size:0.9rem;font-weight:800;padding:6px 18px;border-radius:18px;display:none}.rtag.ok{background:#D6F5E3;color:#2e7d32;display:inline-block}.rtag.fail{background:#FFE5E5;color:#c62828;display:inline-block}.rtag.time{background:#FFF3CD;color:#795548;display:inline-block}.heard-box{background:var(--ibg);border-radius:11px;padding:6px 13px;font-size:0.78rem;color:var(--muted);font-style:italic;min-height:30px;text-align:center;width:100%;max-width:310px}.mic-btn{width:100%;max-width:320px;padding:16px;border-radius:18px;border:none;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform 0.15s,box-shadow 0.15s,background 0.2s;box-shadow:0 4px 18px rgba(74,144,217,0.32)}.mic-btn:hover{transform:translateY(-2px)}.mic-btn:active{transform:scale(0.97)}.mic-btn.rec{background:linear-gradient(135deg,var(--red),var(--red2));box-shadow:0 4px 18px rgba(255,107,107,0.40);animation:pulse 0.9s infinite}.mic-btn.ok{background:linear-gradient(135deg,var(--green),var(--green2));box-shadow:0 4px 18px rgba(107,203,119,0.40)}.mic-btn.fail{background:linear-gradient(135deg,var(--red),var(--red2))}.mic-dot{width:14px;height:14px;border-radius:50%;background:#fff;opacity:0.9;flex-shrink:0}.mic-btn.rec .mic-dot{animation:blink-dot 0.6s infinite}@keyframes blink-dot{0%,100%{opacity:1}50%{opacity:0.2}}@keyframes pulse{0%,100%{box-shadow:0 4px 18px rgba(255,107,107,0.32)}50%{box-shadow:0 4px 36px rgba(255,107,107,0.62),0 0 0 12px rgba(255,107,107,0.10)}}.mic-hint{font-size:0.78rem;color:var(--muted);font-weight:600;text-align:center;max-width:230px}.rec-waves{display:none;align-items:center;justify-content:center;gap:3px;height:28px}.rec-waves.show{display:flex}.rec-waves span{display:block;width:4px;border-radius:2px;background:var(--red);animation:wave 0.8s ease-in-out infinite}.rec-waves span:nth-child(1){animation-delay:0s;height:8px}.rec-waves span:nth-child(2){animation-delay:.1s;height:16px}.rec-waves span:nth-child(3){animation-delay:.2s;height:22px}.rec-waves span:nth-child(4){animation-delay:.1s;height:16px}.rec-waves span:nth-child(5){animation-delay:0s;height:8px}@keyframes wave{0%,100%{transform:scaleY(0.4)}50%{transform:scaleY(1)}}#s-result{justify-content:center}.rcard{background:#fff;border-radius:30px;border:2px solid var(--cborder);padding:28px 24px;max-width:440px;width:100%}.rtitle{font-family:'Fredoka One',cursive;font-size:1.85rem;color:var(--blue);text-align:center;margin-bottom:3px}.rsub{text-align:center;color:var(--muted);font-size:0.86rem;margin-bottom:18px}.stars{text-align:center;font-size:2.1rem;margin-bottom:16px;letter-spacing:4px}.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}.sbox{background:var(--ibg);border-radius:15px;padding:11px;text-align:center}.snum{font-family:'Fredoka One',cursive;font-size:1.8rem;color:var(--blue)}.slbl{font-size:0.72rem;font-weight:700;color:var(--muted);letter-spacing:0.04em;text-transform:uppercase;margin-top:2px}.nn-sum{background:linear-gradient(135deg,#e8f4fd,#d6f5e3);border-radius:15px;padding:12px 14px;margin-bottom:14px;border:1.5px solid var(--cborder)}.nn-sum-title{font-size:0.74rem;font-weight:800;color:var(--blue2);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:7px}.nn-sum-row{display:flex;justify-content:space-between;font-size:0.8rem;font-weight:600;color:var(--text);padding:2px 0}.nn-sum-row span:last-child{font-weight:800;color:var(--blue2)}.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}.btn-sec{padding:11px;border-radius:15px;border:2px solid var(--cborder);background:#fff;font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:700;color:var(--text);cursor:pointer}.btn-pri{padding:11px;border-radius:15px;border:none;background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer}#s-table{padding:18px 12px}.thead-row{display:flex;align-items:center;gap:9px;width:100%;max-width:620px;margin-bottom:14px}.ttitle{font-family:'Fredoka One',cursive;font-size:1.45rem;color:var(--blue);flex:1}.tbtn{padding:6px 14px;border-radius:10px;background:#fff;font-family:'Nunito',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer}.tbtn.back{border:2px solid var(--cborder);color:var(--text)}.tbtn.clear{border:2px solid #FFE5E5;color:var(--red2)}.tbl{width:100%;max-width:620px;border-collapse:collapse;background:#fff;border-radius:16px;overflow:hidden;border:1.5px solid var(--cborder)}.tbl th{background:var(--thead);padding:9px 12px;font-size:0.74rem;font-weight:800;color:var(--muted);text-transform:uppercase;text-align:left}.tbl td{padding:8px 12px;font-size:0.85rem;font-weight:600;border-top:1px solid var(--cborder)}.tbl tr:nth-child(even) td{background:var(--trow2)}.bdiff{font-size:0.68rem;font-weight:800;padding:2px 8px;border-radius:18px}.bf{background:#D6F5E3;color:#2e7d32}.bi{background:#FFF3CD;color:#7B5E1A}.bd{background:#FFE5E5;color:#c62828}.empty-t{text-align:center;padding:30px;color:var(--muted)}.sentence-txt{font-family:'Lexend',sans-serif;font-size:1.45rem;font-weight:700;color:var(--text);line-height:1.7;letter-spacing:0.02em}.sw{display:inline-block;border-radius:6px;padding:1px 4px;margin:1px;transition:background 0.25s,color 0.25s;font-family:'Lexend',sans-serif;font-size:1.45rem;font-weight:700;line-height:1.7}.sw.pending{color:var(--text)}.sw.current{background:#fff3cd;color:#795548;outline:2px solid var(--yellow)}.sw.ok{background:#d6f5e3;color:#1a6b2e}.sw.fail{background:#ffe5e5;color:#b71c1c}.correction-box{width:100%;max-width:350px;background:#fff;border-radius:14px;border:2px solid var(--cborder);padding:10px 14px;font-size:0.82rem;line-height:1.6;display:none}.correction-box.show{display:block}.correction-row{display:flex;align-items:center;gap:8px;padding:2px 0}.correction-expected{font-weight:800;color:var(--text);font-family:'Lexend',sans-serif}.correction-arrow{color:var(--muted)}.correction-heard{font-weight:700;color:var(--red2)}.correction-heard.ok{color:var(--green2)}.mode-tag{font-size:0.68rem;font-weight:800;padding:2px 9px;border-radius:10px;display:inline-block;margin-bottom:8px}.mode-tag.words{background:#e8f4fd;color:var(--blue2)}.mode-tag.sentences{background:#d6f5e3;color:var(--green2)}.moverlay{display:none;position:fixed;inset:0;background:var(--modal-bg);z-index:100;align-items:center;justify-content:center;padding:16px}.moverlay.open{display:flex}.mbox{background:#fff;border-radius:22px;padding:24px 20px;max-width:310px;width:100%;text-align:center;border:2px solid var(--cborder)}.mtitle{font-family:'Fredoka One',cursive;font-size:1.3rem;color:var(--text);margin-bottom:7px}.msub{font-size:0.85rem;color:var(--muted);margin-bottom:18px;line-height:1.5}.mbtns{display:grid;grid-template-columns:1fr 1fr;gap:9px}.mcancel{padding:10px;border-radius:12px;border:2px solid var(--cborder);background:#fff;font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:700;color:var(--text);cursor:pointer}.mok{padding:10px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer}.mok.g{background:linear-gradient(135deg,var(--green),var(--green2))}.pbtn-row{display:flex;flex-direction:column;gap:8px;margin-top:16px}.pbtn{padding:11px;border-radius:14px;font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;border:none}.pbtn.res{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff}.pbtn.men{background:var(--ibg);color:var(--text);border:2px solid var(--cborder)}.pbtn.rep{background:linear-gradient(135deg,var(--green),var(--green2));color:#fff}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;font-size:0.76rem;font-weight:700;padding:7px 16px;border-radius:18px;z-index:200;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;max-width:92vw;text-align:center}.toast.show{opacity:1}@media(max-width:420px){.word-txt{font-size:2.1rem;letter-spacing:0.03em}.card{padding:20px 14px 18px}.logo{font-size:2rem}}.mic-status{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:14px;font-size:0.84rem;font-weight:700;margin-bottom:12px}
+.mic-status.unknown{background:#f0f8ff;border:1.5px solid var(--iborder);color:var(--muted)}
+.mic-status.ok{background:#d6f5e3;border:1.5px solid #a5d6a7;color:#1b5e20}
+.mic-status.err{background:#ffe5e5;border:1.5px solid #ef9a9a;color:#b71c1c}
+.mic-status .mic-icon{font-size:1.4rem}
+.mic-status .mic-txt{flex:1;line-height:1.4}
+.mic-status .mic-txt small{display:block;font-size:0.72rem;font-weight:600;opacity:0.75;margin-top:2px}
+.btn-mic-activate{padding:7px 14px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-family:'Nunito',sans-serif;font-size:0.8rem;font-weight:800;cursor:pointer;white-space:nowrap}
+.heard-box.cdnum{font-family:'Fredoka One',cursive;font-size:2.6rem;font-style:normal;color:var(--blue);background:#e8f4fd;font-weight:900;padding:10px}
+.heard-box.cdgo{font-family:'Fredoka One',cursive;font-size:2rem;font-style:normal;color:var(--green2);background:#d6f5e3;font-weight:900;padding:10px}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div><div id="s-intro" class="screen active">
+<div class="card"><div class="logo">Leo<span>Pal</span></div><div class="logo-sub">Lectura inteligente · Español Mexicano</div><div class="fgroup"><div class="flabel">Tu nombre</div><input type="text" id="player-name" placeholder="Escribe tu nombre..." maxlength="30"></div><div class="fgroup"><div class="flabel">Dificultad</div><div class="diff-row"><button class="opt-btn sel" data-diff="easy" onclick="sel(this,'diff')">Fácil<span class="sub">3 intentos</span></button><button class="opt-btn" data-diff="med" onclick="sel(this,'diff')">Medio<span class="sub">2 intentos</span></button><button class="opt-btn" data-diff="hard" onclick="sel(this,'diff')">Difícil<span class="sub">1 intento</span></button></div></div><!-- MODO: Oraciones vs Palabras --><div class="fgroup"><div class="flabel">¿Qué quieres practicar?</div><div class="diff-row"><button class="opt-btn sel" data-mode="words" onclick="selMode(this,'words')" style="grid-column:span 1">
+        📝 Palabras
+      </button><button class="opt-btn" data-mode="sentences" onclick="selMode(this,'sentences')" style="grid-column:span 2">
+        💬 Oraciones
+      </button></div></div><!-- SUB-OPCIONES PALABRAS --><div class="fgroup" id="sub-words"><div class="flabel">Tamaño de palabras</div><div class="diff-row"><button class="opt-btn sel g" data-wsize="small" onclick="selSub(this,'wsize')">Pequeñas<span class="sub">1-4 letras</span></button><button class="opt-btn" data-wsize="medium" onclick="selSub(this,'wsize')">Intermedias<span class="sub">5-7 letras</span></button><button class="opt-btn" data-wsize="large" onclick="selSub(this,'wsize')">Grandes<span class="sub">8+ letras</span></button></div></div><!-- SUB-OPCIONES ORACIONES --><div class="fgroup" id="sub-sentences" style="display:none"><div class="flabel">Cantidad de palabras por oración</div><div class="diff-row"><button class="opt-btn sel g" data-ssize="3-5" onclick="selSub(this,'ssize')">3 a 5<span class="sub">palabras</span></button><button class="opt-btn" data-ssize="5-8" onclick="selSub(this,'ssize')">5 a 8<span class="sub">palabras</span></button><button class="opt-btn" data-ssize="8-10" onclick="selSub(this,'ssize')">8 a 10<span class="sub">palabras</span></button></div></div><div class="mic-status unknown" id="mic-status-block">
+    <span class="mic-icon">🎙️</span>
+    <div class="mic-txt">Micrófono no activado<small>Presiona el botón para activarlo antes de jugar</small></div>
+    <button class="btn-mic-activate" onclick="activateMic()">Activar</button>
+  </div>
+  <button class="btn-go" id="btn-start" onclick="initAndStart()" disabled>¡Comenzar a leer! 🎙️</button><div id="status-msg" class="status-msg"></div><button class="link-btn" onclick="showTable()">📊 Ver tabla de resultados</button><button class="link-btn" style="color:var(--muted);font-size:0.75rem" onclick="confirmResetNN()">🔄 Reiniciar IA a valores iniciales</button>
+</div>
+</div><div id="s-game" class="screen"><div class="gtop"><div class="g-player" id="g-player">👤 —</div><div class="g-score" id="g-score">0 ✓  0 ✗</div><div class="nn-ind"><div class="dot"></div><span id="nn-ind-txt">IA: 99.9%</span></div><button class="pause-btn" onclick="openPause()">⏸ Pausa</button></div><div class="attempts-bar" id="attempts-bar"></div><div class="gbody"><div class="prog-txt" id="g-prog">Palabra 1 de 5</div><div class="word-card" id="word-card"><div id="word-card-inner"><div class="mode-tag words">📝 Palabra</div><div class="word-txt">—</div></div><div class="nn-cbar-wrap"><div class="nn-cbar" id="nn-cbar" style="width:0%"></div></div><div class="nn-clbl" id="nn-clbl">confianza IA: —</div></div><div class="rtag" id="g-rtag"></div><div class="audio-meter" id="audio-meter" style="display:none"><div class="meter-row"><span style="width:36px">Voz</span><div class="meter-bar-bg"><div class="meter-bar voice" id="m-voice" style="width:0%"></div></div><span id="m-nbadge" class="nbadge low">bajo</span></div><div class="meter-row"><span style="width:36px">Ruido</span><div class="meter-bar-bg"><div class="meter-bar noise" id="m-noise" style="width:0%"></div></div></div></div><div class="heard-box" id="g-heard">—</div><div class="correction-box" id="correction-box"></div><div class="rec-waves" id="rec-waves"><span></span><span></span><span></span><span></span><span></span></div><button class="mic-btn" id="mic-btn" onclick="startListening()">
+      <div class="mic-dot"></div>
+      <span id="mic-btn-txt">Presiona para grabar</span>
+    </button><div class="mic-hint" id="mic-hint">Toca el botón y di la palabra en voz alta</div></div>
+</div><div id="s-result" class="screen">
+<div class="rcard"><div class="rtitle" id="r-title">¡Muy bien!</div><div class="rsub" id="r-sub">Sesión completada</div><div class="stars" id="r-stars">⭐⭐⭐</div><div class="stat-grid"><div class="sbox"><div class="snum" id="r-ok">0</div><div class="slbl">Correctas</div></div><div class="sbox"><div class="snum" id="r-fail">0</div><div class="slbl">Incorrectas</div></div><div class="sbox"><div class="snum" id="r-pct">0%</div><div class="slbl">Precisión</div></div><div class="sbox"><div class="snum" id="r-diff">—</div><div class="slbl">Dificultad</div></div></div><div class="nn-sum"><div class="nn-sum-title">🧠 Reporte IA · Español Mexicano</div><div class="nn-sum-row"><span>Intentos esta sesión</span><span id="rp-att">0</span></div><div class="nn-sum-row"><span>Umbral IA adaptado</span><span id="rp-thr">—</span></div><div class="nn-sum-row"><span>Ruido ambiente</span><span id="rp-noise">—</span></div><div class="nn-sum-row"><span>Datos históricos</span><span id="rp-hist">0</span></div><div class="nn-sum-row"><span>Pesos guardados</span><span id="rp-wpinfo">—</span></div></div><div class="btn-row"><button class="btn-sec" onclick="confirm2('menu')">🏠 Menú</button><button class="btn-pri" onclick="confirm2('repeat')">🔄 Repetir</button></div><button class="link-btn" onclick="showTable()">📊 Ver tabla de resultados</button>
+</div>
+</div><div id="s-table" class="screen"><div class="thead-row"><div class="ttitle">📊 Resultados</div><button class="tbtn clear" onclick="clearTable()">Borrar</button><button class="tbtn back" onclick="goBack()">← Volver</button></div><table class="tbl" id="tbl"><thead><tr><th>Alumno</th><th>Nivel</th><th>✓</th><th>✗</th><th>%</th><th>Fecha</th></tr></thead><tbody id="tbl-body"></tbody></table><div id="tbl-empty" class="empty-t" style="display:none">Aún no hay resultados.</div>
+</div><div class="moverlay" id="m-pause"><div class="mbox"><div style="font-size:2.6rem;margin-bottom:8px">⏸</div><div class="mtitle">Juego en pausa</div><div class="pbtn-row"><button class="pbtn res" onclick="resumeGame()">▶ Continuar</button><button class="pbtn rep" onclick="confirm2FromPause('repeat')">🔄 Repetir</button><button class="pbtn men" onclick="confirm2FromPause('menu')">🏠 Menú</button></div></div>
+</div>
+<div class="moverlay" id="m-confirm"><div class="mbox"><div class="mtitle" id="mc-title">¿Estás seguro?</div><div class="msub" id="mc-sub"></div><div class="mbtns"><button class="mcancel" onclick="closeConfirm()">Cancelar</button><button class="mok" id="mc-ok" onclick="doConfirm()">Confirmar</button></div></div>
+</div><script>
+const NNW={"W1":[[-0.12773,2.82702,1.45414,-1.14257,0.69504,-0.7357,-0.85748,1.01111,0.26438,0.50048,-0.27511,0.95903,0.35302,0.49451,0.00969,1.08414,-0.75636,1.98438,1.09417,-0.96994,2.45831,1.66979,1.34611,2.36398,-0.61358,1.64497,0.25937,1.0758,0.46926,-0.97503,1.77301,-0.66218],[-1.90385,5.37491,1.74145,-0.56601,1.0829,-0.69982,-0.2165,0.04163,-1.26269,-0.29543,-1.27206,0.80935,-0.90385,1.35597,-0.8964,1.34506,-1.19125,4.18064,2.24362,-0.60877,5.95356,2.955,2.6196,5.87374,-0.89223,2.34558,-0.21648,2.00841,1.25443,-0.75456,3.50501,-0.16042],[0.14222,-0.27935,-0.78581,0.21461,-0.61166,0.23781,-0.15526,-0.30415,-0.34338,0.85345,0.57866,0.51105,0.50028,-0.97427,0.17353,-0.94914,-0.07544,0.10915,-0.41098,-0.70558,-0.42442,-0.2284,-0.19816,-0.22472,-0.16761,-0.09902,-0.22759,-0.37452,0.09686,-0.17998,0.24029,-0.14479],[0.44226,-0.67836,-0.65734,-0.42063,-0.61187,0.11516,-0.22269,0.29391,0.88033,0.03087,0.25416,0.34953,0.07453,-1.00507,0.40553,-0.55942,0.17321,0.04555,-0.0969,0.14014,-0.20468,-0.26277,-0.1025,-0.64277,-0.04484,0.20813,0.24606,-0.76304,-0.45162,0.1172,0.20479,0.09418],[-0.23209,-0.03135,-0.53562,-0.26145,-0.19557,-0.21539,0.24743,-0.04953,0.28644,0.35525,-0.01899,0.48163,0.65872,-0.07615,0.14525,0.03912,-0.37698,-0.36231,0.1961,-0.09341,-0.3122,-0.15353,0.15773,-0.12758,-0.3999,0.03774,0.51334,-0.46268,0.23634,-0.00465,-0.26648,-0.14975],[-0.19389,0.13837,1.04263,-0.25466,-0.81431,0.29476,0.19241,-0.72642,-0.82659,-0.04219,-0.40305,-0.83405,-0.05712,-0.73588,0.52742,-0.31959,0.66639,-0.11487,0.98016,-0.51374,0.19449,-0.19143,0.24465,0.66284,-0.31304,0.21584,1.53829,1.62537,0.39772,-0.71026,-0.79251,1.00511],[0.45147,1.5685,0.54227,-0.08489,0.32497,0.41508,0.42386,0.20368,0.06906,-0.35316,-0.20398,0.18026,0.22944,0.27851,-0.29329,0.4808,-0.65011,0.80014,0.48597,0.46571,1.50224,0.77965,0.91457,1.37308,0.00344,0.67524,0.16155,0.60233,0.55075,0.16312,0.53187,-0.39302],[0.13136,3.39998,2.13087,-0.00451,0.98708,0.22043,0.65742,0.30692,0.13663,-0.20256,-0.15934,0.62139,-0.19535,0.52576,-0.17591,0.87294,0.23624,3.03757,1.97127,-0.35677,2.46247,2.4814,1.81799,3.57793,0.67155,2.25262,0.24383,1.46279,1.16939,-0.01455,1.61455,0.1576],[0.61189,3.57119,1.76422,-0.58731,0.80622,0.43009,-0.31152,0.43661,0.40349,0.3491,0.17842,0.45981,0.14558,0.88344,0.18418,1.21068,-0.04299,3.07927,1.61445,-0.11349,3.51651,2.28516,1.84679,3.65663,0.20656,1.69814,0.33963,1.3407,1.05312,-0.474,1.73865,-0.36404],[-2.1324,6.58912,1.40458,-1.24044,1.80017,-0.57826,-0.65394,0.10614,-1.04009,-0.64799,-1.20385,0.37486,-1.15134,1.73585,-0.8404,1.74313,-1.30645,6.25676,2.45595,-1.0092,8.13459,3.33698,3.15001,7.19523,-0.97869,3.731,0.43103,2.89201,1.78707,-0.93381,3.96555,-0.3438]],"b1":[[0.26661,3.66206,1.6435,0.30609,0.51544,0.11525,0.30251,0.23362,0.11439,0.13555,-0.06576,0.20823,0.42838,1.11316,-0.17605,0.97753,-0.13735,2.89266,1.65579,0.31439,3.45296,2.11632,1.73798,3.5647,0.16407,2.05243,0.469,1.68863,1.16202,0.23377,1.82404,-0.44926]],"W2":[[0.0283,0.04074,-0.39377,0.4694,-0.16926,0.65841,0.12674,-0.41792,0.12146,-0.14546,-0.26811,0.15407,-0.41868,-0.10614,-0.47522,-0.5099,0.55106,0.59435,0.63609,-0.34355,-0.26865,0.35436,0.11145,0.21591],[10.78768,-0.14733,12.38814,-1.11668,12.38002,-1.07256,0.04774,9.67866,-0.45355,-0.28304,-0.62548,11.22404,13.13692,0.40123,14.03027,11.73918,-0.33144,1.26647,-0.95789,0.0695,-0.02631,1.22391,-0.40905,3.658],[3.79777,-0.30263,4.79944,-0.53352,4.53351,0.15552,-0.68805,3.2457,0.3237,-0.17354,0.16542,3.28726,5.01308,-0.90341,6.15617,3.98058,-0.11702,0.62425,-0.31317,-0.32789,-0.09384,0.78785,0.24575,0.95922],[-0.65503,0.74741,-0.44272,0.82096,-0.59016,-0.14079,0.13911,-0.13979,-0.37412,1.3842,0.16176,-0.68091,-0.73946,1.58621,-0.55811,-1.11617,0.62669,-0.30278,0.70883,1.07519,1.04765,-0.7835,0.10461,0.07499],[2.78855,-0.50413,3.14662,-0.40156,2.77074,0.21152,-0.87141,2.08954,-0.83047,0.10525,-0.46332,3.70988,4.5427,-0.8471,4.01051,3.54876,-0.12698,0.08372,-0.78535,0.24979,-0.36739,0.82089,-0.19443,0.80605],[-0.42979,0.3549,-0.4645,0.43593,-0.31503,0.35475,0.49723,-0.34339,-0.0653,0.21553,-0.08729,0.04442,-0.38499,0.5131,-0.42118,0.03553,0.1198,0.00056,0.05677,0.2245,-0.17947,0.2514,0.29549,-0.05618],[-0.15726,0.27334,-0.18498,0.07773,-0.00676,-0.22277,0.53894,0.16135,0.46674,0.69758,0.25773,-0.65283,-0.43548,1.01418,0.00492,-0.12451,-0.25794,-0.32335,-0.61847,0.39784,0.66072,0.24753,-0.86698,-0.99516],[1.22948,-0.77155,1.29553,0.27323,0.88183,0.31786,-0.01608,0.98273,-0.01532,-0.81091,-0.04621,0.91197,1.80342,-0.98494,1.27621,1.65158,0.37345,0.16738,0.68883,0.13698,-0.07211,0.60526,0.43936,0.38209],[0.57358,0.0154,-0.38523,0.15082,0.08356,0.81648,0.33053,-0.31229,0.14909,-0.21967,-0.17619,0.70979,0.23294,0.18542,-0.18319,-0.00414,0.04551,0.75084,0.9975,-0.10338,0.8318,0.3983,0.56713,0.71411],[0.62655,-0.317,0.05897,0.14128,1.20515,0.50605,0.19905,0.83438,-0.61464,-0.46956,-0.69492,0.4605,-0.77044,0.25123,0.52139,0.82378,0.86826,0.2471,0.63672,-0.2812,0.09432,0.05762,0.7631,0.27647],[0.05647,-0.35762,-0.34612,0.30539,-0.88118,0.53136,-0.28069,-0.31323,-0.29817,0.16429,-0.61199,-0.62801,-0.80422,0.31982,0.11497,0.54258,0.26717,0.64945,1.24818,0.07932,-0.0354,0.5153,0.59731,0.15145],[1.49852,-0.44659,1.42191,0.22451,1.36346,0.29324,-0.19732,1.04376,-0.68054,-0.17393,0.17724,0.51161,1.83022,0.08356,1.68169,0.77774,0.10182,0.45687,0.25341,-0.95127,-0.26302,0.56333,0.29623,0.47131],[0.08287,0.03468,-0.35655,0.97504,0.08438,0.09131,0.54751,0.03435,-0.26937,-0.28435,0.30967,0.2731,-0.17092,0.12863,0.00509,-0.11949,0.56558,0.24543,0.34671,0.0492,-0.49839,0.12554,0.45167,0.45113],[3.25311,-0.07046,2.6856,-0.27112,2.8568,-0.55111,0.16946,2.0682,-0.13309,-0.22618,0.46842,2.73133,3.70785,0.46305,3.07076,2.37745,0.31259,-0.08015,-0.76443,0.2925,0.21439,0.28929,-0.24798,0.2758],[0.26136,0.14208,0.29102,0.62431,-0.20831,0.57572,0.4482,-0.15648,-0.04482,-0.11847,0.2498,-0.66077,-0.51116,0.14094,0.16561,0.26565,-0.02282,0.43499,0.49438,0.03466,-0.41106,0.11424,0.59916,0.74832],[4.4547,-0.61651,3.83423,0.0447,3.50768,0.07185,-0.04123,2.45697,0.1614,-0.49858,0.09481,4.00078,5.57031,-0.94138,5.35674,4.20392,-0.23393,0.69589,-0.43585,0.08122,-0.51798,0.08438,-0.162,1.71543],[-0.50462,0.39076,-0.47733,0.82219,-1.08878,0.40692,0.40171,-0.7959,0.38783,0.36547,-0.30505,0.10382,-0.20402,0.26971,-0.65536,0.30937,0.86458,0.21613,-0.27841,0.3793,-0.27437,0.70043,0.22201,0.56283],[10.20729,-0.66221,11.24713,0.05428,10.40715,0.22699,-0.98795,7.8223,-0.58521,0.15672,-0.63401,9.73413,11.55048,-0.46169,13.25525,10.81024,-0.65794,2.36622,-0.17286,-0.6439,0.0781,2.29134,-0.12954,4.25552],[8.27696,0.00126,9.0458,0.43178,8.8323,0.27652,-0.63617,5.88416,-0.78668,-0.14854,-0.58918,8.3251,10.19339,-0.13864,10.99682,8.42952,-0.05361,1.66666,-0.46388,-0.11909,-0.98262,1.199,0.28633,2.91128],[-0.34838,0.37118,-0.12232,0.60852,0.14015,-0.03538,0.24246,0.19097,0.0885,0.82548,0.31084,0.20882,-0.69469,0.67461,-1.12552,-0.74843,0.52677,-0.04099,-0.2437,0.64409,0.72588,-1.39664,0.12369,0.26754],[9.86263,-0.74258,11.28821,-0.88029,11.27069,-0.36568,0.12913,8.31106,-0.5618,-1.11862,0.08507,10.00193,12.09183,-0.06448,12.7262,10.69798,-0.5113,0.95874,-1.21116,-0.65612,-0.00905,1.13008,-0.45724,2.70779],[13.7794,-0.77592,15.37248,-0.39004,13.98401,-0.13699,-0.99658,11.97657,-0.56558,-0.27592,-1.01729,12.8498,14.71969,-0.47887,16.08446,13.58881,-1.16957,2.76993,-0.3329,-0.01918,-0.66739,2.97501,-0.66251,5.76378],[8.89113,-0.10409,10.72446,-0.16362,9.27984,-0.04817,-0.6791,5.86932,-0.30562,0.35442,-0.43878,6.87812,10.77114,-0.09585,12.38023,10.07018,-0.41283,1.58282,-0.66386,-0.25643,-0.0673,1.98862,-0.28399,3.01001],[9.26038,-0.18724,11.35087,-0.83071,10.76112,-0.51318,-0.4901,7.59005,-0.33144,0.77464,-1.07046,8.12631,11.94889,0.11076,12.40063,10.02269,-0.45767,0.85703,-0.60655,0.48428,0.19777,0.72415,-0.53602,2.29713],[-0.51635,0.20257,-0.46982,-0.20249,-0.42427,-0.3984,0.48352,-0.26973,0.68058,0.51789,0.4069,-0.70149,-0.1693,0.01319,-0.02823,-0.11443,0.13867,-0.05471,-0.23231,0.1236,-0.38494,0.69489,0.01917,-0.4829],[11.10994,-0.29781,11.47039,0.1139,11.14165,-0.34046,-0.52257,8.24873,-0.51848,-0.06995,-0.47719,10.89276,12.80897,0.01316,12.89346,10.33556,-0.52758,2.89475,-0.52049,-0.45751,-0.31225,3.35192,-0.08851,5.55948],[0.86363,0.04266,1.09399,0.89028,1.19203,0.2589,0.49085,0.40765,-0.25653,0.21321,0.60631,0.11569,1.0962,-0.31985,1.96042,0.7772,0.22404,0.48811,0.10084,-0.15588,-0.95722,0.20594,0.39144,0.32455],[3.96527,-0.43906,5.03752,0.2043,5.00846,-0.68222,-0.01997,2.86369,0.18018,0.16547,1.03718,3.37112,5.25474,0.61163,5.86507,3.00837,0.04865,0.02951,-0.48131,0.10711,-0.88074,-0.98335,-0.12409,0.86315],[5.94789,0.22179,5.47843,-0.17344,5.43217,-0.38989,0.0872,4.95545,0.09296,0.30091,0.27884,6.59097,8.17879,0.79457,8.39053,3.40982,-0.14606,0.69309,-1.06536,0.29114,0.60475,1.01242,-0.19068,2.04142],[-0.58223,0.38647,-0.12554,0.82893,-0.37397,-0.21068,0.73757,0.00998,1.14866,0.77491,0.6055,-1.07822,-0.52436,0.53154,-0.19925,-0.2831,0.04429,-0.33771,-0.62355,0.8127,-0.02525,0.52662,-0.35513,-0.12553],[7.15641,-0.31201,8.63848,-0.35757,8.04066,0.25444,-0.70486,4.9829,0.42168,-0.41404,-0.26192,7.44015,9.04447,0.10079,10.33128,8.28875,-0.21169,1.30242,-0.02124,-0.45086,0.25322,1.84023,0.221,3.29976],[-0.03619,0.41426,-0.49362,0.10119,-0.0625,-0.454,0.19359,0.08893,-0.98998,0.62791,0.50201,0.52591,0.21627,0.2742,-1.11121,0.86762,0.63583,-0.62456,-0.7745,0.82389,0.44278,-0.0918,-0.21928,-0.38135]],"b2":[[0.44574,0.02527,0.34127,0.38581,0.48528,0.24166,0.45907,0.24386,0.0864,-0.01817,0.14359,0.33058,0.90844,0.41597,0.55921,0.42258,0.43642,0.2636,0.0019,0.0498,-0.16587,0.17648,0.16518,0.2963]],"W3":[[12.20279,-2.09636,-1.13528,11.98074,10.6603,15.91399,11.42667,-1.15261,8.2982,-1.21557,8.09502,-1.18552,-0.31854,-1.32764,-1.3423,12.20976],[0.28514,0.5058,0.39403,0.18647,0.06581,-1.16773,-0.2339,-0.06727,-0.13112,0.15296,0.10127,0.23649,-0.27056,0.40103,0.24181,-0.37436],[16.4406,-2.40699,-3.1097,15.60853,10.65653,18.74582,12.17924,-1.78044,8.00693,-2.22303,8.68793,-2.1954,-0.88856,-2.78368,-2.77471,15.93614],[0.47298,0.38166,0.09972,0.35777,0.6701,-1.34798,0.27076,-0.14641,0.53937,0.18348,0.92996,0.02031,-0.17636,0.01689,0.21727,0.48823],[12.87845,-0.91619,-1.03879,12.55197,9.01934,15.86668,11.36307,-0.76321,6.90123,-0.88347,6.45211,-0.46973,-0.19197,-0.82189,-0.91901,12.69965],[-0.42597,-0.68972,-0.46966,0.40439,0.3383,0.09454,0.29344,-0.03326,0.65835,-0.30128,0.55693,0.0874,0.18745,-0.24132,0.08318,0.2993],[-0.04675,0.88504,0.62274,0.05991,0.20791,-0.56439,-0.18893,0.12751,0.42144,0.01748,0.10583,0.07889,0.26664,0.17412,0.32675,0.05807],[9.08754,-0.6259,-0.55736,8.49787,6.79332,12.26446,8.12199,-0.10659,4.8894,0.19857,5.7782,-0.26687,-0.27489,-0.20822,-0.25439,8.72665],[-2.17243,2.62074,2.3371,-1.72297,-1.24502,-0.54483,-1.315,2.02005,-1.65677,1.70606,-1.83568,1.35636,2.18804,1.60226,1.95168,-1.9225],[-0.73423,1.35088,1.81394,-0.54271,-0.23845,-0.25991,0.21287,0.22529,-0.15543,0.7055,-0.94417,0.85829,0.45207,0.59681,0.34997,-0.83637],[0.46716,0.54249,0.58192,0.19461,-0.15506,-1.25774,0.23203,-0.01309,-0.03099,-0.04918,-0.32174,-0.03267,-0.19482,0.14124,0.00691,0.13569],[15.71427,-2.06244,-2.66051,15.19926,12.43521,18.38777,13.88902,-2.14788,9.90799,-2.80769,9.43825,-3.04265,-1.8065,-2.66945,-3.41128,16.21094],[15.79407,-1.30752,-1.01643,14.00772,9.78957,18.3785,11.73081,-0.72542,7.00403,-1.01303,7.50696,-1.01419,0.02209,-0.87608,-1.34976,15.42951],[-0.32996,0.51699,1.2701,0.03488,-0.47844,0.50615,-1.31475,0.54297,0.17908,0.81246,0.36153,0.76141,0.29842,0.73911,0.34129,0.21257],[18.58136,-1.9618,-2.51175,16.88618,12.88435,21.12816,14.76321,-2.66471,10.24677,-2.85279,10.84143,-2.87539,-0.92495,-3.16238,-4.46135,18.78132],[15.96369,-2.79397,-3.26768,14.61853,11.49212,18.85606,13.14311,-0.93836,9.08368,-0.81923,9.09273,-1.27278,-0.7429,-1.64874,-2.3998,16.04485],[0.11624,0.04534,-0.07458,-0.21074,0.38116,-0.78456,0.14466,0.14429,0.26659,0.29075,0.27486,0.34311,0.12872,-0.04768,0.04614,-0.05459],[1.6381,-0.62508,-0.22225,1.17756,0.84543,2.22792,1.20516,0.0805,0.57064,-0.43758,1.04597,-0.41005,-0.05912,-0.29185,-0.4129,1.5972],[0.60077,-0.72116,-0.88826,0.91109,0.56997,0.46933,1.37341,-0.92759,1.12971,-0.90245,1.36131,-1.05696,-0.42728,-0.70127,-1.01689,0.38582],[-0.43001,0.83001,0.29513,-0.04265,-0.49546,-0.4432,0.00064,0.43904,-0.5951,0.08969,-0.94719,0.58273,0.24162,0.42095,0.8459,0.01237],[-0.82033,0.67418,1.10582,-1.21907,-0.99121,0.04013,0.00263,1.26042,-1.22747,0.86651,-1.13557,1.26537,1.20612,0.96482,0.72668,-1.24312],[2.2242,-0.09483,-0.92775,1.95224,1.06311,2.69742,0.91058,-0.42308,0.80921,-0.23884,0.62137,-0.54076,-0.90128,-0.24389,-0.5954,1.92246],[0.34709,-0.50519,-0.18308,-0.0732,0.36135,-0.35402,0.35835,0.20958,0.62617,0.17229,0.33294,0.13666,0.05445,-0.03601,-0.33978,0.28723],[6.37212,-0.40131,-0.0468,4.42112,1.99053,10.67953,3.39206,0.28803,2.04141,-0.28574,1.94451,-0.1134,0.43855,0.10007,0.13,6.39208]],"b3":[[-0.00033,0.20033,0.24588,-0.0103,0.18009,-0.01876,-0.08078,0.13479,0.32276,0.19878,0.39468,0.20252,-0.02076,0.03431,0.36343,0.01395]],"W4":[[15.81466],[-3.17169],[-3.19627],[14.25433],[12.54177],[20.19735],[13.36969],[-0.59975],[12.93719],[-1.04741],[14.49091],[-1.2659],[-0.34006],[-0.65566],[-1.48607],[15.18758]],"b4":[[0.21674]]};
+const NNT=0.20;
+const NNA=1.0000;
+const NNM=[0.75821,0.64321,0.38547,0.40557,0.98909,0.72577,0.91019,0.99914,0.7559,0.64155];
+const NNS=[0.41832,0.30248,0.20068,0.37488,0.08481,0.23168,0.27883,0.01474,0.42953,0.30431];
+
+const WORDS_SMALL=[
+  // 2-3 letras — palabras frecuentes
+  'sol','mar','luz','paz','sal','pez','río','oro','ola','col',
+  'oso','ave','pan','uva','ajo','ojo','pie','dar','ser','ver',
+  'son','uno','van','fue','hay','ven','ten','pon','sí','no',
+  'ya','más','mil','mal','tan','muy','sin','por','con','dos',
+  'rey','mes','ley','fin','voz','don','gol','era','vez','año',
+  'gas','tres','bien','tos','sed','res','mío','oda','así','ir',
+  // 4 letras — naturaleza
+  'luna','nube','rosa','lago','flor','nido','maíz','duna','lava','rana',
+  'lodo','polo','leña','loma','toro','puma',
+  // 4 letras — animales
+  'pato','loro','gato','mula','buey','cría',
+  // 4 letras — comida y bebida
+  'taco','sopa','miel','coco','papa','lima','higo','yuca','nabo','mote',
+  // 4 letras — familia y cuerpo
+  'niño','niña','mamá','papá','bebé','mano','boca','dedo','pelo','cara',
+  // 4 letras — casa y objetos
+  'mesa','casa','ropa','sala','tela','mapa','vela','bola','bota','fila',
+  'hoja','hola','isla','joya','jugo','kilo','loco','lupa','tema','tubo',
+  // 4 letras — colores y calificativos
+  'rojo','azul','gris','lila','alto','bajo','rico','sano','liso','duro',
+  'fino','puro','tipo','tope','tuna','cola','nuca',
+  // 4 letras — acciones y varios
+  'leer','amar','amor','beso','vida','vino','vaca','vale','vena','tren',
+  'oído','alma','foca','lona','lomo','toma','visa',
+];
+const WORDS_MED=[
+  // Naturaleza y paisaje
+  'árbol','lluvia','camino','jardín','pelota','música','amigos',
+  'viento','tierra','verano','puerta','espejo','tiempo','trabajo',
+  'bosque','ciudad','flores','regalo','escuela','tambor','cohete',
+  'playa','brillo','cielo','noche','tarde','campo','cerro','arroyo',
+  'piedra','monte','bahía','sierra','palmar','laguna','selva',
+  // Animales (5-7 letras)
+  'perro','pájaro','ratón','caballo','conejo','tortuga','iguana',
+  'lagarto','burro','ardilla','mapache','coyote','venado','jabalí',
+  'grillo','abeja','mosca','delfín','alacrán','zorrillo',
+  // Comida mexicana (5-7 letras)
+  'tacos','tamales','pozole','menudo','birria','elotes','gordita',
+  'tostada','atole','elote','chile','mango','guayaba','pepino',
+  'jícama','tlayuda','tepache','camote','zapote','plátano','naranja',
+  'limón','chayote','carnita','machaca','memela','chalupa','tamal',
+  // Familia (5-7 letras)
+  'abuelo','abuela','hermano','hermana','primo','vecino','familia',
+  // Escuela (5-7 letras)
+  'lápiz','papel','tijeras','pintura','maestra','alumno','recreo',
+  'salón','mochila','examen','crayón','pincel','tarea','clase','libro',
+  // Cuerpo (5-7 letras)
+  'cabeza','brazo','pierna','rodilla','hombro','espalda','barriga',
+  'mejilla','oreja',
+  // Casa (5-7 letras)
+  'cuarto','ventana','pared','suelo','techo','pasillo','garage','cocina',
+  // Colima y lugares (5-7 letras)
+  'colima','volcán','comala','palmera','danzón','tecomán','armería',
+  'puerto','muelle','malecón','costera',
+  // Tecnología (5-7 letras)
+  'celular','tablet','bocina','cable','señal','mensaje','llamada',
+  // Colores (5-7 letras)
+  'verde','negro','blanco','morado','rosado','dorado','colores',
+  // Calificativos y descriptivos (5-7 letras)
+  'bonita','alegre','fuerte','tierno','suave','grande','gordo','flaco',
+  'moreno','chico','lindo','bueno','triste','feliz','rápido','lento',
+  'limpio','sucio','nuevo','viejo','bonito','fácil','difícil',
+  // Oficios y personas (5-7 letras)
+  'bombero','doctor','músico','pintor','torero','maíces','mangos',
+  'cocos','limones','nopales',
+];
+const WORDS_LARGE=[
+  // Animales (8+ letras)
+  'mariposa','elefante','serpiente','cocodrilo','guajolote','chapulín',
+  'tlacuache','tecolote','escorpión','cangrejo',
+  // Comida (8+ letras)
+  'guacamole','aguacate','tamarindo','enchilada','guanábana','carnitas',
+  'gorditas','tostadas','chayotes','palmeras','coquitos','naranjas',
+  'mazapanes','quesillo',
+  // Tecnología y objetos (8+ letras)
+  'computadora','calculadora','reproductor','televisión','ventilador',
+  'pantalla','cargador','cuaderno','borrador','pizarrón',
+  // Personas y oficios (8+ letras)
+  'presidente','gobernador','secretaria','periodista','arquitecto',
+  'veterinario','electricista','carpintero','enfermera','dentista',
+  // Ciencia y naturaleza (8+ letras)
+  'electricidad','telescopio','temperatura','fotografía','equilibrio',
+  'madrugada','manzanillo','dinosaurio',
+  // Lugares y sociedad (8+ letras)
+  'universidad','biblioteca','laboratorio','supermercado','restaurante',
+  'aeropuerto','estacionamiento','departamento',
+  // Palabras complejas (8+ letras)
+  'bicicleta','automóvil','cumpleaños','refrigerador','helicóptero',
+  'submarino','diccionario','calendario','matemáticas','paraguas',
+  'administración','investigación','conversación','participación',
+  'pronunciación','comprensión','independencia','constitución',
+  'revolución','celebración','decoración','comunicación','construcción',
+  'responsabilidad','entretenimiento','funcionamiento','contabilidad',
+];
+const SENTENCES_3_5=[
+  // Naturaleza y clima
+  'El sol brilla hoy','La luna es bella','El cielo está azul',
+  'El agua está fría','La lluvia cayó fuerte','El viento sopla fuerte',
+  'El río está lleno','El maíz es rico','El volcán humea hoy',
+  'La flor huele bien','La noche está fría','El lago es grande',
+  // Animales
+  'El perro corre rápido','Mi gato es café','El pato nada bien',
+  'La rosa es roja','El toro es grande','El oso es café',
+  'La abeja pica mucho','El loro habla claro','El burro camina lento',
+  // Familia y personas
+  'Mamá hace pan rico','El niño come manzana','Mi mamá me quiere',
+  'Papá trabaja mucho','Mi hermano es alto','Tengo seis años',
+  'Mi abuela hace tamales','La maestra es buena','Mi casa es grande',
+  // Comida
+  'Me gusta el chocolate','Me gustan los tacos','El mango está dulce',
+  'La naranja es rica','El pan está caliente','Quiero agua fría',
+  'La palma da cocos',
+  // Escuela y actividades
+  'Tengo un libro rojo','Voy a la escuela','Juego con mis amigos',
+  'La mariposa vuela alto','Tengo tarea hoy','El recreo ya llegó',
+  'Me gustan las frutas','Soy buen alumno','Voy al parque',
+  // Salud y cuerpo
+  'Me duele la cabeza','Me lavo las manos','Me duele el pie',
+  'Tengo hambre ahora','Tengo sed y hambre','Me duele la panza',
+  // Colima y cotidianas
+  'Colima es bonita','Hoy no hay clases','La luna brilla mucho',
+  'El sol es grande','Mi perro se llama Rex','Los peces nadan juntos',
+  'El árbol tiene hojas','El cielo tiene nubes','Quiero jugar fútbol',
+];
+const SENTENCES_5_8=[
+  // Naturaleza y animales
+  'El perro juega en el jardín verde','Las mariposas vuelan sobre las flores',
+  'El caballo corre libre por el potrero','Vi una iguana grande en el arroyo',
+  'El río corre entre las montañas altas','Los pájaros cantan bonito en la mañana',
+  'La lluvia cae sobre los árboles grandes','El sol calienta toda la ciudad hoy',
+  'La ardilla salta de árbol en árbol','El cocodrilo vive cerca del río tranquilo',
+  'El delfín nada muy rápido en el mar','El coyote aúlla en la noche oscura',
+  'El tlacuache se esconde entre los árboles','Las tortugas nadan lento en el lago',
+  'El grillo canta toda la noche fuerte','Encontramos un conejo chiquito en el jardín',
+  // Comida y cocina
+  'Me gustan los tacos de pollo con salsa','Mamá prepara la cena con mucho amor',
+  'Mi abuela hace pozole rojo los jueves','Hoy hay birria de res en mi casa',
+  'Los chapulines se comen con sal y limón','Los chayotes del mercado están muy frescos',
+  'Voy al mercado con mi abuelita querida','Mi abuela sabe hacer guacamole muy rico',
+  'En Tecomán hay muchos limones y cocos','Los cocos caen de las palmeras altas',
+  // Escuela
+  'La maestra enseña en la escuela cada día','Saqué diez en el examen de matemáticas',
+  'Mi mochila tiene libros y cuadernos nuevos','El recreo dura veinte minutos cada día',
+  'Hoy aprendimos las tablas de multiplicar','Mi compañero me prestó un lápiz rojo',
+  'La directora habló con todos los alumnos','Mañana hay excursión al museo de la ciudad',
+  'El maestro escribe en el pizarrón verde','El libro tiene muchas páginas con dibujos',
+  'Mi hermana aprende a tocar la flauta dulce','Los alumnos leen en voz alta en clase',
+  // Familia y cotidiano
+  'Mi papá trabaja en una tienda del centro','Mi mamá me lleva a la escuela cada mañana',
+  'Mi abuelo me cuenta cuentos por las noches','Mi hermana y yo jugamos en el patio juntos',
+  'Los domingos vamos a comer con la familia','Mi tía vive en una casa cerca del río',
+  'El perro de mi vecino ladra muy fuerte','Mi primo juega fútbol en el parque verde',
+  'Voy con mi mamá al mercado los sábados','La pelota rueda por todo el patio escolar',
+  // Colima y lugares
+  'El volcán de Colima se ve muy bonito','Las palmeras crecen en toda la costa verde',
+  'El danzón se baila en el jardín principal','El calor de Colima es muy fuerte hoy',
+  'Vamos a la playa de Manzanillo en verano','Los limones de Tecomán son los mejores',
+  'La costera de Manzanillo es muy bonita','Los flamboyanes florecen en la ciudad capital',
+  // Salud y valores
+  'Debo lavarme los dientes antes de dormir','Es importante comer frutas y verduras frescas',
+  'Mi perro come su comida todas las mañanas','El maestro llegó muy temprano a la escuela',
+];
+const SENTENCES_8_10=[
+  // Naturaleza y animales
+  'El niño corre feliz por el parque verde de la ciudad',
+  'La mariposa vuela sobre las flores del jardín de mi abuela',
+  'El árbol grande de mi jardín tiene muchas ramas llenas de hojas',
+  'La luna brilla muy bonito en el cielo oscuro y estrellado',
+  'Los flamboyanes florecen de color rojo en las calles de la ciudad',
+  'El río Armería pasa por varios municipios del estado de Colima',
+  'Durante la temporada de lluvias los cerros de Colima se ponen verdes',
+  'Los chapulines son insectos que se comen tostados con sal y chile',
+  'El tlacuache se pasea de noche buscando fruta y agua fresca',
+  'El cocodrilo puede nadar muy rápido y también correr en tierra',
+  'Los coyotes aúllan en la noche oscura cuando hay luna llena',
+  'Los venados corren muy rápido cuando sienten peligro en el bosque',
+  // Colima y cultura
+  'El volcán de Colima se puede ver desde muchos pueblos del estado',
+  'Las fiestas de Colima tienen música de mariachi y danzón en el jardín',
+  'Mi familia viaja a Manzanillo para ver el mar y comer mariscos frescos',
+  'Los limones de Tecomán son los más famosos de todo México y el mundo',
+  'En la feria de Colima hay juegos mecánicos comida y música toda la noche',
+  'Mi abuela me enseñó a hacer tamales de rajas con queso y chile verde',
+  'El mercado Constitución tiene frutas verduras y artesanías de todo Colima',
+  'Los cocos de Manzanillo son muy ricos con limón y chile en polvo',
+  'Mi mamá hace atole de guayaba caliente cuando hace mucho frío',
+  'Los charros de Colima son muy valientes y habilidosos con el lazo',
+  // Escuela y aprendizaje
+  'Todos los días voy a la escuela caminando con mis amigos del barrio',
+  'La maestra nos explicó cómo se forman las nubes en el cielo azul',
+  'Aprender a leer es muy importante para poder estudiar toda la vida',
+  'En la biblioteca de la escuela hay muchos libros de cuentos y ciencias',
+  'Mi compañero y yo hicimos una maqueta del sistema solar con cartón',
+  'La directora premiará a los alumnos que lean más libros este año',
+  'El maestro nos pidió que leyéramos un libro completo por semana',
+  'En la noche escucho a los grillos cantar cerca de mi ventana',
+  // Familia y valores
+  'Mi familia y yo comemos juntos en la mesa todos los domingos',
+  'Mi abuelita hace tamales deliciosos cada año para las posadas de diciembre',
+  'El chocolate caliente sabe muy rico en las mañanas de frío intenso',
+  'Los niños juegan fútbol en el parque cuando termina la escuela por la tarde',
+  'Mi abuelo me cuenta historias de cuando él era niño pequeño en el rancho',
+  'Es importante ayudar a nuestros compañeros cuando tienen alguna dificultad',
+  'Mi mamá me enseñó a decir gracias por favor y buenos días siempre',
+  'Cuidar el medio ambiente es responsabilidad de todos los niños y adultos',
+  'Los amigos verdaderos se ayudan y se respetan en todo momento del día',
+  'Mi familia festeja el día de muertos con ofrendas de flores y comida',
+];
+const ATTEMPTS={easy:3,med:2,hard:1};
+const LABELS={easy:'Fácil',med:'Medio',hard:'Difícil'};
+const DIDX={easy:0,med:1,hard:2};
+// ── PESOS: cargar desde localStorage si existen, si no usar los pre-entrenados ──
+function loadWeights(){
+  try{
+    const saved=localStorage.getItem('lp_weights');
+    if(saved){
+      const w=JSON.parse(saved);
+      if(w.W1&&w.W1.length===NNW.W1.length&&w.W1[0].length===NNW.W1[0].length){
+        return w;
+      }
+    }
+  }catch(e){}
+  return null;
+}
+function saveWeights(){
+  try{
+    const w={W1,b1,W2,b2,W3,b3,W4,b4,thr:nnThr,tAdam,saved:Date.now()};
+    localStorage.setItem('lp_weights',JSON.stringify(w));
+  }catch(e){}
+}
+function resetWeights(){
+  localStorage.removeItem('lp_weights');
+  [W1,b1,W2,b2,W3,b3,W4,b4]=[NNW.W1,NNW.b1,NNW.W2,NNW.b2,NNW.W3,NNW.b3,NNW.W4,NNW.b4].map(m=>m.map(r=>[...r]));
+  nnThr=NNT; tAdam=0;
+}
+const _saved=loadWeights();
+const _sw=_saved
+  ? [_saved.W1,_saved.b1,_saved.W2,_saved.b2,_saved.W3,_saved.b3,_saved.W4,_saved.b4].map(m=>m.map(r=>[...r]))
+  : [NNW.W1,NNW.b1,NNW.W2,NNW.b2,NNW.W3,NNW.b3,NNW.W4,NNW.b4].map(m=>m.map(r=>[...r]));
+let W1=_sw[0],b1=_sw[1],W2=_sw[2],b2=_sw[3],W3=_sw[4],b3=_sw[5],W4=_sw[6],b4=_sw[7];
+let nnThr=_saved?_saved.thr:NNT;
+const xMean=NNM, xStd=NNS;
+const lrelu=x=>x>0?x:0.05*x;  // Leaky ReLU (igual que en entrenamiento)
+const sig=x=>1/(1+Math.exp(-Math.min(15,Math.max(-15,x))));
+const T=M=>M[0].map((_,j)=>M.map(r=>r[j]));
+const mAdd=(A,B)=>A.map((r,i)=>r.map((v,j)=>v+B[i][j]));
+const mMul=(A,B)=>A.map(r=>B[0].map((_,j)=>r.reduce((s,v,k)=>s+v*B[k][j],0)));
+const applyF=(A,f)=>A.map(r=>r.map(f));
+function fwd(x){
+  const xn=x.map((v,i)=>(v-xMean[i])/xStd[i]);
+  let h=applyF(mAdd(mMul([xn],W1),b1),lrelu);
+  h=applyF(mAdd(mMul(h,W2),b2),lrelu);
+  h=applyF(mAdd(mMul(h,W3),b3),lrelu);
+  return applyF(mAdd(mMul(h,W4),b4),sig)[0][0];
+}
+let tAdam=_saved?(_saved.tAdam||0):0;
+const lr=0.001,b1a=0.9,b2a=0.999,eps=1e-8;
+const _z=m=>m.map(r=>r.map(()=>0));
+let mW1=_z(W1),mW2=_z(W2),mW3=_z(W3),mW4=_z(W4);
+let vW1=_z(W1),vW2=_z(W2),vW3=_z(W3),vW4=_z(W4);
+function adamStep(W,G,mW,vW,t){
+  const hat=(m,b)=>m/(1-Math.pow(b,t));
+  return W.map((r,i)=>r.map((v,j)=>{
+    mW[i][j]=b1a*mW[i][j]+(1-b1a)*G[i][j];
+    vW[i][j]=b2a*vW[i][j]+(1-b2a)*G[i][j]**2;
+    return v-lr*hat(mW[i][j],b1a)/(Math.sqrt(hat(vW[i][j],b2a))+eps);
+  }));
+}
+function trainStep(x,label){
+  tAdam++;
+  const xn=x.map((v,i)=>(v-xMean[i])/xStd[i]);
+  const h0=[xn];
+  const z1=mAdd(mMul(h0,W1),b1),a1=applyF(z1,lrelu);
+  const z2=mAdd(mMul(a1,W2),b2),a2=applyF(z2,lrelu);
+  const z3=mAdd(mMul(a2,W3),b3),a3=applyF(z3,lrelu);
+  const z4=mAdd(mMul(a3,W4),b4),pred=applyF(z4,sig)[0][0];
+  const dlr=z=>z>0?1:0.05;
+  const dz4=[[pred-label]];
+  const dz3=mMul(dz4,T(W4)).map((r,i)=>r.map((v,j)=>v*dlr(z3[i][j])));
+  const dz2=mMul(dz3,T(W3)).map((r,i)=>r.map((v,j)=>v*dlr(z2[i][j])));
+  const dz1=mMul(dz2,T(W2)).map((r,i)=>r.map((v,j)=>v*dlr(z1[i][j])));
+  [W4,mW4,vW4]=[adamStep(W4,mMul(T(a3),dz4),mW4,vW4,tAdam),mW4,vW4];
+  [W3,mW3,vW3]=[adamStep(W3,mMul(T(a2),dz3),mW3,vW3,tAdam),mW3,vW3];
+  [W2,mW2,vW2]=[adamStep(W2,mMul(T(a1),dz2),mW2,vW2,tAdam),mW2,vW2];
+  [W1,mW1,vW1]=[adamStep(W1,mMul(T(h0),dz1),mW1,vW1,tAdam),mW1,vW1];
+}
+const normS=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z]/g,'').trim();
+function bigSim(a,b){
+  const na=normS(a),nb=normS(b);
+  if(na===nb)return 1;if(!na||!nb)return 0;
+  const bg=s=>new Set([...Array(Math.max(0,s.length-1))].map((_,i)=>s.slice(i,i+2)));
+  const ba=bg(na),bb=bg(nb);
+  if(!ba.size&&!bb.size)return na[0]===nb[0]?0.5:0;
+  let n=0;ba.forEach(g=>{if(bb.has(g))n++;});
+  return(2*n)/(ba.size+bb.size);
+}
+function mkFeats(heard,conf,target,diff,snrRatio){
+  const hn=normS(heard||''), tn=normS(target);
+  const heardLen=hn.length>0?Math.min(1,hn.length/Math.max(1,tn.length)):0;
+  const snrNorm=Math.min(1,Math.max(0,(snrRatio-1)/9));
+  const firstMatch=hn.length>0&&hn[0]===tn[0]?1:0;
+  const confN=Math.min(1,Math.max(0,conf||0));
+  return[
+    bigSim(heard||'',target),         // 0
+    confN,                              // 1
+    Math.min(1,target.length/15),      // 2
+    DIDX[diff]/2,                       // 3
+    Math.min(1,G.sess.att/100),        // 4
+    G.sess.att>0?G.sess.ok/G.sess.att:0.5, // 5
+    heardLen,                           // 6
+    snrNorm,                            // 7
+    firstMatch,                         // 8
+    heardLen*confN                      // 9
+  ];
+}
+function exactMatch(txt,target){
+  if(G.cfg.mode==='sentences'){
+    const tWords=normS(target).split(/\s+/).filter(Boolean);
+    const hWords=normS(txt||'').split(/\s+/).filter(Boolean);
+    if(!tWords.length)return false;
+    let matches=0;
+    tWords.forEach(tw=>{if(hWords.some(hw=>hw===tw||bigSim(hw,tw)>0.80))matches++;});
+    return matches/tWords.length>=0.60;
+  }
+  const t=normS(target);
+  return(txt||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z\s]/g,'').trim().split(/\s+/).some(w=>w===t);
+}
+let trainHist=JSON.parse(localStorage.getItem('lp_nn')||'[]');
+let snrCurrent=1.0; // actualizado por el analizador de audio
+function evaluate(heard,conf,target,diff){
+  const feats=mkFeats(heard,conf,target,diff,snrCurrent);
+  const score=fwd(feats);
+  const srExact=exactMatch(heard,target);
+
+  // REGLA PRINCIPAL: si el SR detectó la palabra exacta → correcto
+  // La confianza del SR en móvil no es confiable, la ignoramos como barrera
+  let decision=false;
+  if(srExact){
+    // Palabra detectada exactamente → siempre correcto
+    decision=true;
+  } else {
+    // No detectó exacto → usar similitud fonética como segunda oportunidad
+    // Solo aceptar si la similitud es muy alta (>0.82)
+    const sim=bigSim(heard||'',target);
+    decision=sim>=0.82;
+  }
+
+  // Entrenar NN con el resultado
+  const label=srExact?1:0;
+  trainStep(feats,label);
+  trainHist.push({f:feats.map(v=>Math.round(v*1e3)/1e3),l:label});
+  if(trainHist.length>500)trainHist.shift();
+  localStorage.setItem('lp_nn',JSON.stringify(trainHist));
+  G.sess.att++;if(decision)G.sess.ok++;
+  if(G.sess.att%5===0) saveWeights();
+  const pct=Math.round(score*100);
+  $('nn-cbar').style.width=pct+'%';
+  $('nn-clbl').textContent='confianza IA: '+pct+'%';
+  return{decision,score};
+}
+let audioCtx=null,noiseFloor=0,vadIv=null,noiseHistory=[];
+async function buildAudio(rawStream){
+  // Cerrar contexto anterior para evitar nodos duplicados
+  if(audioCtx && audioCtx.state!=='closed'){
+    try{ await audioCtx.close(); }catch(e){}
+  }
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
+  if(audioCtx.state==='suspended') await audioCtx.resume();
+  const mkF=(type,freq,Q,g)=>{
+    const f=audioCtx.createBiquadFilter();
+    f.type=type;
+    f.frequency.value=freq;
+    f.Q.value=Q;
+    if(g!==undefined) f.gain.value=g;
+    return f;
+  };
+  const hp=mkF('highpass',80,0.7);
+  const lp=mkF('lowpass',8000,0.7);
+  const pk=mkF('peaking',2500,1.0,6);
+  const comp=audioCtx.createDynamicsCompressor();
+  comp.threshold.value=-24;
+  comp.knee.value=10;
+  comp.ratio.value=4;
+  comp.attack.value=0.003;
+  comp.release.value=0.12;
+  const gn=audioCtx.createGain();
+  gn.gain.value=1.8;
+  analyserNode=audioCtx.createAnalyser();
+  analyserNode.fftSize=512;
+  analyserNode.smoothingTimeConstant=0.6;
+  const dest=audioCtx.createMediaStreamDestination();
+  const src=audioCtx.createMediaStreamSource(rawStream);
+  src.connect(hp);
+  hp.connect(lp);
+  lp.connect(pk);
+  pk.connect(comp);
+  comp.connect(gn);
+  gn.connect(analyserNode);
+  analyserNode.connect(dest);
+  processedStream=dest.stream;
+  await new Promise(res=>{
+    const buf=new Float32Array(analyserNode.fftSize),s=[];
+    const iv=setInterval(()=>{
+      analyserNode.getFloatTimeDomainData(buf);
+      s.push(Math.sqrt(buf.reduce((a,v)=>a+v*v,0)/buf.length));
+      if(s.length>=6){
+        clearInterval(iv);
+        s.sort((a,b)=>a-b);
+        noiseFloor=s[Math.floor(s.length*0.8)]*1.4;
+        res();
+      }
+    },100);
+  });
+  return processedStream;
+}
+function getRMS(){
+  if(!analyserNode)return{rms:0,snr:1};
+  const buf=new Float32Array(analyserNode.fftSize);
+  analyserNode.getFloatTimeDomainData(buf);
+  const rms=Math.sqrt(buf.reduce((s,v)=>s+v*v,0)/buf.length);
+  return{rms,snr:noiseFloor>0?rms/noiseFloor:1};
+}
+function startMeter(){
+  $('audio-meter').style.display='flex';
+  vadIv=setInterval(()=>{
+    const{rms,snr}=getRMS();
+    snrCurrent=snr; // actualizar para features NN
+    $('m-voice').style.width=Math.min(100,rms*800)+'%';
+    $('m-noise').style.width=Math.min(100,noiseFloor*800)+'%';
+    const b=$('m-nbadge');noiseHistory.push(snr);
+    if(snr<2){b.textContent='bajo';b.className='nbadge low';}
+    else if(snr<4){b.textContent='medio';b.className='nbadge med';}
+    else{b.textContent='alto';b.className='nbadge high';}
+  },80);
+}
+function stopMeter(){
+  clearInterval(vadIv);
+  $('audio-meter').style.display='none';
+  $('m-voice').style.width='0%';$('m-noise').style.width='0%';
+}
+function avgNoise(){
+  if(!noiseHistory.length)return'—';
+  const a=noiseHistory.reduce((s,v)=>s+v,0)/noiseHistory.length;
+  return a<2?'🟢 Bajo':a<4?'🟡 Medio':'🔴 Alto';
+}
+const SRC=window.SpeechRecognition||window.webkitSpeechRecognition||null;
+let srPersist = null;
+function buildPersistSR(){
+  if(!SRC) return;
+  srPersist = new SRC();
+  srPersist.lang = 'es-MX';
+  srPersist.continuous = false;
+  srPersist.interimResults = false;
+  srPersist.maxAlternatives = 5;
+}
+
+// Escucha directa con SR — igual al grabador: permiso pedido UNA VEZ en activateMic().
+// No usa MediaRecorder ni getUserMedia adicional; el permiso ya fue concedido.
+function listenWord(target, cb){
+  if(!srPersist){ fake(cb); return; }
+  let done = false;
+  const finish = (t, c) => {
+    if(done) return; done = true;
+    srPersist.onresult = null;
+    srPersist.onerror  = null;
+    srPersist.onend    = null;
+    cb(t, c);
+  };
+  srPersist.onresult = e => {
+    let best = {t:e.results[0][0].transcript.trim(), c:e.results[0][0].confidence||0};
+    for(let i=0; i<e.results[0].length; i++){
+      const tx=e.results[0][i].transcript.trim(), cx=e.results[0][i].confidence||0;
+      if(exactMatch(tx,target)&&cx>best.c){ best={t:tx,c:cx}; break; }
+    }
+    finish(best.t, best.c);
+  };
+  srPersist.onerror = e => { if(e.error==='aborted') return; finish('', 0); };
+  srPersist.onend   = () => finish('', 0);
+  try{ srPersist.start(); }
+  catch(e){ fake(cb); }
+}
+
+function stopMrRec(){
+  if(G.game) clearTimeout(G.game.th);
+  if(srPersist){ try{ srPersist.abort(); }catch(e){} }
+  if(typeof srContinuous !== 'undefined' && srContinuous){
+    try{ srContinuous.abort(); }catch(e){}
+    srContinuous = null;
+  }
+  if(typeof sentenceTimeout !== 'undefined') clearTimeout(sentenceTimeout);
+}
+function fake(cb){setTimeout(()=>{const ok=Math.random()>0.38;cb(ok?G.game.words[G.game.idx]:'otra',ok?0.85:0.25)},1400)}
+
+// Helper seguro para actualizar el botón de grabación
+function setMicBtn(state, txt){
+  const mb=$('mic-btn');
+  const sp=$('mic-btn-txt');
+  if(mb) mb.className='mic-btn'+(state?' '+state:'');
+  if(sp) sp.textContent=txt||'Presiona para grabar';
+}
+const G={
+  cfg:{name:'',diff:'easy',qty:5,mode:'words',wsize:'small',ssize:'3-5'},
+  game:{words:[],idx:0,ok:0,fail:0,sec:0,th:null,rec:false,paused:false},
+  sess:{att:0,ok:0},
+  mic:{raw:null},
+  pending:null,fromPause:false,srPending:null
+};
+// $ seguro: nunca devuelve null, usa objeto dummy si no existe
+const $=id=>{
+  const el=document.getElementById(id);
+  if(el) return el;
+  // Objeto dummy que absorbe cualquier asignación sin error
+  return {
+    textContent:'',style:{},classList:{add:()=>{},remove:()=>{},toggle:()=>{}},
+    className:'',disabled:false,innerHTML:'',
+    querySelector:()=>null,getAttribute:()=>null
+  };
+};
+const shuffle=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b};
+const showSc=id=>document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
+const toast=(msg,dur=2800)=>{const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),+dur)};
+const setStatus=(t,c)=>{const m=$('status-msg');m.textContent=t;m.className='status-msg '+c};
+function sel(btn,type){
+  document.querySelectorAll(type==='qty'?'[data-qty]':'[data-diff]').forEach(b=>b.classList.remove('sel','g'));
+  btn.classList.add('sel');if(type==='qty')btn.classList.add('g');
+  if(type==='diff')G.cfg.diff=btn.dataset.diff;else G.cfg.qty=parseInt(btn.dataset.qty);
+}
+function selMode(btn,mode){
+  document.querySelectorAll('[data-mode]').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  G.cfg.mode=mode;
+  $('sub-words').style.display=mode==='words'?'block':'none';
+  $('sub-sentences').style.display=mode==='sentences'?'block':'none';
+}
+function selSub(btn,type){
+  const attr=type==='wsize'?'[data-wsize]':'[data-ssize]';
+  document.querySelectorAll(attr).forEach(b=>b.classList.remove('sel','g'));
+  btn.classList.add('sel','g');
+  if(type==='wsize') G.cfg.wsize=btn.dataset.wsize;
+  else G.cfg.ssize=btn.dataset.ssize;
+}
+async function activateMic(){
+  const block=$('mic-status-block');
+  const abtn=block.querySelector('.btn-mic-activate');
+  if(abtn){abtn.textContent='Activando...';abtn.disabled=true;}
+  try{
+    G.mic.raw=await navigator.mediaDevices.getUserMedia({
+      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1,sampleRate:16000},
+      video:false
+    });
+    await buildAudio(G.mic.raw);
+    // Crear instancia SR persistente con el permiso ya dado
+    buildPersistSR();
+    block.className='mic-status ok';
+    block.innerHTML='<span class="mic-icon">✅</span><div class="mic-txt">Micrófono activo<small>Listo para jugar</small></div>';
+    $('btn-start').disabled=false;
+  }catch(e){
+    let msg='No se pudo activar el micrófono',hint='Revisa los permisos del navegador';
+    if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError'){
+      msg='Permiso denegado';
+      hint='Ve a Ajustes → Privacidad → Micrófono y actívalo para este navegador';
+    }else if(e.name==='NotFoundError'){
+      msg='No se encontró micrófono';
+      hint='Conecta un micrófono o usa auriculares';
+    }else if(e.name==='NotReadableError'){
+      msg='Micrófono en uso por otra app';
+      hint='Cierra otras apps que usen el micrófono';
+    }
+    block.className='mic-status err';
+    block.innerHTML='<span class="mic-icon">❌</span><div class="mic-txt">'+msg+'<small>'+hint+'</small></div><button class="btn-mic-activate" onclick="activateMic()">Reintentar</button>';
+  }
+}
+async function initAndStart(){
+  const nm=$('player-name').value.trim();
+  if(!nm){$('player-name').focus();return}
+  G.cfg.name=nm;
+  beginGame();
+}
+function buildWordList(){
+  if(G.cfg.mode==='sentences'){
+    const map={'3-5':SENTENCES_3_5,'5-8':SENTENCES_5_8,'8-10':SENTENCES_8_10};
+    return shuffle([...(map[G.cfg.ssize]||SENTENCES_3_5)]).slice(0,G.cfg.qty||8);
+  }
+  const map={small:WORDS_SMALL,medium:WORDS_MED,large:WORDS_LARGE};
+  const pool=[...(map[G.cfg.wsize]||WORDS_SMALL)];
+  return shuffle(pool).slice(0,G.cfg.qty||10);
+}
+function beginGame(){
+  G.sess={att:0,ok:0};noiseHistory=[];snrCurrent=1.0;
+  if(!G.cfg.qty||G.cfg.qty===5){
+    G.cfg.qty=G.cfg.mode==='sentences'?8:10;
+  }
+  const words=buildWordList();
+  G.game={words,idx:0,ok:0,fail:0,sec:0,th:null,rec:false,paused:false,started:false};
+  $('g-player').textContent='👤 '+G.cfg.name;
+  $('nn-cbar').style.width='0%';$('nn-clbl').textContent='confianza IA: —';
+  startMeter();showSc('s-game');
+  showWord();
+  showCountdownThen(startListening);
+}
+let sentenceWords=[]; // palabras de la oración como array
+let sentenceResults=[]; // {word, heard, ok} por palabra
+function buildSentenceSpans(sentence){
+  sentenceWords=sentence.trim().split(/\s+/);
+  sentenceResults=[];
+  return sentenceWords.map((w,i)=>
+    `<span class="sw pending" id="sw-${i}">${w}</span>`
+  ).join(' ');
+}
+function highlightWord(idx,state){
+  const el=document.getElementById('sw-'+idx);
+  if(el){el.className='sw '+state;}
+}
+function renderCorrections(){
+  const box=$('correction-box');
+  const errors=sentenceResults.filter(r=>!r.ok);
+  if(!errors.length){box.className='correction-box';return;}
+  box.innerHTML=errors.map(r=>
+    `<div class="correction-row"><span class="correction-expected">${r.word}</span><span class="correction-arrow">→</span><span class="correction-heard fail">dijiste: "${r.heard||'(nada)'}"</span></div>`
+  ).join('');
+  box.className='correction-box show';
+}
+function renderAttempts(){
+  const gm=G.game;
+  const total=ATTEMPTS[G.cfg.diff];
+  const bar=$('attempts-bar');
+  bar.innerHTML='';
+  for(let i=0;i<total;i++){
+    const d=document.createElement('div');
+    d.className='attempt-dot '+(i<gm.attUsed?'used':'left');
+    bar.appendChild(d);
+  }
+}
+function showWord(){
+  const gm=G.game;if(gm.idx>=gm.words.length){endGame();return}
+  clearTimeout(gm.th);
+  gm.attLeft=ATTEMPTS[G.cfg.diff];
+  gm.attUsed=0;
+  const item=gm.words[gm.idx];
+  const isSentence=G.cfg.mode==='sentences';
+  const wcard=$('word-card-inner');
+  if(isSentence){
+    const spans=buildSentenceSpans(item);
+    wcard.innerHTML=`<div class="mode-tag sentences">💬 Oración</div><div class="sentence-txt" id="sentence-display">${spans}</div>`;
+  } else {
+    wcard.innerHTML=`<div class="mode-tag words">📝 Palabra</div><div class="word-txt">${item}</div>`;
+  }
+  $('correction-box').className='correction-box';
+  const label=isSentence?'Oración':'Palabra';
+  $('g-prog').textContent=label+' '+(gm.idx+1)+' de '+gm.words.length;
+  $('nn-cbar').style.width='0%';$('nn-clbl').textContent='confianza IA: —';
+  updScore();renderAttempts();resetUI();
+  if(!gm.started){gm.started=true;}else{startListening();}
+}
+function resetUI(){
+  setMicBtn('','⏳ Preparando...');
+  const rt=$('g-rtag');rt.className='rtag';rt.style.display='none';
+  $('g-heard').textContent='—';$('g-heard').className='heard-box';
+  $('g-heard').style.display='block';
+  $('correction-box').className='correction-box';
+  $('mic-hint').textContent='';
+  $('rec-waves').classList.remove('show');
+  if(srContinuous){try{srContinuous.abort();}catch(e){}srContinuous=null;}
+  clearTimeout(sentenceTimeout);
+}
+function showCountdownThen(callback){
+  const gm=G.game;
+  if(!gm||gm.paused||gm.idx>=gm.words.length) return;
+  const heard=$('g-heard');
+  const ticks=['3','2','1','¡Ya!'];
+  const clss=['cdnum','cdnum','cdnum','cdgo'];
+  let i=0;
+  $('mic-btn').disabled=true;
+  $('mic-hint').textContent=G.cfg.mode==='sentences'?'Prepárate para leer la oración...':'Prepárate para decir la palabra...';
+  function step(){
+    if(gm.paused||gm.idx>=gm.words.length){$('mic-btn').disabled=false;return;}
+    heard.textContent=ticks[i];
+    heard.className='heard-box '+clss[i];
+    i++;
+    if(i<ticks.length){
+      gm.th=setTimeout(step,750);
+    } else {
+      gm.th=setTimeout(()=>{
+        if(gm.paused){$('mic-btn').disabled=false;return;}
+        heard.className='heard-box';
+        heard.textContent='🎙️ escuchando...';
+        $('mic-btn').disabled=false;
+        callback();
+      },350);
+    }
+  }
+  step();
+}
+function onNoMoreAttempts(){
+  const gm=G.game;
+  gm.fail++;
+  const rt=$('g-rtag');
+  rt.textContent='❌ Sin más intentos';rt.className='rtag fail';rt.style.display='inline-block';
+  $('mic-btn').className='mic-btn fail';
+  $('mic-hint').textContent='La palabra era: '+gm.words[gm.idx];
+  $('rec-waves').classList.remove('show');
+  gm.th=setTimeout(()=>{gm.idx++;showWord();},1800);
+}
+function updScore(){const gm=G.game;$('g-score').textContent=gm.ok+' ✓  '+gm.fail+' ✗'}
+function startListening(){
+  const gm=G.game;if(gm.paused)return;
+
+  if(gm.rec){
+    stopMrRec();
+    return;
+  }
+
+  clearTimeout(gm.th);
+  gm.rec=true;
+  setMicBtn('rec','⏹ Toca para detener');
+  $('g-heard').style.display='block';
+  $('g-heard').textContent='🎙️ escuchando...';
+  $('rec-waves').classList.add('show');
+
+  if(G.cfg.mode==='sentences'){
+    $('mic-hint').textContent='Lee la oración y toca el botón para terminar';
+    listenSentence(gm.words[gm.idx]);
+  } else {
+    $('mic-hint').textContent='Di la palabra y toca el botón para detener';
+
+    listenWord(gm.words[gm.idx],(heard,conf)=>{
+      gm.rec=false;
+      clearTimeout(gm.th);
+      $('rec-waves').classList.remove('show');
+      const{decision}=evaluate(heard,conf,gm.words[gm.idx],G.cfg.diff);
+      processResult(heard,conf,decision);
+    });
+
+    gm.th=setTimeout(()=>{ if(srPersist){try{srPersist.abort();}catch(e){}} },5000);
+  }
+}
+let srContinuous=null;
+let sentenceTimeout=null;
+function listenSentence(sentence){
+  const target=sentenceWords;
+  sentenceResults=[];
+  let wordPtr=0;
+  let lastTranscript='';
+  let silenceTimer=null;
+  let restartTimer=null;
+  let active=true;
+  if(target.length>0) highlightWord(0,'current');
+  const SRClass=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SRClass){
+    const fakeTime=target.length*800;
+    setTimeout(()=>{ simulateSentenceResult(sentence); },fakeTime);
+    return;
+  }
+  const totalSec={easy:60,med:45,hard:30}[G.cfg.diff]||45;
+  const totalTimer=setTimeout(()=>{
+    active=false;
+    stopSR();
+    finishSentence();
+  }, totalSec*1000);
+  function stopSR(){
+    clearTimeout(silenceTimer);
+    clearTimeout(restartTimer);
+    if(srContinuous){
+      try{srContinuous.abort();}catch(e){}
+      srContinuous=null;
+    }
+  }
+  function startSR(){
+    if(!active) return;
+    // Usar srPersist para no pedir permiso de nuevo
+    srContinuous = srPersist || new (window.SpeechRecognition||window.webkitSpeechRecognition)();
+    srContinuous.lang='es-MX';
+    srContinuous.continuous=false;
+    srContinuous.interimResults=true;
+    srContinuous.maxAlternatives=3;
+    srContinuous.onresult=(e)=>{
+      if(!active) return;
+      let interim='', finalTxt='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        if(e.results[i].isFinal) finalTxt+=e.results[i][0].transcript+' ';
+        else interim=e.results[i][0].transcript;
+      }
+      const heard=(finalTxt||interim).trim();
+      if(!heard) return;
+      clearTimeout(silenceTimer);
+      silenceTimer=setTimeout(()=>{
+        if(!active) return;
+        active=false;
+        clearTimeout(totalTimer);
+        stopSR();
+        finishSentence();
+      }, 3500);
+      const hWords=normS(heard).split(/\s+/).filter(Boolean);
+      processHeardWords(hWords);
+      if(wordPtr>=target.length){
+        active=false;
+        clearTimeout(totalTimer);
+        clearTimeout(silenceTimer);
+        stopSR();
+        setTimeout(()=>finishSentence(), 400);
+      }
+    };
+    srContinuous.onerror=(e)=>{
+      if(!active) return;
+      if(e.error==='no-speech'){
+        srContinuous=null;
+        restartTimer=setTimeout(()=>{ if(active) startSR(); }, 300);
+      } else {
+        active=false;
+        clearTimeout(totalTimer);
+        finishSentence();
+      }
+    };
+    srContinuous.onend=()=>{
+      if(!active) return;
+      srContinuous=null;
+      restartTimer=setTimeout(()=>{ if(active) startSR(); }, 200);
+    };
+    try{ srContinuous.start(); }
+    catch(e){
+      srContinuous=null;
+      restartTimer=setTimeout(()=>{ if(active) startSR(); }, 400);
+    }
+  }
+  function processHeardWords(hWords){
+    for(let hi=0;hi<hWords.length&&wordPtr<target.length;){
+      const hw=hWords[hi];
+      const tw=normS(target[wordPtr]);
+      const sim=bigSim(hw,tw);
+      if(hw===tw||sim>=0.72){
+        highlightWord(wordPtr,'ok');
+        sentenceResults[wordPtr]={word:target[wordPtr],heard:hw,ok:true};
+        wordPtr++;
+        hi++;
+        if(wordPtr<target.length) highlightWord(wordPtr,'current');
+      } else {
+        let foundAhead=-1;
+        for(let look=wordPtr+1;look<Math.min(wordPtr+3,target.length);look++){
+          if(bigSim(hw,normS(target[look]))>=0.75){ foundAhead=look; break; }
+        }
+        if(foundAhead>-1){
+          for(let skip=wordPtr;skip<foundAhead;skip++){
+            if(!sentenceResults[skip]){
+              highlightWord(skip,'fail');
+              sentenceResults[skip]={word:target[skip],heard:'',ok:false};
+            }
+          }
+          highlightWord(foundAhead,'ok');
+          sentenceResults[foundAhead]={word:target[foundAhead],heard:hw,ok:true};
+          wordPtr=foundAhead+1;
+          if(wordPtr<target.length) highlightWord(wordPtr,'current');
+          hi++;
+        } else {
+          if(sim>=0.40){
+            highlightWord(wordPtr,'fail');
+            sentenceResults[wordPtr]={word:target[wordPtr],heard:hw,ok:false};
+            wordPtr++;
+            hi++;
+            if(wordPtr<target.length) highlightWord(wordPtr,'current');
+          } else {
+            hi++;
+          }
+        }
+      }
+    }
+  }
+  startSR();
+  silenceTimer=setTimeout(()=>{
+    if(active&&wordPtr===0){
+      $('mic-hint').textContent='No se detecta voz, habla más fuerte...';
+    }
+  }, 4000);
+}
+function simulateSentenceResult(sentence){
+  sentenceWords.forEach((w,i)=>{
+    const ok=Math.random()>0.3;
+    highlightWord(i,ok?'ok':'fail');
+    sentenceResults[i]={word:w,heard:ok?w:'(simulado)',ok};
+  });
+  finishSentence();
+}
+function finishSentence(){
+  G.game.rec=false;
+  $('rec-waves').classList.remove('show');
+  $('mic-btn').disabled=false;setMicBtn('','Presiona para grabar');
+  sentenceWords.forEach((w,i)=>{
+    if(!sentenceResults[i]){
+      highlightWord(i,'fail');
+      sentenceResults[i]={word:w,heard:'',ok:false};
+    }
+  });
+  const total=sentenceWords.length;
+  const correct=sentenceResults.filter(r=>r.ok).length;
+  const pct=total>0?correct/total:0;
+  const decision=pct>=0.55;
+  renderCorrections();
+  const gm=G.game;
+  const mb=$('mic-btn'),rt=$('g-rtag');
+  if(decision){
+    gm.ok++;setMicBtn('ok','✅ ¡Correcto!');
+    rt.textContent='✅ ¡Muy bien leído!';rt.className='rtag ok';rt.style.display='inline-block';
+  } else {
+    gm.fail++;setMicBtn('fail','❌ Inténtalo de nuevo');
+    rt.textContent='❌ Sigue practicando';rt.className='rtag fail';rt.style.display='inline-block';
+  }
+  $('mic-hint').textContent=correct+' de '+total+' palabras correctas';
+  // Mostrar en heard-box lo que se escuchó
+  const heardWords=sentenceResults.map(r=>r.heard||'—').join(' ');
+  $('g-heard').style.display='block';
+  $('g-heard').textContent='🎙️ "'+heardWords+'"';
+  updScore();
+  const errors=sentenceResults.filter(r=>!r.ok).length;
+  const delay=errors>0?5000:3000;
+  gm.th=setTimeout(()=>{gm.idx++;showWord();},delay);
+}
+function evaluateSentenceFull(heard,conf,sentence){
+  const hWords=normS(heard||'').split(/\s+/).filter(Boolean);
+  sentenceWords.forEach((tw,i)=>{
+    const hn=normS(tw);
+    const match=hWords.find(hw=>hw===hn||bigSim(hw,hn)>=0.72);
+    const ok=!!match;
+    highlightWord(i,ok?'ok':'fail');
+    sentenceResults[i]={word:tw,heard:match||hWords[i]||'',ok};
+  });
+  finishSentence();
+}
+function processResult(heard,conf,decision){
+  const gm=G.game;
+  const target=gm.words[gm.idx];
+  const mb=$('mic-btn'),rt=$('g-rtag');
+  const heardTxt=heard?heard:'(nada)';
+  const matchTxt=exactMatch(heard,target)?'✅':'❌';
+  $('g-heard').textContent=`🎙️ Escuché: "${heardTxt}" ${matchTxt}`;
+  if(decision){
+    gm.ok++;setMicBtn('ok','✅ ¡Correcto!');
+    rt.textContent='✅ ¡Correcto!';rt.className='rtag ok';rt.style.display='inline-block';
+    $('mic-hint').textContent=G.cfg.mode==='sentences'?'¡Muy bien leído!':'¡Excelente pronunciación!';
+    if(G.sess.att>0&&G.sess.att%6===0)toast('🧠 IA ajustando pesos...');
+  }else{
+    gm.fail++;setMicBtn('fail','❌ Inténtalo de nuevo');
+    rt.textContent='❌ Incorrecto';rt.className='rtag fail';rt.style.display='inline-block';
+    $('mic-hint').textContent=(G.cfg.mode==='sentences'?'La oración era: ':'La palabra era: ')+target;
+  }
+  updScore();
+  gm.th=setTimeout(()=>{gm.idx++;showWord()},1900);
+}
+function endGame(){
+  const gm=G.game;stopMeter();
+  const pct=Math.round(gm.ok/gm.words.length*100);
+  $('r-ok').textContent=gm.ok;$('r-fail').textContent=gm.fail;
+  $('r-pct').textContent=pct+'%';$('r-diff').textContent=LABELS[G.cfg.diff];
+  const[stars,title]=pct>=90?['⭐⭐⭐','¡Increíble!']:pct>=70?['⭐⭐','¡Muy bien!']:['⭐','¡Sigue practicando!'];
+  $('r-stars').textContent=stars;$('r-title').textContent=title;
+  $('r-sub').textContent=G.cfg.name+' completó '+gm.words.length+' palabras';
+  $('rp-att').textContent=G.sess.att;
+  $('rp-thr').textContent=Math.round(nnThr*100)+'%';
+  $('rp-noise').textContent=avgNoise();
+  $('rp-hist').textContent=trainHist.length;
+  const wpSaved=localStorage.getItem('lp_weights');
+  const wpInfo=wpSaved?'Personalizados 💾':'Pre-entrenados 🏭';
+  if($('rp-wpinfo')) $('rp-wpinfo').textContent=wpInfo;
+  saveWeights(); // guardar pesos al final de cada sesión
+  saveResult(pct);showSc('s-result');
+}
+function saveResult(pct){
+  const rows=JSON.parse(localStorage.getItem('lp_r')||'[]');
+  rows.unshift({name:G.cfg.name,diff:G.cfg.diff,ok:G.game.ok,fail:G.game.fail,pct,date:new Date().toLocaleDateString('es-MX')});
+  if(rows.length>60)rows.pop();
+  localStorage.setItem('lp_r',JSON.stringify(rows));
+}
+function showTable(){
+  const rows=JSON.parse(localStorage.getItem('lp_r')||'[]');
+  const tb=$('tbl-body');tb.innerHTML='';
+  if(!rows.length){$('tbl-empty').style.display='block';$('tbl').style.display='none'}
+  else{
+    $('tbl-empty').style.display='none';$('tbl').style.display='table';
+    rows.forEach(r=>{
+      const tr=document.createElement('tr');
+      const bc=r.diff==='easy'?'bf':r.diff==='med'?'bi':'bd';
+      tr.innerHTML=`<td style="font-weight:700">${r.name}</td><td><span class="bdiff ${bc}">${LABELS[r.diff]}</span></td><td style="color:#2e7d32;font-weight:700">${r.ok}</td><td style="color:#c62828;font-weight:700">${r.fail}</td><td style="font-weight:800">${r.pct}%</td><td style="color:var(--muted)">${r.date}</td>`;
+      tb.appendChild(tr);
+    });
+  }
+  $('s-table').dataset.from=document.querySelector('.screen.active')?.id||'s-intro';
+  showSc('s-table');
+}
+function clearTable(){if(!confirm('¿Borrar todos los resultados?'))return;localStorage.removeItem('lp_r');showTable()}
+function goBack(){showSc($('s-table').dataset.from||'s-intro')}
+function openPause(){if(G.game.idx>=G.game.words.length)return;G.game.paused=true;$('m-pause').classList.add('open')}
+function resumeGame(){
+  $('m-pause').classList.remove('open');
+  G.game.paused=false;
+  // Limpiar handlers antes de abortar para que no disparen callbacks viejos
+  if(srPersist){srPersist.onresult=null;srPersist.onerror=null;srPersist.onend=null;}
+  if(srContinuous){srContinuous.onresult=null;srContinuous.onerror=null;srContinuous.onend=null;}
+  stopMrRec();
+  G.game.rec=false;
+  // Reanudar escucha automáticamente para la palabra/oración actual
+  setTimeout(()=>{ if(!G.game.paused) startListening(); }, 200);
+}
+function confirm2FromPause(a){G.fromPause=true;confirm2(a)}
+function confirmResetNN(){
+  if(!confirm('¿Reiniciar la IA a sus valores iniciales?\nSe borrarán todos los ajustes aprendidos con tus alumnos.')) return;
+  resetWeights();
+  localStorage.removeItem('lp_nn');
+  toast('🔄 IA reiniciada a valores de fábrica');
+}
+function confirm2(a){
+  G.pending=a;
+  const m={menu:{t:'¿Ir al menú?',s:'Perderás el progreso actual.',l:'Sí, ir al menú',g:false},
+           repeat:{t:'¿Repetir?',s:'Se reiniciará con las mismas palabras.',l:'Sí, repetir',g:true}}[a];
+  $('mc-title').textContent=m.t;$('mc-sub').textContent=m.s;
+  const ok=$('mc-ok');ok.textContent=m.l;ok.className=m.g?'mok g':'mok';
+  $('m-confirm').classList.add('open');
+}
+function closeConfirm(){
+  $('m-confirm').classList.remove('open');
+  if(G.fromPause){G.fromPause=false;$('m-pause').classList.add('open')}
+  G.pending=null;
+}
+function doConfirm(){
+  $('m-confirm').classList.remove('open');$('m-pause').classList.remove('open');
+  G.fromPause=false;clearInterval(G.game.iv);clearTimeout(G.game.th);
+  if(G.pending==='menu'){
+    stopMeter();
+    stopMrRec();
+    if(G.mic.raw){G.mic.raw.getTracks().forEach(t=>t.stop());G.mic.raw=null}
+    if(audioCtx&&audioCtx.state!=='closed')audioCtx.close();
+    showSc('s-intro');
+  }else if(G.pending==='repeat'){
+    G.game={...G.game,idx:0,ok:0,fail:0,sec:0,th:null,rec:false,paused:false,started:false};
+    G.game.words=shuffle(G.game.words);G.sess={att:0,ok:0};
+    showSc('s-game');showWord();showCountdownThen(startListening);
+  }
+  G.pending=null;
+}
+$('player-name').addEventListener('keydown',e=>{if(e.key==='Enter')initAndStart()});
+window.addEventListener('load',()=>{
+  // ── Actualizar badge ──
+  const saved=localStorage.getItem('lp_weights');
+  const hist=JSON.parse(localStorage.getItem('lp_nn')||'[]');
+  const badge=$('badge-nn-txt');
+  if(saved&&hist.length>0){
+    badge.textContent='IA Colima personalizada · '+hist.length+' intentos 💾';
+  } else {
+    badge.textContent='IA Colima · lista para aprender';
+  }
+});
+
+</script>
+</body>
+</html>

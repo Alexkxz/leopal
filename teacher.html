@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LectoVoz Maestro</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="teacher-app">
+      <header class="teacher-hero">
+        <div>
+          <p class="eyebrow">Panel del maestro</p>
+          <h1>Registros LectoVoz</h1>
+        </div>
+        <a class="primary nav-button" href="index.html">Ir al juego</a>
+      </header>
+
+      <section class="dashboard-grid">
+        <article class="teacher-stat">
+          <span>Practicas</span>
+          <strong id="total-records">0</strong>
+        </article>
+        <article class="teacher-stat">
+          <span>Promedio</span>
+          <strong id="average-accuracy">0%</strong>
+        </article>
+        <article class="teacher-stat">
+          <span>Errores</span>
+          <strong id="total-errors">0</strong>
+        </article>
+      </section>
+
+      <section class="records-panel">
+        <div class="records-tools">
+          <label for="group-filter">Grupo</label>
+          <select id="group-filter">
+            <option value="all">Todos</option>
+          </select>
+          <button id="export-btn" class="secondary">Exportar CSV</button>
+          <button id="clear-btn" class="danger">Borrar registros</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Alumno</th>
+                <th>Grupo</th>
+                <th>Nivel</th>
+                <th>Texto</th>
+                <th>Aciertos</th>
+                <th>Errores</th>
+                <th>Precision</th>
+                <th>Tiempo</th>
+              </tr>
+            </thead>
+            <tbody id="records-body"></tbody>
+          </table>
+        </div>
+        <p class="empty-state" id="empty-state">Todavia no hay registros guardados.</p>
+      </section>
+    </main>
+
+    <script src="teacher.js"></script>
+  </body>
+</html>
