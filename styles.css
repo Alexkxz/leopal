@@ -24,7 +24,8 @@ body {
 
 button,
 select,
-textarea {
+textarea,
+input {
   font: inherit;
 }
 
@@ -708,6 +709,194 @@ button:active,
   padding: 18px;
 }
 
+.teacher-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.control-app {
+  align-content: start;
+}
+
+.control-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tab-button {
+  min-height: 44px;
+  border: 1px solid rgba(124, 239, 255, 0.28);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--muted);
+}
+
+.tab-button.active {
+  border-color: rgba(255, 225, 86, 0.5);
+  background: linear-gradient(180deg, rgba(255, 225, 86, 0.24), rgba(0, 194, 255, 0.12));
+  color: #fff;
+}
+
+.control-panel {
+  display: none;
+}
+
+.control-panel.active {
+  display: block;
+}
+
+.control-layout,
+.game-config-grid {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.student-register,
+.student-list-panel,
+.selected-student-card,
+.config-section {
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(12, 18, 40, 0.92), rgba(8, 13, 30, 0.86));
+  box-shadow:
+    0 0 24px rgba(0, 194, 255, 0.16),
+    inset 0 0 28px rgba(139, 92, 246, 0.08);
+}
+
+.student-form,
+.settings-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.setting-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  border: 1px solid rgba(124, 239, 255, 0.28);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-weight: 700;
+}
+
+.setting-toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--green);
+}
+
+.panel-title-row,
+.selected-student-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.panel-title-row span {
+  display: inline-grid;
+  min-width: 42px;
+  min-height: 34px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--yellow);
+  font-weight: 800;
+}
+
+.student-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.student-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 64px;
+  border: 1px solid rgba(124, 239, 255, 0.25);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  text-align: left;
+}
+
+.student-row.active {
+  border-color: var(--yellow);
+  background: rgba(255, 225, 86, 0.14);
+}
+
+.student-row span {
+  display: grid;
+  gap: 4px;
+}
+
+.student-row small,
+.student-row i,
+.config-note,
+#selected-student-meta {
+  color: var(--muted);
+}
+
+.student-row i {
+  min-width: 34px;
+  font-style: normal;
+  text-align: right;
+}
+
+.selected-student-card {
+  margin-bottom: 18px;
+}
+
+.small-button {
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.consonant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.consonant-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.consonant-option span {
+  display: grid;
+  min-height: 54px;
+  place-items: center;
+  border: 1px solid rgba(124, 239, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.consonant-option input:checked + span {
+  border-color: var(--green);
+  background: rgba(53, 255, 135, 0.16);
+  color: var(--green);
+}
+
+.consonant-option input:disabled + span {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
 .records-tools {
   display: flex;
   flex-wrap: wrap;
@@ -760,6 +949,22 @@ td {
   }
 
   .teacher-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .teacher-actions,
+  .control-tabs {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .control-layout,
+  .game-config-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .selected-student-card {
     align-items: stretch;
     flex-direction: column;
   }

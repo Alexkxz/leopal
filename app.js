@@ -169,6 +169,103 @@ const lessons = {
   ],
 };
 
+const extraLessons = {
+  silabas: [
+    "ha he hi ho hu", "ka ke ki ko ku", "wa we wi wo wu", "xa xe xi xo xu",
+    "cha che chi cho chu", "lla lle lli llo llu", "rra rre rri rro rru",
+    "bra bre bri bro bru", "bla ble bli blo blu", "pra pre pri pro pru",
+    "pla ple pli plo plu", "tra tre tri tro tru", "cla cle cli clo clu",
+    "cra cre cri cro cru", "gra gre gri gro gru", "dra dre dri dro dru",
+    "fra fre fri fro fru", "fla fle fli flo flu",
+  ],
+  palabras_cortas: [
+    "el", "la", "los", "las", "un", "una", "unos", "unas", "y", "o",
+    "de", "del", "al", "en", "con", "por", "mi", "tu", "su", "soy",
+    "yo", "se", "me", "te", "le", "lo", "nos", "va", "veo", "come",
+    "mira", "salta", "rie", "libro", "agua", "dia", "mano", "ojo", "pie", "feliz",
+    "cal", "can", "dan", "fan", "bar", "par", "pal", "mal", "mas", "mis",
+    "tus", "sus", "ves", "vas", "voy", "fui", "ira", "uso", "ama", "aro",
+    "eco", "ese", "isa", "oca", "oca", "oca", "cuna", "cama", "copa", "cima",
+    "piso", "peso", "pesa", "paso", "pase", "mina", "mono", "mimo", "misa", "masa",
+    "nana", "nene", "nona", "nena", "nudo", "sana", "seno", "suma", "sapo", "seda",
+    "taza", "tiza", "tela", "tono", "tapa", "dado", "dama", "dona", "duda", "dije",
+    "faro", "fino", "fama", "fumo", "feta", "goma", "gula", "gana", "gira", "giro",
+    "jugo", "jefa", "jota", "jura", "vivo", "vela", "voto", "vaso", "zumo", "zona",
+  ],
+  palabras_medianas: [
+    "porque", "cuando", "como", "pero", "aunque", "mientras", "entonces", "despues",
+    "antes", "tambien", "siempre", "nunca", "ahora", "todavia", "tanto", "todo",
+    "cada", "otro", "otra", "poco", "casi", "entre", "sobre", "hacia",
+    "desde", "hasta", "tener", "hacer", "poder", "querer", "saber", "decir",
+    "poner", "venir", "salir", "llevar", "traer", "tengo", "tiene", "puedo",
+    "vamos", "tienen", "habia", "tenia", "eran", "fueron", "estaba", "estan",
+    "amiga", "cuento", "palabra", "numero", "veces", "dentro", "afuera", "arriba",
+    "abajo", "cerca", "lejos", "pronto", "luego", "junto", "igual", "mejor",
+    "dulce", "salado", "caliente", "helado", "mojado", "seco", "redondo", "cuadrado",
+    "plato", "vasito", "cuchara", "tenedor", "zapato", "camisa", "sueter", "sombrero",
+    "cepillo", "jaboncito", "toalla", "patio", "cancha", "banca", "paredes", "puertas",
+    "familias", "maestros", "lectura", "dictado", "sonido", "silaba", "vocales", "letras",
+    "cuento", "pagina", "renglon", "titulo", "dibujo", "tarjeta", "premio", "avance",
+  ],
+  palabras_largas: [
+    "aprendizaje", "abecedario", "consonantes", "vocalizacion", "entonacion", "diccion",
+    "ortografia", "vocabulario", "imaginacion", "curiosidad", "observacion", "explicacion",
+    "instruccion", "educacion", "naturaleza", "experimento", "maravilloso", "silencioso",
+    "cuidadoso", "respetuoso", "organizado", "compartido", "divertido", "colorido",
+    "bibliotecario", "cuentacuentos", "companerismo", "responsable", "participante", "estudiante",
+    "profesora", "directora", "secretario", "enfermeria", "deportista", "campesino",
+    "panadero", "pescador", "jardinero", "mecanico", "fotografo", "cientifico",
+    "rinoceronte", "hipopotamo", "jirafita", "golondrina", "colibri", "pelicano",
+    "zanahoria", "calabacita", "jitomate", "mandarina", "sandia", "lechuga",
+    "desayuno", "almuerzo", "merienda", "cazuela", "molcajete", "licuadora",
+    "computacion", "microfono", "audifonos", "bibliografia", "geografia", "historia",
+  ],
+  frases_cortas: [
+    "Yo veo una casa", "Mi mama lee", "Papa toma agua", "La mesa es roja",
+    "El nino mira", "La nina salta", "Tengo un libro", "Veo una flor",
+    "El perro ladra", "Mi gato duerme", "La sopa esta caliente", "El pan es dulce",
+    "Vamos a leer", "Quiero jugar hoy", "Tengo mucha sed", "Mira mi dibujo",
+    "La clase empieza", "El cuento termina", "Mi mano limpia", "El sol calienta",
+    "La luna sale", "El agua corre", "La pelota bota", "El lapiz pinta",
+    "La maestra habla", "El alumno escucha", "Todos leen juntos", "Mi amigo viene",
+    "La puerta abre", "La ventana cierra", "El patio suena", "La mochila pesa",
+  ],
+  frases_medianas: [
+    "El nino lee una palabra nueva", "La nina escribe su nombre completo",
+    "Mi amigo cuenta hasta veinte despacio", "La maestra revisa la tarea del grupo",
+    "El libro tiene dibujos grandes y claros", "Todos escuchan el cuento con atencion",
+    "Mi mama me ayuda a leer cada tarde", "Papa prepara agua fresca para todos",
+    "El alumno practica silabas antes de jugar", "La clase empieza cuando todos llegan",
+    "Hoy leimos palabras cortas en voz alta", "La pelota roja rueda por la cancha",
+    "Mi mochila tiene cuadernos lapices y colores", "El patio de la escuela esta limpio",
+    "La familia come junta en la mesa", "Despues de leer salimos al recreo",
+    "Cada palabra nueva me ayuda mucho", "Puedo leer mejor si practico diario",
+    "El maestro guarda los registros del juego", "La nina avanza cuando lee con calma",
+    "El microfono escucha la voz del alumno", "Las consonantes aparecen poco a poco",
+    "Mi grupo practica lectura todos los dias", "El cuento corto habla de una casa",
+  ],
+  frases_largas: [
+    "El alumno lee una frase completa mientras la maestra observa su avance",
+    "Cuando practicamos todos los dias las palabras nuevas se vuelven mas faciles",
+    "La nina mira el dibujo del cuento y despues lee la oracion con calma",
+    "Mi maestro preparo una partida especial con consonantes que ya conocemos",
+    "En la escuela aprendemos a escuchar pensar leer y compartir nuestras ideas",
+    "Cada estudiante tiene su propio ritmo y puede mejorar con practica constante",
+    "El juego muestra una palabra nueva y el alumno la lee en voz alta",
+    "Despues de terminar la lectura el registro queda guardado para revisarlo",
+    "La familia puede ayudar en casa leyendo cuentos cortos durante la tarde",
+    "Cuando una palabra parece dificil respiramos despacio y volvemos a intentarlo",
+    "La maestra elige el nivel inicial y la meta de ejercicios para cada alumno",
+    "Las consonantes seleccionadas ayudan a preparar lecturas adecuadas para el grupo",
+    "El alumno escucha la indicacion mira la pantalla y comienza a leer tranquilo",
+    "Con cada partida completada el estudiante gana confianza para leer textos nuevos",
+  ],
+};
+
+Object.entries(extraLessons).forEach(([level, items]) => {
+  lessons[level] = [...new Set([...(lessons[level] || []), ...items])];
+});
+
 const promptEl = document.querySelector("#prompt");
 const statusEl = document.querySelector("#mic-status");
 const feedbackEl = document.querySelector("#feedback");
@@ -191,10 +288,20 @@ const studentGroupInput = document.querySelector("#student-group");
 const currentStudentEl = document.querySelector("#current-student");
 const scoreCountEl = document.querySelector("#score-count");
 const logoutBtn = document.querySelector("#logout-btn");
+const activeConsonantsEl = document.querySelector("#active-consonants");
+const sessionGoalCountEl = document.querySelector("#session-goal-count");
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const storageKey = "lectovoz_records";
 const sessionKey = "lectovoz_session";
+const studentsKey = "lectovoz_students";
+const defaultGameConfig = {
+  consonants: ["m", "p", "l", "s", "t", "n", "r", "c", "q", "b", "d", "f", "g", "j", "v", "z", "y", "h", "k", "w", "x", "ch", "ll", "rr"],
+  levelStart: "silabas",
+  sessionGoal: 10,
+  shuffleSyllables: false,
+  notes: "",
+};
 
 let recognition;
 let activeText = "";
@@ -221,6 +328,8 @@ let lessonStartedAt = Date.now();
 let lessonCorrect = 0;
 let lessonErrors = 0;
 let shuffledLessons = {};
+let currentGameConfig = { ...defaultGameConfig };
+let completedInSession = 0;
 
 const minConfidence = 0;
 
@@ -238,7 +347,8 @@ function normalizeText(value) {
 function splitIntoChunks(text) {
   const normalized = normalizeText(text);
   if (levelSelect.value === "silabas") {
-    return normalized.split(" ").filter(Boolean);
+    const syllables = normalized.split(" ").filter(Boolean);
+    return currentGameConfig.shuffleSyllables ? shuffleList(syllables) : syllables;
   }
 
   if (levelSelect.value.startsWith("palabras")) {
@@ -316,14 +426,79 @@ function setLesson(text) {
 
 function loadCurrentLesson() {
   const list = getLessonList(levelSelect.value);
+  if (!list.length) {
+    setLesson("ma me mi mo mu");
+    feedbackEl.textContent = "No hay ejercicios para esas consonantes en este nivel.";
+    return;
+  }
   setLesson(list[lessonIndex % list.length]);
 }
 
 function getLessonList(level) {
-  if (!shuffledLessons[level] || shuffledLessons[level].length !== lessons[level].length) {
-    shuffledLessons[level] = shuffleList(lessons[level]);
+  const allowedKey = getAllowedConsonants().join("-");
+  const shuffleKey = `${level}:${allowedKey}`;
+  const baseLessons = getConfiguredLessons(level);
+
+  if (!shuffledLessons[shuffleKey] || shuffledLessons[shuffleKey].length !== baseLessons.length) {
+    shuffledLessons[shuffleKey] = shuffleList(baseLessons);
   }
-  return shuffledLessons[level];
+  return shuffledLessons[shuffleKey];
+}
+
+function getConfiguredLessons(level) {
+  const list = lessons[level] || [];
+  const allowed = getAllowedConsonants();
+  if (!allowed.length) return list;
+
+  const filtered = list.filter((text) => usesOnlyAllowedConsonants(text, allowed));
+  return filtered.length ? filtered : list;
+}
+
+function getAllowedConsonants() {
+  return [...new Set(currentGameConfig.consonants || defaultGameConfig.consonants)].map(normalizeConsonant);
+}
+
+function normalizeConsonant(value) {
+  return normalizeText(value).replace(/\s/g, "");
+}
+
+function usesOnlyAllowedConsonants(text, allowedConsonants) {
+  const allowed = new Set(allowedConsonants.map(normalizeConsonant));
+  return getTextConsonants(text).every((consonant) => allowed.has(consonant));
+}
+
+function getTextConsonants(text) {
+  const normalized = normalizeText(text);
+  const consonants = [];
+
+  for (let index = 0; index < normalized.length; index += 1) {
+    const pair = normalized.slice(index, index + 2);
+    const trio = normalized.slice(index, index + 3);
+
+    if (pair === "ch" || pair === "ll" || pair === "rr") {
+      consonants.push(pair);
+      index += 1;
+      continue;
+    }
+
+    if (pair === "qu") {
+      consonants.push("q");
+      index += 1;
+      continue;
+    }
+
+    if ((trio === "gue" || trio === "gui") && normalized[index] === "g") {
+      consonants.push("g");
+      continue;
+    }
+
+    const letter = normalized[index];
+    if (letter >= "a" && letter <= "z" && !isVowel(letter)) {
+      consonants.push(letter);
+    }
+  }
+
+  return consonants;
 }
 
 function shuffleList(list) {
@@ -457,6 +632,10 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
   if (currentIndex >= chunks.length) {
     feedbackEl.textContent = "Lectura completa. Muy bien.";
     savePracticeRecord("completed");
+    completedInSession += 1;
+    if (completedInSession >= Number(currentGameConfig.sessionGoal || 10)) {
+      feedbackEl.textContent = "Meta de partida completada. Muy bien.";
+    }
     stopListening(false);
     return;
   }
@@ -596,6 +775,9 @@ function savePracticeRecord(status) {
     errors: lessonErrors,
     total,
     score,
+    sessionGoal: currentGameConfig.sessionGoal,
+    consonants: currentGameConfig.consonants,
+    shuffleSyllables: currentGameConfig.shuffleSyllables,
     accuracy,
     transcript: lastTranscript || "-",
     durationSeconds: Math.max(1, Math.round((Date.now() - lessonStartedAt) / 1000)),
@@ -620,19 +802,78 @@ function restoreSession() {
   }
 
   if (!currentSession) return;
+  const registeredStudent = findRegisteredStudent(currentSession.student, currentSession.group);
+  currentGameConfig = normalizeGameConfig(registeredStudent?.config || currentSession.config);
+  currentSession = {
+    ...currentSession,
+    studentId: registeredStudent?.id || currentSession.studentId || "",
+    config: currentGameConfig,
+  };
+  localStorage.setItem(sessionKey, JSON.stringify(currentSession));
+  applyGameConfig();
   loginScreen.classList.add("hidden");
   currentStudentEl.textContent = `${currentSession.student} / ${currentSession.group}`;
 }
 
 function createSession(student, group) {
+  const registeredStudent = findRegisteredStudent(student, group);
+  const config = normalizeGameConfig(registeredStudent?.config);
   currentSession = {
+    studentId: registeredStudent?.id || "",
     student,
     group,
+    config,
     startedAt: new Date().toISOString(),
   };
+  currentGameConfig = config;
+  completedInSession = 0;
   localStorage.setItem(sessionKey, JSON.stringify(currentSession));
+  applyGameConfig();
   loginScreen.classList.add("hidden");
   currentStudentEl.textContent = `${student} / ${group}`;
+}
+
+function getRegisteredStudents() {
+  try {
+    return JSON.parse(localStorage.getItem(studentsKey)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function findRegisteredStudent(student, group) {
+  const cleanStudent = normalizeText(student);
+  const cleanGroup = normalizeText(group);
+  return getRegisteredStudents().find((item) => (
+    normalizeText(item.name) === cleanStudent && normalizeText(item.group) === cleanGroup
+  ));
+}
+
+function normalizeGameConfig(config) {
+  return {
+    ...defaultGameConfig,
+    ...(config || {}),
+    consonants: Array.isArray(config?.consonants) && config.consonants.length
+      ? config.consonants
+      : defaultGameConfig.consonants,
+    sessionGoal: Number(config?.sessionGoal || defaultGameConfig.sessionGoal),
+    shuffleSyllables: Boolean(config?.shuffleSyllables),
+  };
+}
+
+function applyGameConfig() {
+  if (lessons[currentGameConfig.levelStart]) {
+    levelSelect.value = currentGameConfig.levelStart;
+  }
+  lessonIndex = 0;
+  shuffledLessons = {};
+  updateGameConfigSummary();
+  loadCurrentLesson();
+}
+
+function updateGameConfigSummary() {
+  activeConsonantsEl.textContent = getAllowedConsonants().length;
+  sessionGoalCountEl.textContent = currentGameConfig.sessionGoal;
 }
 
 async function prepareAudioMonitor() {
@@ -847,9 +1088,12 @@ logoutBtn.addEventListener("click", () => {
   stopListening(false);
   localStorage.removeItem(sessionKey);
   currentSession = null;
+  currentGameConfig = { ...defaultGameConfig };
+  completedInSession = 0;
   loginScreen.classList.remove("hidden");
   currentStudentEl.textContent = "Invitado";
 });
 
 restoreSession();
-loadCurrentLesson();
+if (!currentSession) loadCurrentLesson();
+updateGameConfigSummary();

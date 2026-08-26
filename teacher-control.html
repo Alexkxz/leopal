@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Control del maestro</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="teacher-app control-app">
+      <header class="teacher-hero">
+        <div>
+          <p class="eyebrow">Panel docente</p>
+          <h1>Control del maestro</h1>
+        </div>
+        <div class="teacher-actions">
+          <a class="secondary nav-button" href="teacher.html">Registros</a>
+          <a class="primary nav-button" href="index.html">Ir al juego</a>
+        </div>
+      </header>
+
+      <section class="control-tabs" aria-label="Secciones del control">
+        <button class="tab-button active" type="button" data-tab="students">Alumnos</button>
+        <button class="tab-button" type="button" data-tab="game">Partida</button>
+        <button class="tab-button" type="button" data-tab="summary">Resumen</button>
+      </section>
+
+      <section class="control-panel active" id="tab-students">
+        <div class="control-layout">
+          <article class="student-register">
+            <h2>Registrar alumno</h2>
+            <form id="student-form" class="student-form">
+              <label for="new-student-name">Nombre</label>
+              <input id="new-student-name" required autocomplete="name" placeholder="Nombre del alumno" />
+              <label for="new-student-group">Grupo</label>
+              <input id="new-student-group" required placeholder="Ej. 1A" />
+              <button class="primary full" type="submit">Registrar</button>
+            </form>
+          </article>
+
+          <article class="student-list-panel">
+            <div class="panel-title-row">
+              <h2>Alumnos registrados</h2>
+              <span id="student-count">0</span>
+            </div>
+            <div class="student-list" id="student-list"></div>
+            <p class="empty-state" id="students-empty">Todavia no hay alumnos registrados.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="control-panel" id="tab-game">
+        <div class="selected-student-card">
+          <div>
+            <p class="eyebrow">Alumno seleccionado</p>
+            <h2 id="selected-student-name">Selecciona un alumno</h2>
+            <p id="selected-student-meta">Desde la pestana Alumnos puedes escoger a quien configurar.</p>
+          </div>
+          <button class="danger" id="delete-student-btn" type="button" disabled>Eliminar alumno</button>
+        </div>
+
+        <div class="game-config-grid">
+          <article class="config-section">
+            <div class="panel-title-row">
+              <h2>Consonantes</h2>
+              <button class="secondary small-button" id="select-all-consonants" type="button">Todas</button>
+            </div>
+            <p class="config-note">El orden final se puede ajustar cuando me pases la secuencia exacta.</p>
+            <div class="consonant-grid" id="consonant-grid"></div>
+          </article>
+
+          <article class="config-section">
+            <h2>Ajustes de partida</h2>
+            <div class="settings-grid">
+              <label for="level-start">Nivel inicial</label>
+              <select id="level-start">
+                <option value="silabas">Silabas</option>
+                <option value="palabras_cortas">Palabras pequenas</option>
+                <option value="palabras_medianas">Palabras medianas</option>
+                <option value="palabras_largas">Palabras grandes</option>
+                <option value="frases_cortas">Frases 3 a 5</option>
+                <option value="frases_medianas">Frases 5 a 8</option>
+                <option value="frases_largas">Frases 8 a 10</option>
+              </select>
+
+              <label for="session-goal">Meta de ejercicios</label>
+              <input id="session-goal" type="number" min="1" max="50" value="10" />
+
+              <label class="setting-toggle" for="shuffle-syllables">
+                <input id="shuffle-syllables" type="checkbox" />
+                <span>Revolver silabas</span>
+              </label>
+
+              <label for="custom-notes">Notas</label>
+              <textarea id="custom-notes" rows="5" placeholder="Observaciones para esta partida"></textarea>
+            </div>
+            <button class="primary full" id="save-config-btn" type="button" disabled>Guardar configuracion</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="control-panel" id="tab-summary">
+        <div class="dashboard-grid">
+          <article class="teacher-stat">
+            <span>Alumnos</span>
+            <strong id="summary-students">0</strong>
+          </article>
+          <article class="teacher-stat">
+            <span>Configurados</span>
+            <strong id="summary-configured">0</strong>
+          </article>
+          <article class="teacher-stat">
+            <span>Consonantes activas</span>
+            <strong id="summary-consonants">0</strong>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script src="teacher-control.js"></script>
+  </body>
+</html>
