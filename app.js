@@ -143,9 +143,11 @@ function setMicrophoneLabel(value) {
   const normalized = value.toLowerCase();
   const isListeningLabel = normalized.includes("escuchando");
   const isPermissionLabel = normalized.includes("permitir") || normalized.includes("solicitando");
+  const icon = isListeningLabel ? "&#9208;" : "&#127908;";
+  const label = isListeningLabel ? "Pausar" : isPermissionLabel ? value : "Comenzar partida";
   startBtn.innerHTML = `
-    <span aria-hidden="true">&#127908;</span>
-    <span>${isListeningLabel ? "Escuchando..." : isPermissionLabel ? value : "Continuar lectura"}</span>
+    <span aria-hidden="true">${icon}</span>
+    <span>${label}</span>
   `;
 }
 

@@ -31,14 +31,16 @@
           <div class="student-score" aria-label="Puntos obtenidos">
             <span aria-hidden="true">&#9733;</span>
             <strong id="score-count">0</strong>
-            <small>puntos</small>
+            <small>PUNTOS</small>
           </div>
         </header>
 
         <div class="student-reader reader" aria-live="polite">
           <div class="leo-space" aria-hidden="true">
             <div class="leo-placeholder">
-              <span>Leo</span>
+              <span class="leo-name">Leo</span>
+              <span class="leo-face"></span>
+              <small>&iexcl;Vamos!</small>
             </div>
           </div>
 
@@ -53,12 +55,12 @@
 
           <button id="start-btn" class="primary mic-button" type="button">
             <span aria-hidden="true">&#127908;</span>
-            <span>Permitir microfono y comenzar</span>
+            <span>Comenzar partida</span>
           </button>
 
           <section class="student-progress" aria-labelledby="goal-title">
             <div class="goal-row">
-              <h2 id="goal-title">Meta de hoy</h2>
+              <h2 id="goal-title">MISION</h2>
               <span id="session-progress-text">0 / 10</span>
             </div>
             <div class="meter" aria-hidden="true">
@@ -69,8 +71,8 @@
           <div class="student-badges">
             <div class="student-badge">
               <span aria-hidden="true">&#128293;</span>
+              <small>COMBO x</small>
               <strong id="streak-count">0</strong>
-              <small>seguidas</small>
             </div>
             <div class="status" id="mic-status">Microfono detenido</div>
           </div>
@@ -83,12 +85,12 @@
           <section class="mission-card" id="mission-card" hidden aria-live="polite">
             <div>
               <p class="mission-icon" aria-hidden="true">&#127881;</p>
-              <h2>&iexcl;Mision completada!</h2>
+              <h2>&#127942; MISION COMPLETADA</h2>
               <p>Hiciste <strong id="mission-count">0</strong> ejercicios y ganaste <strong id="mission-score">0</strong> puntos.</p>
-              <p>Sigue leyendo asi de bonito.</p>
+              <p>&iexcl;Muy bien! Tu lectura sigue subiendo de nivel.</p>
             </div>
             <div class="mission-actions">
-              <button id="continue-btn" class="primary" type="button">Seguir practicando</button>
+              <button id="continue-btn" class="primary" type="button">Seguir jugando</button>
               <button id="mission-logout-btn" class="secondary" type="button">Salir</button>
             </div>
           </section>

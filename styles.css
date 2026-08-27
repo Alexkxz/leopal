@@ -1753,3 +1753,415 @@ body.student-page::after {
     min-height: 3.25rem;
   }
 }
+
+/* Student arcade dark theme */
+body.student-page {
+  --student-bg: #080b18;
+  --student-bg-2: #101631;
+  --student-panel: rgba(13, 20, 44, 0.88);
+  --student-panel-strong: rgba(18, 29, 64, 0.94);
+  --student-ink: #f7fbff;
+  --student-muted: #a9b7dc;
+  --student-line: rgba(110, 231, 255, 0.34);
+  --student-blue: #1ea7ff;
+  --student-cyan: #5df7ff;
+  --student-green: #40ff91;
+  --student-yellow: #ffd84d;
+  --student-orange: #ff9f2f;
+  --student-red: #ff4f7b;
+  --student-violet: #a78bfa;
+  background:
+    linear-gradient(rgba(93, 247, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(93, 247, 255, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 18% 12%, rgba(30, 167, 255, 0.24), transparent 26rem),
+    radial-gradient(circle at 82% 18%, rgba(255, 79, 123, 0.16), transparent 24rem),
+    radial-gradient(circle at 50% 100%, rgba(64, 255, 145, 0.16), transparent 28rem),
+    linear-gradient(180deg, var(--student-bg), #0b1025 56%, #090d1c);
+  background-size: 2.5rem 2.5rem, 2.5rem 2.5rem, auto, auto, auto, auto;
+  color: var(--student-ink);
+}
+
+body.student-page::before,
+body.student-page::after {
+  display: block;
+}
+
+body.student-page::before {
+  background:
+    linear-gradient(115deg, transparent 45%, rgba(93, 247, 255, 0.2) 46%, transparent 48%),
+    linear-gradient(65deg, transparent 45%, rgba(255, 216, 77, 0.16) 46%, transparent 48%);
+  opacity: 0.55;
+}
+
+body.student-page::after {
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.028) 1px, transparent 1px, transparent 5px);
+}
+
+.student-page .login-screen {
+  background:
+    radial-gradient(circle at 50% 20%, rgba(30, 167, 255, 0.25), transparent 22rem),
+    rgba(8, 11, 24, 0.96);
+}
+
+.student-page .login-card {
+  border: 2px solid var(--student-line);
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, rgba(18, 29, 64, 0.98), rgba(10, 15, 35, 0.98));
+  color: var(--student-ink);
+  box-shadow:
+    0 0 0 0.25rem rgba(93, 247, 255, 0.08),
+    0 1.5rem 4rem rgba(0, 0, 0, 0.45),
+    inset 0 0 2rem rgba(167, 139, 250, 0.08);
+}
+
+.student-page .login-card h1,
+.student-page .student-greeting h1 {
+  color: #ffffff;
+  text-shadow: 0 0 1.1rem rgba(93, 247, 255, 0.45);
+}
+
+.student-page .eyebrow,
+.student-page .login-copy {
+  color: var(--student-muted);
+}
+
+.student-page input {
+  border-color: var(--student-line);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--student-ink);
+}
+
+.student-app {
+  position: relative;
+  z-index: 1;
+}
+
+.student-header {
+  border: 1px solid rgba(93, 247, 255, 0.2);
+  border-radius: 1.25rem;
+  padding: clamp(0.8rem, 3vw, 1rem);
+  background: linear-gradient(180deg, rgba(13, 20, 44, 0.7), rgba(10, 15, 35, 0.54));
+  box-shadow: inset 0 0 1.6rem rgba(93, 247, 255, 0.06);
+}
+
+.activity-pill {
+  border-color: rgba(93, 247, 255, 0.38);
+  background: rgba(93, 247, 255, 0.1);
+  color: var(--student-cyan);
+  box-shadow: 0 0 1rem rgba(93, 247, 255, 0.1);
+}
+
+.student-score,
+.student-badge {
+  border: 1px solid rgba(255, 216, 77, 0.42);
+  border-radius: 0.9rem;
+  background: linear-gradient(180deg, rgba(255, 216, 77, 0.18), rgba(255, 159, 47, 0.1));
+  color: var(--student-yellow);
+  box-shadow:
+    0 0.55rem 0 rgba(0, 0, 0, 0.3),
+    0 0 1.4rem rgba(255, 216, 77, 0.12);
+}
+
+.student-score small,
+.student-badge small {
+  color: #fff4b3;
+  letter-spacing: 0;
+}
+
+.student-score strong,
+.student-badge strong {
+  color: #ffffff;
+  text-shadow: 0 0 0.75rem rgba(255, 216, 77, 0.44);
+}
+
+.leo-placeholder {
+  position: relative;
+  width: min(8.5rem, 100%);
+  border: 2px solid rgba(93, 247, 255, 0.34);
+  border-radius: 1.2rem;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(93, 247, 255, 0.2), transparent 3.6rem),
+    linear-gradient(180deg, rgba(18, 29, 64, 0.94), rgba(10, 15, 35, 0.92));
+  color: var(--student-cyan);
+  box-shadow: 0 0 1.5rem rgba(93, 247, 255, 0.14);
+  aspect-ratio: 0.78;
+  padding: 0.8rem;
+}
+
+.leo-name {
+  align-self: start;
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+
+.leo-face {
+  display: grid;
+  width: 4.4rem;
+  aspect-ratio: 1;
+  place-self: center;
+  border: 0.28rem solid var(--student-cyan);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 38%, #fff 0 0.22rem, transparent 0.24rem),
+    radial-gradient(circle at 66% 38%, #fff 0 0.22rem, transparent 0.24rem),
+    radial-gradient(ellipse at 50% 64%, rgba(64, 255, 145, 0.95) 0 0.62rem, transparent 0.66rem),
+    rgba(93, 247, 255, 0.12);
+  box-shadow: inset 0 0 1.2rem rgba(93, 247, 255, 0.18), 0 0 1rem rgba(93, 247, 255, 0.28);
+}
+
+.leo-placeholder small {
+  align-self: end;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.student-page .prompt-shell {
+  border: 2px solid rgba(93, 247, 255, 0.42);
+  border-radius: clamp(1rem, 5vw, 1.5rem);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
+    radial-gradient(circle at 50% 42%, rgba(30, 167, 255, 0.16), transparent 55%),
+    var(--student-panel);
+  box-shadow:
+    0 0 0 0.22rem rgba(93, 247, 255, 0.055),
+    0 1.3rem 3rem rgba(0, 0, 0, 0.38),
+    inset 0 0 2rem rgba(93, 247, 255, 0.08);
+}
+
+.student-page .prompt-shell::before {
+  display: block;
+  inset: 0.65rem;
+  border: 1px dashed rgba(255, 216, 77, 0.23);
+  border-radius: 1rem;
+}
+
+.read-label {
+  color: var(--student-muted);
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.student-page .chunk {
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-bottom: 0.45rem solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.9rem;
+  background: linear-gradient(180deg, rgba(23, 35, 78, 0.98), rgba(10, 15, 35, 0.98));
+  color: #ffffff;
+  text-shadow: 0 0 0.7rem rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 0.55rem 0 rgba(0, 0, 0, 0.26),
+    0 0 1rem rgba(30, 167, 255, 0.12);
+}
+
+.student-page .chunk.current {
+  border-color: var(--student-cyan);
+  color: var(--student-cyan);
+  box-shadow:
+    0 0.7rem 0 rgba(0, 0, 0, 0.3),
+    0 0 1.5rem rgba(93, 247, 255, 0.34);
+}
+
+.student-page .chunk.correct {
+  border-color: var(--student-green);
+  background: linear-gradient(180deg, rgba(64, 255, 145, 0.26), rgba(7, 82, 47, 0.34));
+  color: var(--student-green);
+  box-shadow:
+    0 0.55rem 0 rgba(0, 0, 0, 0.26),
+    0 0 1.6rem rgba(64, 255, 145, 0.3);
+}
+
+.student-page .chunk.approximate {
+  border-color: var(--student-yellow);
+  background: linear-gradient(180deg, rgba(255, 216, 77, 0.24), rgba(134, 79, 12, 0.24));
+  color: var(--student-yellow);
+}
+
+.student-page .chunk.error {
+  border-color: var(--student-red);
+  background: linear-gradient(180deg, rgba(255, 79, 123, 0.25), rgba(94, 18, 44, 0.32));
+  color: #ffdce6;
+}
+
+.student-page .chunk.not-mastered {
+  border-color: var(--student-violet);
+  background: linear-gradient(180deg, rgba(167, 139, 250, 0.28), rgba(57, 38, 111, 0.34));
+  color: #e9ddff;
+  box-shadow:
+    0 0.55rem 0 rgba(0, 0, 0, 0.26),
+    0 0 1.4rem rgba(167, 139, 250, 0.25);
+}
+
+.student-page .feedback,
+.student-progress,
+.student-page .status,
+.mission-card {
+  border: 1px solid rgba(93, 247, 255, 0.28);
+  background: linear-gradient(180deg, rgba(18, 29, 64, 0.9), rgba(10, 15, 35, 0.86));
+  color: var(--student-muted);
+  box-shadow: inset 0 0 1.3rem rgba(93, 247, 255, 0.055);
+}
+
+.student-page .feedback-correct {
+  border-color: rgba(64, 255, 145, 0.5);
+  background: rgba(21, 73, 50, 0.72);
+  color: #dfffee;
+  box-shadow: 0 0 1.5rem rgba(64, 255, 145, 0.18);
+}
+
+.student-page .feedback-approximate {
+  border-color: rgba(255, 216, 77, 0.55);
+  background: rgba(93, 65, 18, 0.72);
+  color: #fff2b0;
+}
+
+.student-page .feedback-incorrect {
+  border-color: rgba(255, 79, 123, 0.5);
+  background: rgba(78, 23, 46, 0.72);
+  color: #ffdce6;
+}
+
+.mic-button {
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.9rem;
+  background: linear-gradient(180deg, #5df7ff, #1f6dff);
+  color: #071025;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  box-shadow:
+    0 0.65rem 0 #0b327d,
+    0 0 1.9rem rgba(93, 247, 255, 0.26);
+}
+
+.student-page .mic-button.is-listening {
+  background: linear-gradient(180deg, #40ff91, #12a85c);
+  color: #04150c;
+  box-shadow:
+    0 0.65rem 0 #07572e,
+    0 0 1.8rem rgba(64, 255, 145, 0.32);
+}
+
+.student-page .secondary {
+  border: 1px solid rgba(255, 216, 77, 0.35);
+  background: linear-gradient(180deg, rgba(255, 216, 77, 0.18), rgba(255, 159, 47, 0.13));
+  color: #ffffff;
+}
+
+.student-page button:focus-visible,
+.student-page input:focus-visible {
+  outline: 3px solid var(--student-yellow);
+  outline-offset: 3px;
+}
+
+.goal-row h2 {
+  color: var(--student-yellow);
+  text-shadow: 0 0 0.85rem rgba(255, 216, 77, 0.25);
+}
+
+.goal-row span {
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.student-page .meter {
+  border: 1px solid rgba(93, 247, 255, 0.25);
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 0.12rem, transparent 0.12rem 1rem),
+    rgba(255, 255, 255, 0.1);
+}
+
+.student-page #meter-fill {
+  background: linear-gradient(90deg, var(--student-green), var(--student-cyan), var(--student-yellow));
+  box-shadow: 0 0 1rem rgba(64, 255, 145, 0.45);
+}
+
+.student-page .status.listening {
+  border-color: rgba(64, 255, 145, 0.5);
+  background: rgba(21, 73, 50, 0.65);
+  color: var(--student-green);
+}
+
+.mission-card {
+  border-color: rgba(255, 216, 77, 0.46);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 216, 77, 0.2), transparent 14rem),
+    linear-gradient(180deg, rgba(22, 32, 68, 0.98), rgba(10, 15, 35, 0.96));
+  color: var(--student-ink);
+  box-shadow:
+    0 0 0 0.22rem rgba(255, 216, 77, 0.08),
+    0 1.4rem 3rem rgba(0, 0, 0, 0.4),
+    0 0 2rem rgba(255, 216, 77, 0.18);
+}
+
+.mission-card h2 {
+  color: var(--student-yellow);
+  text-shadow: 0 0 1rem rgba(255, 216, 77, 0.3);
+}
+
+.mission-card p {
+  color: var(--student-muted);
+}
+
+.mission-card strong {
+  color: #ffffff;
+}
+
+@media (min-width: 1024px) {
+  .student-reader {
+    grid-template-columns: minmax(7rem, 9rem) minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .student-page .chunk.correct,
+  .student-page .feedback-correct {
+    animation: student-arcade-pop 420ms ease both;
+  }
+
+  .student-page .mic-button.is-listening {
+    animation: student-mic-pulse 1.65s ease-in-out infinite;
+  }
+
+  .student-badge strong {
+    transition: transform 180ms ease, text-shadow 180ms ease;
+  }
+
+  .mission-card:not([hidden]) {
+    animation: student-mission-in 360ms ease both;
+  }
+}
+
+@keyframes student-arcade-pop {
+  0% {
+    transform: scale(0.98);
+    filter: brightness(1);
+  }
+  45% {
+    transform: scale(1.035);
+    filter: brightness(1.18);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes student-mic-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0.65rem 0 #07572e, 0 0 1.2rem rgba(64, 255, 145, 0.2);
+  }
+  50% {
+    box-shadow: 0 0.65rem 0 #07572e, 0 0 2.4rem rgba(64, 255, 145, 0.46);
+  }
+}
+
+@keyframes student-mission-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.6rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
