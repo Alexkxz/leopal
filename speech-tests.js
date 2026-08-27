@@ -13,6 +13,7 @@ function createFakeElement() {
     classList: {
       add() {},
       remove() {},
+      toggle() {},
       contains() {
         return false;
       },
@@ -43,6 +44,18 @@ const context = {
     },
     cancelAnimationFrame() {},
   },
+  localStorage: {
+    getItem() {
+      return null;
+    },
+    setItem() {},
+    removeItem() {},
+  },
+  crypto: {
+    randomUUID() {
+      return "test-id";
+    },
+  },
   navigator: {
     mediaDevices: null,
   },
@@ -56,8 +69,16 @@ const context = {
     },
   },
 };
+context.window.localStorage = context.localStorage;
+context.window.crypto = context.crypto;
+context.window.navigator = context.navigator;
+context.window.performance = performance;
 
 vm.createContext(context);
+vm.runInContext(fs.readFileSync("modules/evaluation.js", "utf8"), context);
+vm.runInContext(fs.readFileSync("modules/content.js", "utf8"), context);
+vm.runInContext(fs.readFileSync("modules/storage.js", "utf8"), context);
+vm.runInContext(fs.readFileSync("modules/speech-recognition.js", "utf8"), context);
 vm.runInContext(fs.readFileSync("app.js", "utf8"), context);
 
 const levelSelect = elements.get("#level-select");

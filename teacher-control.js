@@ -1,8 +1,6 @@
-const studentsKey = "lectovoz_students";
-
-const defaultConsonants = [
-  "m", "p", "l", "s", "t", "n", "r", "c", "q", "b", "d", "f", "g", "j", "v", "z", "y", "h", "k", "w", "x", "ch", "ll", "rr",
-];
+const Storage = window.LectoVozStorage;
+const TeacherControl = window.LectoVozTeacherControl;
+const defaultConsonants = TeacherControl.getDefaultConsonants();
 
 const tabs = document.querySelectorAll(".tab-button");
 const panels = document.querySelectorAll(".control-panel");
@@ -29,34 +27,19 @@ const summaryConsonants = document.querySelector("#summary-consonants");
 let selectedStudentId = "";
 
 function getStudents() {
-  try {
-    return JSON.parse(localStorage.getItem(studentsKey)) || [];
-  } catch {
-    return [];
-  }
+  return Storage.getStudents();
 }
 
 function saveStudents(students) {
-  localStorage.setItem(studentsKey, JSON.stringify(students));
-}
-
-function createId() {
-  return crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+  Storage.saveStudents(students);
 }
 
 function getSelectedStudent() {
-  return getStudents().find((student) => student.id === selectedStudentId);
+  return TeacherControl.getSelectedStudent(getStudents(), selectedStudentId);
 }
 
 function makeDefaultConfig() {
-  return {
-    consonants: [...defaultConsonants],
-    levelStart: "silabas",
-    sessionGoal: 10,
-    shuffleSyllables: false,
-    notes: "",
-    updatedAt: new Date().toISOString(),
-  };
+  return TeacherControl.makeDefaultConfig();
 }
 
 function setActiveTab(tabName) {
@@ -65,12 +48,7 @@ function setActiveTab(tabName) {
 }
 
 function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  return TeacherControl.escapeHtml(value);
 }
 
 function renderStudents() {
@@ -176,13 +154,7 @@ studentForm.addEventListener("submit", (event) => {
   if (!name || !group) return;
 
   const students = getStudents();
-  const student = {
-    id: createId(),
-    name,
-    group,
-    config: makeDefaultConfig(),
-    createdAt: new Date().toISOString(),
-  };
+  const student = TeacherControl.createStudentRecord(name, group);
   students.unshift(student);
   saveStudents(students);
   selectedStudentId = student.id;
@@ -193,11 +165,7 @@ studentForm.addEventListener("submit", (event) => {
 
 saveConfigBtn.addEventListener("click", () => {
   const students = getStudents();
-  const nextStudents = students.map((student) => (
-    student.id === selectedStudentId
-      ? { ...student, config: readConfigFromForm() }
-      : student
-  ));
+  const nextStudents = TeacherControl.replaceStudentConfig(students, selectedStudentId, readConfigFromForm());
   saveStudents(nextStudents);
   render();
 });
@@ -213,7 +181,7 @@ selectAllConsonantsBtn.addEventListener("click", () => {
 deleteStudentBtn.addEventListener("click", () => {
   const student = getSelectedStudent();
   if (!student || !confirm(`Eliminar a ${student.name}?`)) return;
-  saveStudents(getStudents().filter((item) => item.id !== student.id));
+  saveStudents(TeacherControl.deleteStudentById(getStudents(), student.id));
   selectedStudentId = "";
   render();
   setActiveTab("students");

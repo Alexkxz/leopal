@@ -1,4 +1,5 @@
-const storageKey = "lectovoz_records";
+const Storage = window.LectoVozStorage;
+const Dashboard = window.LectoVozTeacherDashboard;
 
 const totalRecordsEl = document.querySelector("#total-records");
 const averageAccuracyEl = document.querySelector("#average-accuracy");
@@ -10,26 +11,19 @@ const exportBtn = document.querySelector("#export-btn");
 const clearBtn = document.querySelector("#clear-btn");
 
 function getRecords() {
-  try {
-    return JSON.parse(localStorage.getItem(storageKey)) || [];
-  } catch {
-    return [];
-  }
+  return Storage.getRecords();
 }
 
 function saveRecords(records) {
-  localStorage.setItem(storageKey, JSON.stringify(records));
+  Storage.saveRecords(records);
 }
 
 function formatDate(value) {
-  return new Intl.DateTimeFormat("es-MX", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return Dashboard.formatDate(value);
 }
 
 function renderGroupOptions(records) {
-  const groups = [...new Set(records.map((record) => record.group).filter(Boolean))].sort();
+  const groups = Dashboard.getGroups(records);
   const current = groupFilter.value;
   groupFilter.innerHTML = '<option value="all">Todos</option>';
 
@@ -45,22 +39,18 @@ function renderGroupOptions(records) {
 
 function getFilteredRecords() {
   const records = getRecords();
-  if (groupFilter.value === "all") return records;
-  return records.filter((record) => record.group === groupFilter.value);
+  return Dashboard.filterRecords(records, groupFilter.value);
 }
 
 function render() {
   const allRecords = getRecords();
   renderGroupOptions(allRecords);
   const records = getFilteredRecords();
-  const totalErrors = records.reduce((sum, record) => sum + Number(record.errors || 0), 0);
-  const average = records.length
-    ? Math.round(records.reduce((sum, record) => sum + Number(record.accuracy || 0), 0) / records.length)
-    : 0;
+  const summary = Dashboard.calculateSummary(records);
 
-  totalRecordsEl.textContent = records.length;
-  averageAccuracyEl.textContent = `${average}%`;
-  totalErrorsEl.textContent = totalErrors;
+  totalRecordsEl.textContent = summary.totalRecords;
+  averageAccuracyEl.textContent = `${summary.averageAccuracy}%`;
+  totalErrorsEl.textContent = summary.totalErrors;
   emptyState.hidden = records.length > 0;
   recordsBody.innerHTML = "";
 
@@ -82,32 +72,12 @@ function render() {
 }
 
 function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  return Dashboard.escapeHtml(value);
 }
 
 function exportCsv() {
   const records = getFilteredRecords();
-  const headers = ["fecha", "alumno", "grupo", "nivel", "texto", "aciertos", "errores", "precision", "tiempo_segundos", "escuchado"];
-  const rows = records.map((record) => [
-    record.createdAt,
-    record.student,
-    record.group,
-    record.level,
-    record.text,
-    record.correct,
-    record.errors,
-    record.accuracy,
-    record.durationSeconds,
-    record.transcript,
-  ]);
-  const csv = [headers, ...rows]
-    .map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","))
-    .join("\n");
+  const csv = Dashboard.buildCsv(records);
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
