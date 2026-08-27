@@ -22,6 +22,14 @@ const scoreCountEl = document.querySelector("#score-count");
 const logoutBtn = document.querySelector("#logout-btn");
 const activeConsonantsEl = document.querySelector("#active-consonants");
 const sessionGoalCountEl = document.querySelector("#session-goal-count");
+const currentActivityEl = document.querySelector("#current-activity");
+const sessionProgressText = document.querySelector("#session-progress-text");
+const streakCountEl = document.querySelector("#streak-count");
+const missionCard = document.querySelector("#mission-card");
+const missionCountEl = document.querySelector("#mission-count");
+const missionScoreEl = document.querySelector("#mission-score");
+const continueBtn = document.querySelector("#continue-btn");
+const missionLogoutBtn = document.querySelector("#mission-logout-btn");
 
 const Content = window.LectoVozContent;
 const Evaluation = window.LectoVozEvaluation;
@@ -46,6 +54,8 @@ let lessonErrors = 0;
 let shuffledLessons = {};
 let currentGameConfig = Content.getDefaultGameConfig();
 let completedInSession = 0;
+let streakCount = 0;
+let advancingToNextLesson = false;
 
 const minConfidence = 0;
 const speechController = window.LectoVozSpeech.createSpeechController({
@@ -57,17 +67,18 @@ const speechController = window.LectoVozSpeech.createSpeechController({
   processTranscript,
   onMissingSession: () => {
     loginScreen.classList.remove("hidden");
-    feedbackEl.textContent = "Entra con nombre y grupo para guardar tu avance.";
+    setFeedbackState("neutral", "Entra con nombre y grupo para guardar tu avance.");
   },
   setFeedback: (value) => {
-    feedbackEl.textContent = value;
+    setFeedbackState("neutral", value);
   },
   setStatus: (value, isListening) => {
     statusEl.textContent = value;
     statusEl.classList.toggle("listening", isListening);
+    startBtn.classList.toggle("is-listening", isListening);
   },
   setStartLabel: (value) => {
-    startBtn.textContent = value;
+    setMicrophoneLabel(value);
   },
   setNoiseLevel: (percent) => {
     noiseLevelEl.style.width = `${percent}%`;
@@ -115,17 +126,48 @@ function renderPrompt() {
   updateMeter();
 }
 
+function setFeedbackState(state, message) {
+  feedbackEl.textContent = message;
+  feedbackEl.classList.remove("feedback-correct", "feedback-approximate", "feedback-incorrect");
+  if (state !== "neutral") feedbackEl.classList.add(`feedback-${state}`);
+}
+
+function setMicrophoneLabel(value) {
+  const normalized = value.toLowerCase();
+  const isListeningLabel = normalized.includes("escuchando");
+  const isPermissionLabel = normalized.includes("permitir") || normalized.includes("solicitando");
+  startBtn.innerHTML = `
+    <span aria-hidden="true">&#127908;</span>
+    <span>${isListeningLabel ? "Escuchando..." : isPermissionLabel ? value : "Continuar lectura"}</span>
+  `;
+}
+
+function getLevelLabel(level) {
+  const labels = {
+    silabas: "Silabas",
+    palabras_cortas: "Palabras pequenas",
+    palabras_medianas: "Palabras medianas",
+    palabras_largas: "Palabras grandes",
+    frases_cortas: "Frases cortas",
+    frases_medianas: "Frases medianas",
+    frases_largas: "Frases largas",
+  };
+  return labels[level] || "Lectura";
+}
+
 function setLesson(text) {
   activeText = normalizeText(text);
   chunks = splitIntoChunks(activeText);
   currentIndex = 0;
+  advancingToNextLesson = false;
   lastTranscript = "";
   pendingErrorCount = 0;
   lessonStartedAt = Date.now();
   lessonCorrect = 0;
   lessonErrors = 0;
   heardEl.textContent = "-";
-  feedbackEl.textContent = "Lee en voz alta. El microfono ira siguiendo tu lectura.";
+  hideMissionComplete();
+  setFeedbackState("neutral", "Lee en voz alta. El microfono ira siguiendo tu lectura.");
   renderPrompt();
 }
 
@@ -133,7 +175,7 @@ function loadCurrentLesson() {
   const list = getLessonList(levelSelect.value);
   if (!list.length) {
     setLesson("ma me mi mo mu");
-    feedbackEl.textContent = "No hay ejercicios para esas consonantes en este nivel.";
+    setFeedbackState("neutral", "No hay ejercicios para esas consonantes en este nivel.");
     return;
   }
   setLesson(list[lessonIndex % list.length]);
@@ -180,28 +222,38 @@ function shuffleList(list) {
 }
 
 function updateMeter() {
-  const done = chunks.filter((_, index) => {
-    const el = promptEl.querySelector(`[data-index="${index}"]`);
-    return el?.classList.contains("correct");
-  }).length;
-  meterFill.style.width = chunks.length ? `${Math.round((done / chunks.length) * 100)}%` : "0%";
+  const goal = Number(currentGameConfig.sessionGoal || 10);
+  const progress = Math.min(completedInSession, goal);
+  meterFill.style.width = goal ? `${Math.round((progress / goal) * 100)}%` : "0%";
+  sessionProgressText.textContent = `${progress} / ${goal}`;
 }
 
 function markChunk(index, state) {
   const el = promptEl.querySelector(`[data-index="${index}"]`);
   if (!el) return;
-  el.classList.remove("current", "correct", "error");
+  el.classList.remove("current", "correct", "approximate", "error");
   el.classList.add(state);
 }
 
 function setCurrent(index) {
-  promptEl.querySelectorAll(".chunk").forEach((el) => el.classList.remove("current"));
+  promptEl.querySelectorAll(".chunk").forEach((el) => el.classList.remove("current", "approximate", "error"));
   const el = promptEl.querySelector(`[data-index="${index}"]`);
   if (el) el.classList.add("current");
 }
 
+function markCurrentApproximate() {
+  const el = promptEl.querySelector(`[data-index="${currentIndex}"]`);
+  if (!el) return;
+  el.classList.remove("current", "error");
+  el.classList.add("approximate");
+}
+
 function chunkMatches(spoken, expected) {
   return Evaluation.chunkMatches(spoken, expected);
+}
+
+function evaluateReading(spoken, expected) {
+  return Evaluation.evaluateReading(spoken, expected);
 }
 
 function scoreMatch(spoken, expected) {
@@ -228,9 +280,33 @@ function findError(spokenWords, expected) {
   return Evaluation.findError(spokenWords, expected);
 }
 
+function getBestReadingEvaluation(candidateTranscripts, expected) {
+  const candidates = candidateTranscripts.flatMap((candidate) => buildSpokenCandidates(candidate));
+  return candidates
+    .map((candidate) => evaluateReading(candidate, expected))
+    .sort((left, right) => right.score - left.score)[0];
+}
+
+function continueAfterCompletedLesson() {
+  if (completedInSession >= Number(currentGameConfig.sessionGoal || 10)) {
+    showMissionComplete();
+    stopListening(false);
+    return;
+  }
+
+  window.setTimeout(() => {
+    lessonIndex += 1;
+    loadCurrentLesson();
+    if (speechController.isListening()) {
+      setFeedbackState("neutral", `Lee ahora: ${chunks[currentIndex]}`);
+    }
+  }, 900);
+}
+
 function processTranscript(transcript, confidence = 1, isFinal = false, alternatives = []) {
   const clean = normalizeText(transcript);
   if (!clean || clean === lastTranscript) return;
+  if (advancingToNextLesson) return;
   if (!isFinal && confidence > 0 && confidence < minConfidence) return;
 
   lastTranscript = clean;
@@ -251,29 +327,41 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
     lessonCorrect += 1;
     correctCountEl.textContent = correctCount;
     updateScore(10);
+    streakCount += 1;
+    updateStreak();
     currentIndex += 1;
     advanced += 1;
     updateMeter();
   }
 
   if (currentIndex >= chunks.length) {
-    feedbackEl.textContent = "Lectura completa. Muy bien.";
+    advancingToNextLesson = true;
+    setFeedbackState("correct", "¡Muy bien!");
     savePracticeRecord("completed");
     completedInSession += 1;
-    if (completedInSession >= Number(currentGameConfig.sessionGoal || 10)) {
-      feedbackEl.textContent = "Meta de partida completada. Muy bien.";
-    }
-    stopListening(false);
+    updateMeter();
+    continueAfterCompletedLesson();
     return;
   }
 
   if (advanced > 0) {
     setCurrent(currentIndex);
-    feedbackEl.textContent = `Sigue con: ${chunks[currentIndex]}`;
+    setFeedbackState("correct", `¡Excelente! Sigue con: ${chunks[currentIndex]}`);
     return;
   }
 
   const expected = chunks[currentIndex];
+  const bestEvaluation = getBestReadingEvaluation(candidateTranscripts, expected);
+  if (bestEvaluation?.status === "approximate") {
+    pendingErrorCount = 0;
+    streakCount = 0;
+    updateStreak();
+    markCurrentApproximate();
+    setFeedbackState("approximate", "¡Casi! Intentalo otra vez");
+    window.setTimeout(() => setCurrent(currentIndex), 700);
+    return;
+  }
+
   if (findError(spokenWords, expected)) {
     pendingErrorCount += isFinal ? 2 : 1;
     if (pendingErrorCount < 2) return;
@@ -283,7 +371,9 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
     lessonErrors += 1;
     errorCountEl.textContent = errorCount;
     updateScore(-2);
-    feedbackEl.textContent = `Intenta de nuevo: ${expected}`;
+    streakCount = 0;
+    updateStreak();
+    setFeedbackState("incorrect", "Vamos otra vez");
     pendingErrorCount = 0;
     window.setTimeout(() => setCurrent(currentIndex), 650);
   }
@@ -295,6 +385,10 @@ async function startListening() {
 
 function stopListening(updateText = true) {
   speechController.stop(updateText);
+}
+
+function closeListening(updateText = true) {
+  speechController.close(updateText);
 }
 
 function getRecords() {
@@ -332,6 +426,28 @@ function savePracticeRecord(status) {
 function updateScore(points) {
   score = Math.max(0, score + points);
   scoreCountEl.textContent = score;
+  missionScoreEl.textContent = score;
+}
+
+function updateStreak() {
+  streakCountEl.textContent = streakCount;
+}
+
+function showMissionComplete() {
+  missionCountEl.textContent = completedInSession;
+  missionScoreEl.textContent = score;
+  missionCard.hidden = false;
+  setFeedbackState("correct", "¡Misión completada!");
+}
+
+function hideMissionComplete() {
+  missionCard.hidden = true;
+}
+
+function goToNextLesson() {
+  hideMissionComplete();
+  lessonIndex += 1;
+  loadCurrentLesson();
 }
 
 function restoreSession() {
@@ -348,7 +464,7 @@ function restoreSession() {
   Storage.saveSession(currentSession);
   applyGameConfig();
   loginScreen.classList.add("hidden");
-  currentStudentEl.textContent = `${currentSession.student} / ${currentSession.group}`;
+  currentStudentEl.textContent = currentSession.student;
 }
 
 function createSession(student, group) {
@@ -363,10 +479,12 @@ function createSession(student, group) {
   };
   currentGameConfig = config;
   completedInSession = 0;
+  streakCount = 0;
+  updateStreak();
   Storage.saveSession(currentSession);
   applyGameConfig();
   loginScreen.classList.add("hidden");
-  currentStudentEl.textContent = `${student} / ${group}`;
+  currentStudentEl.textContent = student;
 }
 
 function getRegisteredStudents() {
@@ -406,6 +524,8 @@ function applyGameConfig() {
 function updateGameConfigSummary() {
   activeConsonantsEl.textContent = getAllowedConsonants().length;
   sessionGoalCountEl.textContent = currentGameConfig.sessionGoal;
+  currentActivityEl.textContent = getLevelLabel(levelSelect.value);
+  updateMeter();
 }
 
 function readVolume() {
@@ -441,14 +561,13 @@ startBtn.addEventListener("click", () => {
 });
 
 nextBtn.addEventListener("click", () => {
-  stopListening(false);
-  lessonIndex += 1;
-  loadCurrentLesson();
+  goToNextLesson();
 });
 
 levelSelect.addEventListener("change", () => {
   stopListening(false);
   lessonIndex = 0;
+  updateGameConfigSummary();
   loadCurrentLesson();
 });
 
@@ -468,15 +587,29 @@ loginForm.addEventListener("submit", (event) => {
 });
 
 logoutBtn.addEventListener("click", () => {
-  stopListening(false);
+  closeListening(false);
   Storage.clearSession();
   currentSession = null;
   currentGameConfig = Content.getDefaultGameConfig();
   completedInSession = 0;
+  streakCount = 0;
+  updateStreak();
+  updateMeter();
+  hideMissionComplete();
   loginScreen.classList.remove("hidden");
   currentStudentEl.textContent = "Invitado";
 });
 
+continueBtn.addEventListener("click", goToNextLesson);
+missionLogoutBtn.addEventListener("click", () => logoutBtn.click());
+
+if (typeof window.addEventListener === "function") {
+  window.addEventListener("pagehide", () => {
+    closeListening(false);
+  });
+}
+
 restoreSession();
 if (!currentSession) loadCurrentLesson();
 updateGameConfigSummary();
+updateStreak();

@@ -974,3 +974,782 @@ td {
     min-height: 58px;
   }
 }
+
+/* Student reading experience */
+body.student-page {
+  --student-ink: #17324d;
+  --student-muted: #55708a;
+  --student-paper: #fffaf0;
+  --student-sky: #dff5ff;
+  --student-mint: #ddf8e8;
+  --student-blue: #2f80ed;
+  --student-green: #24a148;
+  --student-yellow: #f2b705;
+  --student-red: #d64545;
+  --student-line: rgba(23, 50, 77, 0.14);
+  overflow-x: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.68)),
+    repeating-linear-gradient(90deg, rgba(47, 128, 237, 0.07) 0 16px, transparent 16px 32px),
+    #f3fbf6;
+  color: var(--student-ink);
+}
+
+body.student-page::before,
+body.student-page::after {
+  display: none;
+}
+
+.student-page .login-screen {
+  background: rgba(223, 245, 255, 0.94);
+}
+
+.student-page .login-card {
+  gap: 14px;
+  border: 2px solid var(--student-line);
+  border-radius: 28px;
+  background: #fff;
+  color: var(--student-ink);
+  box-shadow: 0 22px 50px rgba(23, 50, 77, 0.16);
+}
+
+.student-page .login-card h1 {
+  color: var(--student-ink);
+  text-shadow: none;
+}
+
+.student-page .login-copy,
+.student-page .eyebrow {
+  color: var(--student-muted);
+}
+
+.student-page input {
+  border-color: var(--student-line);
+  background: #fff;
+  color: var(--student-ink);
+}
+
+.student-page input::placeholder {
+  color: rgba(85, 112, 138, 0.7);
+}
+
+.student-app {
+  display: block;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.student-practice {
+  min-height: calc(100vh - 48px);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.student-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  max-width: 1120px;
+  margin: 0 auto 18px;
+}
+
+.student-greeting {
+  display: grid;
+  gap: 8px;
+}
+
+.student-greeting h1 {
+  color: var(--student-ink);
+  font-size: clamp(32px, 6vw, 56px);
+  text-shadow: none;
+}
+
+.activity-pill {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0;
+  border: 2px solid rgba(47, 128, 237, 0.2);
+  border-radius: 999px;
+  padding: 8px 16px;
+  background: #fff;
+  color: var(--student-blue);
+  font-weight: 800;
+}
+
+.student-score,
+.student-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 64px;
+  border: 2px solid rgba(242, 183, 5, 0.26);
+  border-radius: 24px;
+  padding: 10px 18px;
+  background: #fff7d6;
+  color: #6d4b00;
+  box-shadow: 0 10px 22px rgba(109, 75, 0, 0.08);
+}
+
+.student-score span,
+.student-badge span {
+  font-size: 28px;
+}
+
+.student-score strong,
+.student-badge strong {
+  color: inherit;
+  font-size: 34px;
+}
+
+.student-score small,
+.student-badge small {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.student-reader {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 18px;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.leo-space {
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+}
+
+.leo-placeholder {
+  display: grid;
+  width: 118px;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 3px dashed rgba(47, 128, 237, 0.28);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--student-blue);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.student-page .prompt-shell {
+  min-height: clamp(260px, 42vh, 440px);
+  border: 3px solid var(--student-line);
+  border-radius: 32px;
+  background: var(--student-paper);
+  box-shadow: 0 18px 42px rgba(23, 50, 77, 0.14);
+  padding: clamp(22px, 5vw, 48px);
+}
+
+.student-page .prompt-shell::before {
+  display: none;
+}
+
+.read-label {
+  position: absolute;
+  inset: 20px auto auto 24px;
+  margin: 0;
+  color: var(--student-muted);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.student-page .prompt {
+  width: 100%;
+  max-width: 900px;
+}
+
+.student-page .chunk {
+  min-width: 72px;
+  min-height: 78px;
+  border: 3px solid rgba(23, 50, 77, 0.12);
+  border-bottom: 8px solid rgba(23, 50, 77, 0.18);
+  border-radius: 22px;
+  background: #fff;
+  color: var(--student-ink);
+  font-size: clamp(38px, 8vw, 86px);
+  text-shadow: none;
+  box-shadow: 0 10px 0 rgba(23, 50, 77, 0.08);
+}
+
+.student-page .chunk.current {
+  border-color: var(--student-blue);
+  color: var(--student-blue);
+  transform: translateY(-5px);
+  box-shadow: 0 14px 0 rgba(23, 50, 77, 0.08), 0 0 0 6px rgba(47, 128, 237, 0.12);
+}
+
+.student-page .chunk.correct {
+  border-color: var(--student-green);
+  background: #e8f8ee;
+  color: var(--student-green);
+}
+
+.student-page .chunk.approximate {
+  border-color: var(--student-yellow);
+  background: #fff6cf;
+  color: #7a5600;
+}
+
+.student-page .chunk.error {
+  border-color: var(--student-red);
+  background: #fff0f0;
+  color: var(--student-red);
+}
+
+.student-page .feedback {
+  grid-column: 2;
+  min-height: 58px;
+  border: 2px solid var(--student-line);
+  border-radius: 22px;
+  padding: 14px 18px;
+  background: #fff;
+  color: var(--student-muted);
+  font-size: clamp(20px, 3vw, 28px);
+  font-weight: 900;
+}
+
+.student-page .feedback-correct {
+  border-color: rgba(36, 161, 72, 0.28);
+  background: #e8f8ee;
+  color: var(--student-green);
+}
+
+.student-page .feedback-approximate {
+  border-color: rgba(242, 183, 5, 0.36);
+  background: #fff6cf;
+  color: #7a5600;
+}
+
+.student-page .feedback-incorrect {
+  border-color: rgba(214, 69, 69, 0.28);
+  background: #fff0f0;
+  color: var(--student-red);
+}
+
+.mic-button {
+  grid-column: 2;
+  justify-self: center;
+  min-height: 76px;
+  border-radius: 999px;
+  padding: 0 34px;
+  background: var(--student-blue);
+  color: #fff;
+  font-size: clamp(20px, 4vw, 30px);
+  box-shadow: 0 10px 0 #1d5fb8, 0 18px 30px rgba(47, 128, 237, 0.2);
+}
+
+.student-page .mic-button.is-listening {
+  background: var(--student-green);
+  box-shadow: 0 10px 0 #147332, 0 18px 30px rgba(36, 161, 72, 0.22);
+}
+
+.student-page .mic-button:focus-visible {
+  outline: 4px solid rgba(36, 161, 72, 0.25);
+}
+
+.student-progress,
+.student-badges,
+.student-controls,
+.mission-card {
+  grid-column: 2;
+}
+
+.student-progress {
+  display: grid;
+  gap: 10px;
+  border-radius: 24px;
+  padding: 18px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(23, 50, 77, 0.1);
+}
+
+.goal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.goal-row h2,
+.mission-card h2 {
+  color: var(--student-ink);
+  font-size: clamp(22px, 4vw, 34px);
+}
+
+.goal-row span {
+  color: var(--student-blue);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.student-page .meter {
+  height: 22px;
+  background: #e3edf5;
+}
+
+.student-page #meter-fill {
+  background: linear-gradient(90deg, var(--student-green), var(--student-blue));
+  box-shadow: none;
+}
+
+.student-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.student-page .status {
+  min-height: 54px;
+  min-width: min(100%, 240px);
+  border: 2px solid var(--student-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--student-muted);
+  font-weight: 800;
+}
+
+.student-page .status.listening {
+  border-color: rgba(36, 161, 72, 0.32);
+  background: #e8f8ee;
+  color: var(--student-green);
+}
+
+.student-controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.student-page button {
+  min-height: 56px;
+  border-radius: 18px;
+}
+
+.student-page .primary {
+  background: var(--student-blue);
+  color: #fff;
+}
+
+.student-page .secondary {
+  border-color: var(--student-line);
+  background: #fff;
+  color: var(--student-ink);
+}
+
+.mission-card {
+  display: grid;
+  gap: 18px;
+  border: 3px solid rgba(36, 161, 72, 0.26);
+  border-radius: 32px;
+  padding: clamp(22px, 5vw, 36px);
+  background: #e8f8ee;
+  color: var(--student-ink);
+  text-align: center;
+  box-shadow: 0 18px 42px rgba(36, 161, 72, 0.18);
+}
+
+.mission-card[hidden] {
+  display: none;
+}
+
+.mission-icon {
+  margin: 0;
+  font-size: 48px;
+}
+
+.mission-card p {
+  margin: 8px 0 0;
+  color: var(--student-muted);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.mission-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.student-internal {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .student-app {
+    padding: 14px;
+  }
+
+  .student-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .student-score {
+    justify-content: center;
+  }
+
+  .student-reader {
+    grid-template-columns: 1fr;
+  }
+
+  .leo-space {
+    display: none;
+  }
+
+  .student-page .prompt-shell,
+  .student-page .feedback,
+  .mic-button,
+  .student-progress,
+  .student-badges,
+  .student-controls,
+  .mission-card {
+    grid-column: 1;
+  }
+
+  .student-page .chunk {
+    min-width: 54px;
+    min-height: 64px;
+  }
+
+  .student-controls,
+  .mission-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Responsive student refinements: mobile first, then expand */
+.student-page,
+.student-page * {
+  max-width: 100%;
+}
+
+.student-page {
+  min-width: 0;
+}
+
+.student-page .login-screen {
+  overflow-y: auto;
+}
+
+.student-page .login-card {
+  width: min(100%, 28rem);
+  padding: clamp(1rem, 6vw, 1.75rem);
+}
+
+.student-app {
+  width: min(100%, 76rem);
+  margin: 0 auto;
+  padding: clamp(0.75rem, 4vw, 1.5rem);
+}
+
+.student-practice {
+  min-height: auto;
+}
+
+.student-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: clamp(0.75rem, 3vw, 1.125rem);
+  width: 100%;
+  margin-bottom: clamp(0.75rem, 3vw, 1.125rem);
+}
+
+.student-greeting {
+  min-width: 0;
+}
+
+.student-greeting h1 {
+  overflow-wrap: anywhere;
+  font-size: clamp(1.75rem, 10vw, 3.25rem);
+  line-height: 1.04;
+}
+
+.activity-pill {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 0.45rem 0.8rem;
+  font-size: clamp(0.9rem, 3.8vw, 1rem);
+}
+
+.student-score,
+.student-badge {
+  justify-content: center;
+  min-height: 3.25rem;
+  border-radius: 1.125rem;
+  padding: 0.55rem 0.8rem;
+}
+
+.student-score strong,
+.student-badge strong {
+  font-size: clamp(1.55rem, 8vw, 2.125rem);
+}
+
+.student-score span,
+.student-badge span {
+  font-size: clamp(1.25rem, 6vw, 1.75rem);
+}
+
+.student-reader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(0.75rem, 3.2vw, 1.125rem);
+  width: 100%;
+}
+
+.leo-space {
+  display: none;
+}
+
+.student-page .prompt-shell,
+.student-page .feedback,
+.mic-button,
+.student-progress,
+.student-badges,
+.student-controls,
+.mission-card {
+  grid-column: 1;
+}
+
+.student-page .prompt-shell {
+  min-height: clamp(13rem, 46vh, 24rem);
+  border-radius: clamp(1.25rem, 7vw, 2rem);
+  padding: clamp(3rem, 12vw, 4.25rem) clamp(0.75rem, 4vw, 1.5rem) clamp(1rem, 5vw, 2rem);
+}
+
+.read-label {
+  inset: clamp(0.9rem, 4vw, 1.25rem) auto auto clamp(1rem, 4vw, 1.5rem);
+  font-size: clamp(0.85rem, 3.8vw, 1rem);
+}
+
+.student-page .prompt {
+  gap: clamp(0.4rem, 2.5vw, 0.75rem);
+  min-width: 0;
+}
+
+.student-page .chunk {
+  min-width: min(3.2rem, 100%);
+  min-height: clamp(3.4rem, 16vw, 4.8rem);
+  max-width: 100%;
+  border-radius: clamp(0.9rem, 4vw, 1.35rem);
+  padding: clamp(0.35rem, 2vw, 0.65rem) clamp(0.45rem, 2.6vw, 0.75rem);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.08;
+  font-size: clamp(2rem, 12vw, 4.4rem);
+}
+
+.student-page .space {
+  width: clamp(0.4rem, 3vw, 1rem);
+}
+
+.student-page .feedback {
+  min-height: auto;
+  border-radius: 1.1rem;
+  padding: clamp(0.75rem, 3.5vw, 1rem);
+  font-size: clamp(1.05rem, 5.2vw, 1.45rem);
+  line-height: 1.22;
+}
+
+.mic-button {
+  width: min(100%, 25rem);
+  min-height: clamp(3.5rem, 15vw, 4.75rem);
+  padding: 0 clamp(1rem, 5vw, 2rem);
+  white-space: normal;
+  line-height: 1.1;
+  font-size: clamp(1.1rem, 5.4vw, 1.85rem);
+  touch-action: manipulation;
+}
+
+.student-progress {
+  border-radius: 1.25rem;
+  padding: clamp(0.8rem, 4vw, 1.1rem);
+}
+
+.goal-row {
+  gap: 0.75rem;
+}
+
+.goal-row h2 {
+  font-size: clamp(1.15rem, 5vw, 1.55rem);
+}
+
+.goal-row span {
+  white-space: nowrap;
+  font-size: clamp(1.1rem, 5vw, 1.5rem);
+}
+
+.student-page .meter {
+  height: clamp(1rem, 5vw, 1.35rem);
+}
+
+.student-badges {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+}
+
+.student-page .status {
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  padding-inline: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.student-controls,
+.mission-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+}
+
+.student-page button {
+  width: 100%;
+  min-height: 3rem;
+  padding-inline: 0.9rem;
+  touch-action: manipulation;
+}
+
+.mission-card {
+  border-radius: clamp(1.25rem, 7vw, 2rem);
+  padding: clamp(1rem, 5vw, 2rem);
+}
+
+.mission-card h2 {
+  font-size: clamp(1.35rem, 7vw, 2rem);
+}
+
+.mission-card p {
+  font-size: clamp(1rem, 4.8vw, 1.25rem);
+}
+
+@media (min-width: 430px) {
+  .student-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .student-score {
+    justify-self: end;
+  }
+
+  .student-badges {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .student-controls,
+  .mission-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .student-app {
+    width: min(100%, 68rem);
+  }
+
+  .student-reader {
+    gap: 1.25rem;
+  }
+
+  .student-page .prompt-shell {
+    min-height: clamp(18rem, 44vh, 27rem);
+    padding-inline: clamp(1.5rem, 5vw, 3rem);
+  }
+
+  .student-page .chunk {
+    min-width: 4.2rem;
+    min-height: 4.9rem;
+    font-size: clamp(3rem, 7.5vw, 5.4rem);
+  }
+
+  .student-page .feedback,
+  .mic-button,
+  .student-progress,
+  .student-badges,
+  .student-controls,
+  .mission-card {
+    width: min(100%, 52rem);
+    justify-self: center;
+  }
+}
+
+@media (min-width: 1024px) {
+  .student-app {
+    width: min(100%, 78rem);
+  }
+
+  .student-reader {
+    grid-template-columns: minmax(7rem, 9rem) minmax(0, 1fr);
+  }
+
+  .leo-space {
+    display: grid;
+  }
+
+  .student-page .prompt-shell,
+  .student-page .feedback,
+  .mic-button,
+  .student-progress,
+  .student-badges,
+  .student-controls,
+  .mission-card {
+    grid-column: 2;
+  }
+
+  .student-page .prompt-shell {
+    min-height: min(42vh, 28rem);
+  }
+}
+
+@media (min-width: 1366px) {
+  .student-app {
+    width: min(100%, 82rem);
+    padding-block: 2rem;
+  }
+
+  .student-page .prompt-shell {
+    min-height: 30rem;
+  }
+
+  .student-page .chunk {
+    font-size: clamp(3.5rem, 5vw, 5.8rem);
+  }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  .student-app {
+    padding-block: 0.75rem;
+  }
+
+  .student-header {
+    margin-bottom: 0.75rem;
+  }
+
+  .student-page .prompt-shell {
+    min-height: 12rem;
+    padding-top: 2.6rem;
+    padding-bottom: 0.8rem;
+  }
+
+  .student-page .chunk {
+    min-height: 3.2rem;
+    font-size: clamp(1.85rem, 7vh, 3.6rem);
+  }
+
+  .mic-button {
+    min-height: 3.25rem;
+  }
+}

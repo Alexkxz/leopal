@@ -6,79 +6,108 @@
     <title>LectoVoz</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
+  <body class="student-page">
     <section class="login-screen" id="login-screen">
       <form class="login-card" id="login-form">
-        <p class="eyebrow">Lectura activa</p>
+        <p class="eyebrow">Lectura divertida</p>
         <h1>LectoVoz</h1>
-        <p class="login-copy">Entra al juego para guardar tu avance.</p>
+        <p class="login-copy">Escribe tu nombre para comenzar tu practica.</p>
         <label for="student-name">Alumno</label>
         <input id="student-name" autocomplete="name" required placeholder="Nombre del alumno" />
         <label for="student-group">Grupo</label>
         <input id="student-group" required placeholder="Ej. 1A" />
-        <button class="primary full" type="submit">Entrar al juego</button>
-        <a class="teacher-link" href="teacher-control.html">Control del maestro</a>
+        <button class="primary full" type="submit">Entrar a leer</button>
       </form>
     </section>
 
-    <main class="app">
-      <section class="practice" aria-labelledby="app-title">
-        <div class="topbar">
-          <div>
-            <p class="eyebrow">Juego didactico de lectura</p>
-            <h1 id="app-title">LectoVoz</h1>
+    <main class="student-app app">
+      <section class="student-practice practice" aria-labelledby="app-title">
+        <header class="student-header">
+          <div class="student-greeting">
+            <p class="eyebrow">LectoVoz</p>
+            <h1 id="app-title">Hola, <span id="current-student">Invitado</span></h1>
+            <p class="activity-pill" id="current-activity">Silabas</p>
           </div>
-          <div class="player-strip">
-            <div>
-              <span>Jugador</span>
-              <strong id="current-student">Invitado</strong>
-            </div>
-            <div>
-              <span>Puntos</span>
-              <strong id="score-count">0</strong>
-            </div>
-            <div class="status" id="mic-status">Microfono detenido</div>
+          <div class="student-score" aria-label="Puntos obtenidos">
+            <span aria-hidden="true">&#9733;</span>
+            <strong id="score-count">0</strong>
+            <small>puntos</small>
           </div>
-        </div>
+        </header>
 
-        <div class="reader" aria-live="polite">
-          <div class="level-row">
-            <label for="level-select">Nivel</label>
-            <select id="level-select">
-              <option value="silabas">Silabas</option>
-              <option value="palabras_cortas">Palabras pequenas</option>
-              <option value="palabras_medianas">Palabras medianas</option>
-              <option value="palabras_largas">Palabras grandes</option>
-              <option value="frases_cortas">Frases 3 a 5</option>
-              <option value="frases_medianas">Frases 5 a 8</option>
-              <option value="frases_largas">Frases 8 a 10</option>
-            </select>
+        <div class="student-reader reader" aria-live="polite">
+          <div class="leo-space" aria-hidden="true">
+            <div class="leo-placeholder">
+              <span>Leo</span>
+            </div>
           </div>
 
-          <div class="prompt-shell">
+          <div class="prompt-shell" id="reading-card">
+            <p class="read-label">Lee en voz alta</p>
             <div id="prompt" class="prompt"></div>
           </div>
 
-          <div class="meter" aria-hidden="true">
-            <div id="meter-fill"></div>
-          </div>
-
-          <p class="feedback" id="feedback">
-            Presiona iniciar y permite el microfono. Despues lee en voz alta.
+          <p class="feedback" id="feedback" role="status">
+            Presiona comenzar y permite el microfono. Despues lee en voz alta.
           </p>
 
-          <div class="controls">
-            <button id="start-btn" class="primary">Iniciar lectura</button>
-            <button id="next-btn" class="secondary">Siguiente</button>
-            <button id="logout-btn" class="secondary">Salir</button>
+          <button id="start-btn" class="primary mic-button" type="button">
+            <span aria-hidden="true">&#127908;</span>
+            <span>Permitir microfono y comenzar</span>
+          </button>
+
+          <section class="student-progress" aria-labelledby="goal-title">
+            <div class="goal-row">
+              <h2 id="goal-title">Meta de hoy</h2>
+              <span id="session-progress-text">0 / 10</span>
+            </div>
+            <div class="meter" aria-hidden="true">
+              <div id="meter-fill"></div>
+            </div>
+          </section>
+
+          <div class="student-badges">
+            <div class="student-badge">
+              <span aria-hidden="true">&#128293;</span>
+              <strong id="streak-count">0</strong>
+              <small>seguidas</small>
+            </div>
+            <div class="status" id="mic-status">Microfono detenido</div>
           </div>
+
+          <div class="controls student-controls">
+            <button id="next-btn" class="secondary" type="button">Siguiente</button>
+            <button id="logout-btn" class="secondary" type="button">Salir</button>
+          </div>
+
+          <section class="mission-card" id="mission-card" hidden aria-live="polite">
+            <div>
+              <p class="mission-icon" aria-hidden="true">&#127881;</p>
+              <h2>&iexcl;Mision completada!</h2>
+              <p>Hiciste <strong id="mission-count">0</strong> ejercicios y ganaste <strong id="mission-score">0</strong> puntos.</p>
+              <p>Sigue leyendo asi de bonito.</p>
+            </div>
+            <div class="mission-actions">
+              <button id="continue-btn" class="primary" type="button">Seguir practicando</button>
+              <button id="mission-logout-btn" class="secondary" type="button">Salir</button>
+            </div>
+          </section>
         </div>
       </section>
 
-      <aside class="side">
-        <h2>Panel docente</h2>
-        <a class="teacher-link compact" href="teacher-control.html">Control del maestro</a>
-        <a class="teacher-link compact" href="teacher.html">Ver registros completos</a>
+      <aside class="student-internal" hidden aria-hidden="true">
+        <div class="level-row">
+          <label for="level-select">Nivel</label>
+          <select id="level-select">
+            <option value="silabas">Silabas</option>
+            <option value="palabras_cortas">Palabras pequenas</option>
+            <option value="palabras_medianas">Palabras medianas</option>
+            <option value="palabras_largas">Palabras grandes</option>
+            <option value="frases_cortas">Frases 3 a 5</option>
+            <option value="frases_medianas">Frases 5 a 8</option>
+            <option value="frases_largas">Frases 8 a 10</option>
+          </select>
+        </div>
         <div class="stat">
           <span>Correctas</span>
           <strong id="correct-count">0</strong>

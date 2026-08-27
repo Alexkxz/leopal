@@ -111,8 +111,7 @@
   }
 
   function chunkMatches(spoken, expected) {
-    if (!spoken || !expected) return false;
-    return scoreMatch(spoken, expected) >= getMatchThreshold(expected);
+    return evaluateReading(spoken, expected).status === "correct";
   }
 
   function scoreMatch(spoken, expected) {
@@ -130,6 +129,126 @@
     const phoneticDistance = normalizedDistance(phoneticSpoken, phoneticExpected);
     const dice = diceSimilarity(phoneticSpoken, phoneticExpected);
     return Math.max(1 - directDistance, 1 - phoneticDistance, dice);
+  }
+
+  function evaluateReading(spoken, expected) {
+    const normalizedSpoken = normalizeText(spoken);
+    const normalizedExpected = normalizeText(expected);
+    const phoneticSpoken = phoneticKey(normalizedSpoken);
+    const phoneticExpected = phoneticKey(normalizedExpected);
+    const score = scoreMatch(normalizedSpoken, normalizedExpected);
+    const details = {
+      spoken: normalizedSpoken,
+      expected: normalizedExpected,
+      status: "incorrect",
+      score,
+      normalizedSpoken,
+      normalizedExpected,
+      reason: "low_similarity",
+    };
+
+    if (!normalizedSpoken || !normalizedExpected) {
+      return {
+        ...details,
+        score: 0,
+        reason: "missing_text",
+      };
+    }
+
+    if (normalizedSpoken === normalizedExpected) {
+      return {
+        ...details,
+        status: "correct",
+        score: 1,
+        reason: "exact_match",
+      };
+    }
+
+    if (phoneticSpoken === phoneticExpected) {
+      return {
+        ...details,
+        status: "correct",
+        score: 1,
+        reason: "phonetic_equivalence",
+      };
+    }
+
+    if (isExpectedInsideSpokenCandidate(normalizedSpoken, normalizedExpected, phoneticSpoken, phoneticExpected)) {
+      return {
+        ...details,
+        status: "correct",
+        reason: "expected_found_in_spoken_candidate",
+      };
+    }
+
+    if (isApproximateReading(normalizedSpoken, normalizedExpected, phoneticSpoken, phoneticExpected, score)) {
+      return {
+        ...details,
+        status: "approximate",
+        reason: "high_similarity_but_not_exact",
+      };
+    }
+
+    return details;
+  }
+
+  function isExpectedInsideSpokenCandidate(normalizedSpoken, normalizedExpected, phoneticSpoken, phoneticExpected) {
+    if (normalizedExpected.length > 4) return false;
+    if (normalizedExpected.length > normalizedSpoken.length) return false;
+    if (normalizedSpoken.includes(normalizedExpected)) return true;
+    return phoneticSpoken.includes(phoneticExpected);
+  }
+
+  function isApproximateReading(normalizedSpoken, normalizedExpected, phoneticSpoken, phoneticExpected, score) {
+    const expectedLength = normalizedExpected.length;
+    if (expectedLength < 5) return false;
+
+    const directDistance = levenshtein(normalizedSpoken, normalizedExpected);
+    const phoneticDistance = levenshtein(phoneticSpoken, phoneticExpected);
+    const normalizedDirectDistance = normalizedDistance(normalizedSpoken, normalizedExpected);
+    const normalizedPhoneticDistance = normalizedDistance(phoneticSpoken, phoneticExpected);
+    const lengthGap = Math.abs(normalizedSpoken.length - normalizedExpected.length);
+    const threshold = getApproximateThreshold(normalizedExpected);
+    const hasSmallEdit = Math.min(directDistance, phoneticDistance) <= 1;
+    const hasCloseDistance = Math.min(normalizedDirectDistance, normalizedPhoneticDistance) <= 0.2;
+    const keepsWordShape = hasSharedWordShape(normalizedSpoken, normalizedExpected, phoneticSpoken, phoneticExpected);
+
+    return score >= threshold && hasSmallEdit && hasCloseDistance && lengthGap <= 1 && keepsWordShape;
+  }
+
+  function getApproximateThreshold(expected) {
+    if (expected.length < 5) return 1;
+    if (expected.length <= 7) return 0.82;
+    return 0.78;
+  }
+
+  function hasSharedWordShape(normalizedSpoken, normalizedExpected, phoneticSpoken, phoneticExpected) {
+    const prefixLength = commonPrefixLength(normalizedSpoken, normalizedExpected);
+    const suffixLength = commonSuffixLength(normalizedSpoken, normalizedExpected);
+    const phoneticPrefixLength = commonPrefixLength(phoneticSpoken, phoneticExpected);
+    const phoneticSuffixLength = commonSuffixLength(phoneticSpoken, phoneticExpected);
+    const requiredEdge = normalizedExpected.length >= 8 ? 2 : 1;
+
+    return (
+      prefixLength >= requiredEdge
+      || suffixLength >= requiredEdge
+      || phoneticPrefixLength >= requiredEdge
+      || phoneticSuffixLength >= requiredEdge
+    );
+  }
+
+  function commonPrefixLength(a, b) {
+    const limit = Math.min(a.length, b.length);
+    let count = 0;
+    while (count < limit && a[count] === b[count]) count += 1;
+    return count;
+  }
+
+  function commonSuffixLength(a, b) {
+    const limit = Math.min(a.length, b.length);
+    let count = 0;
+    while (count < limit && a[a.length - 1 - count] === b[b.length - 1 - count]) count += 1;
+    return count;
   }
 
   function getMatchThreshold(expected) {
@@ -236,8 +355,10 @@
     getTextConsonants,
     usesOnlyAllowedConsonants,
     shuffleList,
+    evaluateReading,
     chunkMatches,
     scoreMatch,
+    getApproximateThreshold,
     getMatchThreshold,
     phoneticKey,
     buildSpokenCandidates,
