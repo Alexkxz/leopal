@@ -56,6 +56,13 @@ let currentGameConfig = Content.getDefaultGameConfig();
 let completedInSession = 0;
 let streakCount = 0;
 let advancingToNextLesson = false;
+let attemptCount = 0;
+let chunkAttemptRecords = [];
+let notMasteredChunks = [];
+
+const defaultMaxAttemptsPerChunk = 3;
+const minVoiceMsForAttempt = 300;
+const recognitionWarmupMs = 250;
 
 const minConfidence = 0;
 const speechController = window.LectoVozSpeech.createSpeechController({
@@ -160,6 +167,9 @@ function setLesson(text) {
   chunks = splitIntoChunks(activeText);
   currentIndex = 0;
   advancingToNextLesson = false;
+  attemptCount = 0;
+  chunkAttemptRecords = [];
+  notMasteredChunks = [];
   lastTranscript = "";
   pendingErrorCount = 0;
   lessonStartedAt = Date.now();
@@ -231,12 +241,12 @@ function updateMeter() {
 function markChunk(index, state) {
   const el = promptEl.querySelector(`[data-index="${index}"]`);
   if (!el) return;
-  el.classList.remove("current", "correct", "approximate", "error");
+  el.classList.remove("current", "correct", "approximate", "error", "not-mastered");
   el.classList.add(state);
 }
 
 function setCurrent(index) {
-  promptEl.querySelectorAll(".chunk").forEach((el) => el.classList.remove("current", "approximate", "error"));
+  promptEl.querySelectorAll(".chunk").forEach((el) => el.classList.remove("current", "approximate", "error", "not-mastered"));
   const el = promptEl.querySelector(`[data-index="${index}"]`);
   if (el) el.classList.add("current");
 }
@@ -287,6 +297,131 @@ function getBestReadingEvaluation(candidateTranscripts, expected) {
     .sort((left, right) => right.score - left.score)[0];
 }
 
+function hasVoiceAttemptReady() {
+  const overrideMs = window.__lectovozVoiceGateOverrideMs;
+  const voiceMs = Number.isFinite(overrideMs)
+    ? overrideMs
+    : Number(speechController.getVoiceActiveDuration?.() || 0);
+  const listeningOverrideMs = window.__lectovozListeningGateOverrideMs;
+  const listeningMs = Number.isFinite(listeningOverrideMs)
+    ? listeningOverrideMs
+    : Number(speechController.getListeningDuration?.() || 0);
+  return voiceMs >= minVoiceMsForAttempt && listeningMs >= recognitionWarmupMs;
+}
+
+function normalizeMaxAttemptsPerChunk(value) {
+  const attempts = Number(value);
+  return [1, 2, 3].includes(attempts) ? attempts : defaultMaxAttemptsPerChunk;
+}
+
+function getMaxAttemptsPerChunk() {
+  return normalizeMaxAttemptsPerChunk(currentGameConfig.maxAttemptsPerChunk);
+}
+
+function describeObservedDifference(expected, spoken) {
+  const expectedSyllables = syllabifyWord(expected);
+  const spokenSyllables = syllabifyWord(spoken);
+  if (expectedSyllables.length === spokenSyllables.length) {
+    const index = expectedSyllables.findIndex((part, partIndex) => part !== spokenSyllables[partIndex]);
+    if (index >= 0) {
+      return {
+        expectedPart: expectedSyllables[index],
+        recognizedPart: spokenSyllables[index],
+      };
+    }
+  }
+
+  const limit = Math.min(expected.length, spoken.length);
+  for (let index = 0; index < limit; index += 1) {
+    if (expected[index] !== spoken[index]) {
+      return {
+        expectedPart: expected[index],
+        recognizedPart: spoken[index],
+      };
+    }
+  }
+
+  if (expected.length !== spoken.length) {
+    return {
+      expectedPart: expected.slice(limit) || "",
+      recognizedPart: spoken.slice(limit) || "",
+    };
+  }
+
+  return undefined;
+}
+
+function registerChunkAttempt(evaluation) {
+  attemptCount += 1;
+  const attempt = {
+    expected: evaluation.normalizedExpected,
+    spoken: evaluation.normalizedSpoken,
+    status: "attempt",
+    attempts: attemptCount,
+    evaluationStatus: evaluation.status,
+    evaluationScore: evaluation.score,
+    observedDifference: describeObservedDifference(evaluation.normalizedExpected, evaluation.normalizedSpoken),
+  };
+  chunkAttemptRecords.push(attempt);
+  return attempt;
+}
+
+function handleUnmasteredChunk(evaluation) {
+  const record = {
+    expected: evaluation.normalizedExpected,
+    spoken: evaluation.normalizedSpoken,
+    status: "not_mastered",
+    attempts: attemptCount,
+    evaluationStatus: evaluation.status,
+    evaluationScore: evaluation.score,
+    observedDifference: describeObservedDifference(evaluation.normalizedExpected, evaluation.normalizedSpoken),
+  };
+  notMasteredChunks.push(record);
+  markChunk(currentIndex, "not-mastered");
+  errorCount += 1;
+  lessonErrors += 1;
+  errorCountEl.textContent = errorCount;
+  streakCount = 0;
+  updateStreak();
+  currentIndex += 1;
+  attemptCount = 0;
+  lastTranscript = "";
+  setFeedbackState("approximate", "Seguiremos practicando esta palabra");
+
+  if (currentIndex >= chunks.length) {
+    advancingToNextLesson = true;
+    savePracticeRecord("completed");
+    completedInSession += 1;
+    updateMeter();
+    continueAfterCompletedLesson();
+    return;
+  }
+
+  setCurrent(currentIndex);
+}
+
+function handleChunkAttempt(evaluation) {
+  registerChunkAttempt(evaluation);
+  lastTranscript = "";
+
+  if (attemptCount >= getMaxAttemptsPerChunk()) {
+    handleUnmasteredChunk(evaluation);
+    return;
+  }
+
+  if (evaluation.status === "approximate") {
+    markCurrentApproximate();
+  } else {
+    markChunk(currentIndex, "error");
+  }
+
+  const message = attemptCount === 1
+    ? "Intentalo otra vez"
+    : "Muy cerca. Vamos una vez mas";
+  setFeedbackState(evaluation.status === "approximate" ? "approximate" : "incorrect", message);
+  window.setTimeout(() => setCurrent(currentIndex), 700);
+}
+
 function continueAfterCompletedLesson() {
   if (completedInSession >= Number(currentGameConfig.sessionGoal || 10)) {
     showMissionComplete();
@@ -308,6 +443,7 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
   if (!clean || clean === lastTranscript) return;
   if (advancingToNextLesson) return;
   if (!isFinal && confidence > 0 && confidence < minConfidence) return;
+  if (!hasVoiceAttemptReady()) return;
 
   lastTranscript = clean;
   heardEl.textContent = clean;
@@ -327,6 +463,8 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
     lessonCorrect += 1;
     correctCountEl.textContent = correctCount;
     updateScore(10);
+    attemptCount = 0;
+    lastTranscript = "";
     streakCount += 1;
     updateStreak();
     currentIndex += 1;
@@ -356,26 +494,13 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
     pendingErrorCount = 0;
     streakCount = 0;
     updateStreak();
-    markCurrentApproximate();
-    setFeedbackState("approximate", "¡Casi! Intentalo otra vez");
-    window.setTimeout(() => setCurrent(currentIndex), 700);
+    handleChunkAttempt(bestEvaluation);
     return;
   }
 
-  if (findError(spokenWords, expected)) {
-    pendingErrorCount += isFinal ? 2 : 1;
-    if (pendingErrorCount < 2) return;
-
-    markChunk(currentIndex, "error");
-    errorCount += 1;
-    lessonErrors += 1;
-    errorCountEl.textContent = errorCount;
-    updateScore(-2);
-    streakCount = 0;
-    updateStreak();
-    setFeedbackState("incorrect", "Vamos otra vez");
+  if (isFinal || findError(spokenWords, expected)) {
     pendingErrorCount = 0;
-    window.setTimeout(() => setCurrent(currentIndex), 650);
+    handleChunkAttempt(bestEvaluation || evaluateReading(clean, expected));
   }
 }
 
@@ -414,6 +539,8 @@ function savePracticeRecord(status) {
     sessionGoal: currentGameConfig.sessionGoal,
     consonants: currentGameConfig.consonants,
     shuffleSyllables: currentGameConfig.shuffleSyllables,
+    chunkAttempts: chunkAttemptRecords,
+    notMasteredChunks,
     accuracy,
     transcript: lastTranscript || "-",
     durationSeconds: Math.max(1, Math.round((Date.now() - lessonStartedAt) / 1000)),
@@ -444,10 +571,13 @@ function hideMissionComplete() {
   missionCard.hidden = true;
 }
 
-function goToNextLesson() {
+async function goToNextLesson(options = {}) {
   hideMissionComplete();
   lessonIndex += 1;
   loadCurrentLesson();
+  if (options.resumeListening) {
+    await startListening();
+  }
 }
 
 function restoreSession() {
@@ -508,6 +638,7 @@ function normalizeGameConfig(config) {
       : defaultGameConfig.consonants,
     sessionGoal: Number(config?.sessionGoal || defaultGameConfig.sessionGoal),
     shuffleSyllables: Boolean(config?.shuffleSyllables),
+    maxAttemptsPerChunk: normalizeMaxAttemptsPerChunk(config?.maxAttemptsPerChunk),
   };
 }
 
@@ -550,6 +681,16 @@ function makePairs(value) {
 
 function levenshtein(a, b) {
   return Evaluation.levenshtein(a, b);
+}
+
+function getPedagogicalState() {
+  return {
+    currentIndex,
+    attemptCount,
+    chunkAttempts: chunkAttemptRecords,
+    notMasteredChunks,
+    getUserMediaCalls: undefined,
+  };
 }
 
 startBtn.addEventListener("click", () => {
@@ -600,7 +741,7 @@ logoutBtn.addEventListener("click", () => {
   currentStudentEl.textContent = "Invitado";
 });
 
-continueBtn.addEventListener("click", goToNextLesson);
+continueBtn.addEventListener("click", () => goToNextLesson({ resumeListening: true }));
 missionLogoutBtn.addEventListener("click", () => logoutBtn.click());
 
 if (typeof window.addEventListener === "function") {

@@ -275,6 +275,7 @@ const defaultGameConfig = {
   levelStart: "silabas",
   sessionGoal: 10,
   shuffleSyllables: false,
+  maxAttemptsPerChunk: 3,
   notes: "",
 };
 

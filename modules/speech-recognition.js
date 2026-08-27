@@ -16,6 +16,10 @@
     let startingPromise;
     let noiseFloor = 0.025;
     let currentVolume = 0;
+    let voiceActiveStartedAt = 0;
+    let lastVoiceActiveDuration = 0;
+    let lastVoiceDetectedAt = 0;
+    let recognitionStartedAt = 0;
     let state = "idle";
     let audioReady = false;
     let listening = false;
@@ -253,6 +257,7 @@
         if (error.name !== "InvalidStateError") throw error;
         recognitionActive = true;
       }
+      recognitionStartedAt = getNow();
       state = "listening";
       options.setStatus("Escuchando", true);
       options.setStartLabel("Escuchando...");
@@ -267,6 +272,9 @@
         if (error.name !== "InvalidStateError") throw error;
       }
       recognitionActive = false;
+      voiceActiveStartedAt = 0;
+      lastVoiceActiveDuration = 0;
+      lastVoiceDetectedAt = 0;
     }
 
     function shouldRestartRecognition() {
@@ -307,6 +315,11 @@
         audioSource = undefined;
       }
 
+      if (audioContext?.close) {
+        audioContext.close();
+      }
+      audioContext = undefined;
+
       if (micStream) {
         micStream.getTracks().forEach((track) => track.stop());
         micStream = undefined;
@@ -316,6 +329,9 @@
       recognitionActive = false;
       analyser = undefined;
       currentVolume = 0;
+      voiceActiveStartedAt = 0;
+      lastVoiceActiveDuration = 0;
+      lastVoiceDetectedAt = 0;
       audioReady = false;
       options.setVoiceLevel(0);
     }
@@ -339,6 +355,7 @@
 
       const tick = () => {
         currentVolume = readVolume();
+        updateVoiceActivity();
         options.setVoiceLevel(Math.min(100, Math.round(currentVolume * 650)));
         options.setNoiseLevel(Math.min(100, Math.round(noiseFloor * 650)));
         animationFrameId = win.requestAnimationFrame(tick);
@@ -365,6 +382,21 @@
       return global.performance?.now ? global.performance.now() : Date.now();
     }
 
+    function updateVoiceActivity() {
+      const now = getNow();
+      if (isVoiceActive()) {
+        if (!voiceActiveStartedAt) voiceActiveStartedAt = now;
+        lastVoiceActiveDuration = now - voiceActiveStartedAt;
+        lastVoiceDetectedAt = now;
+        return;
+      }
+
+      voiceActiveStartedAt = 0;
+      if (!lastVoiceDetectedAt || now - lastVoiceDetectedAt > 1200) {
+        lastVoiceActiveDuration = 0;
+      }
+    }
+
     function getMicrophoneErrorMessage(error) {
       if (error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError") {
         return "Necesitamos el microfono para escuchar tu lectura.";
@@ -386,6 +418,8 @@
       getState: () => state,
       isListening: () => listening,
       isAudioReady: () => audioReady,
+      getListeningDuration: () => recognitionStartedAt ? Math.max(0, getNow() - recognitionStartedAt) : 0,
+      getVoiceActiveDuration: () => lastVoiceActiveDuration,
       isVoiceActive,
       readVolume,
     };

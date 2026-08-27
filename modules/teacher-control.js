@@ -9,8 +9,22 @@
       levelStart: "silabas",
       sessionGoal: 10,
       shuffleSyllables: false,
+      maxAttemptsPerChunk: 3,
       notes: "",
       updatedAt: new Date().toISOString(),
+    };
+  }
+
+  function normalizeMaxAttemptsPerChunk(value) {
+    const attempts = Number(value);
+    return [1, 2, 3].includes(attempts) ? attempts : 3;
+  }
+
+  function normalizeStudentConfig(config) {
+    return {
+      ...makeDefaultConfig(),
+      ...(config || {}),
+      maxAttemptsPerChunk: normalizeMaxAttemptsPerChunk(config?.maxAttemptsPerChunk),
     };
   }
 
@@ -31,7 +45,7 @@
   function replaceStudentConfig(students, selectedStudentId, config) {
     return students.map((student) => (
       student.id === selectedStudentId
-        ? { ...student, config }
+        ? { ...student, config: normalizeStudentConfig(config) }
         : student
     ));
   }
@@ -52,6 +66,8 @@
   global.LectoVozTeacherControl = {
     getDefaultConsonants,
     makeDefaultConfig,
+    normalizeMaxAttemptsPerChunk,
+    normalizeStudentConfig,
     createStudentRecord,
     getSelectedStudent,
     replaceStudentConfig,

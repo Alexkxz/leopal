@@ -12,12 +12,14 @@ let passedChecks = 0;
 });
 
 function createFakeElement() {
+  const listeners = {};
   return {
     value: "silabas",
     textContent: "",
     innerHTML: "",
     style: {},
     dataset: {},
+    hidden: false,
     className: "",
     classList: {
       add() {},
@@ -28,7 +30,12 @@ function createFakeElement() {
       },
     },
     appendChild() {},
-    addEventListener() {},
+    addEventListener(event, handler) {
+      listeners[event] = handler;
+    },
+    click() {
+      return listeners.click?.();
+    },
     querySelector() {
       return createFakeElement();
     },
@@ -39,22 +46,113 @@ function createFakeElement() {
 }
 
 const elements = new Map();
+let recognitionInstances = 0;
+let lastRecognition;
+let getUserMediaCalls = 0;
+const mediaTrack = {
+  stopped: false,
+  stop() {
+    this.stopped = true;
+  },
+};
+
+function FakeSpeechRecognition() {
+  recognitionInstances += 1;
+  lastRecognition = this;
+  this.startCalls = 0;
+  this.stopCalls = 0;
+}
+
+FakeSpeechRecognition.prototype.start = function start() {
+  this.startCalls += 1;
+};
+
+FakeSpeechRecognition.prototype.stop = function stop() {
+  this.stopCalls += 1;
+};
+
+function createAudioNode() {
+  return {
+    type: "",
+    frequency: { value: 0 },
+    Q: { value: 0 },
+    gain: { value: 0 },
+    threshold: { value: 0 },
+    knee: { value: 0 },
+    ratio: { value: 0 },
+    attack: { value: 0 },
+    release: { value: 0 },
+    connect() {},
+    disconnect() {},
+  };
+}
+
+function FakeAudioContext() {
+  this.state = "running";
+  this.resume = () => Promise.resolve();
+  this.createBiquadFilter = createAudioNode;
+  this.createDynamicsCompressor = createAudioNode;
+  this.createGain = createAudioNode;
+  this.createMediaStreamSource = createAudioNode;
+  this.createAnalyser = () => ({
+    fftSize: 512,
+    smoothingTimeConstant: 0,
+    connect() {},
+    disconnect() {},
+    getByteTimeDomainData(data) {
+      data.fill(128);
+    },
+  });
+}
+
+function createConfiguredStudent(maxAttemptsPerChunk, label) {
+  return {
+    id: `student-${label}`,
+    name: `Intentos ${label}`,
+    group: "1A",
+    config: {
+      consonants: ["m", "p", "l", "s", "t", "n", "r", "c", "q", "b", "d", "f", "g", "j", "v", "z", "y", "h", "k", "w", "x", "ch", "ll", "rr"],
+      levelStart: "frases_cortas",
+      sessionGoal: 10,
+      shuffleSyllables: false,
+      maxAttemptsPerChunk,
+    },
+  };
+}
+
+const storedStudents = [
+  createConfiguredStudent(1, "uno"),
+  createConfiguredStudent(2, "dos"),
+  createConfiguredStudent(3, "tres"),
+  createConfiguredStudent(undefined, "sin valor"),
+  createConfiguredStudent(9, "invalido"),
+];
+
 const context = {
   console,
   performance,
-  setTimeout,
+  setTimeout(callback) {
+    callback();
+    return 1;
+  },
   clearTimeout,
   window: {
-    SpeechRecognition: function SpeechRecognition() {},
-    webkitSpeechRecognition: function SpeechRecognition() {},
-    setTimeout,
+    SpeechRecognition: FakeSpeechRecognition,
+    webkitSpeechRecognition: FakeSpeechRecognition,
+    AudioContext: FakeAudioContext,
+    setTimeout(callback) {
+      callback();
+      return 1;
+    },
+    clearTimeout,
     requestAnimationFrame() {
       return 1;
     },
     cancelAnimationFrame() {},
   },
   localStorage: {
-    getItem() {
+    getItem(key) {
+      if (key === "lectovoz_students") return JSON.stringify(storedStudents);
       return null;
     },
     setItem() {},
@@ -66,7 +164,12 @@ const context = {
     },
   },
   navigator: {
-    mediaDevices: null,
+    mediaDevices: {
+      getUserMedia() {
+        getUserMediaCalls += 1;
+        return Promise.resolve({ getTracks: () => [mediaTrack] });
+      },
+    },
   },
   document: {
     querySelector(selector) {
@@ -171,4 +274,129 @@ assert.strictEqual(context.canAdvanceWithTranscript("marposa", "mariposa"), fals
 assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mi"), true);
 assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mama"), true);
 
-console.log(`Speech logic tests passed (${passedChecks} checks)`);
+(async () => {
+  const continueBtn = elements.get("#continue-btn");
+  const statusEl = elements.get("#mic-status");
+  const missionCard = elements.get("#mission-card");
+
+  context.createSession("Ana", "1A");
+  await context.startListening();
+  assert.strictEqual(getUserMediaCalls, 1);
+  assert.strictEqual(recognitionInstances, 1);
+  assert.strictEqual(statusEl.textContent, "Escuchando");
+
+  context.stopListening(false);
+  assert.strictEqual(mediaTrack.stopped, false);
+  assert.strictEqual(statusEl.textContent, "Microfono listo");
+
+  context.showMissionComplete();
+  assert.strictEqual(missionCard.hidden, false);
+  await continueBtn.click();
+  assert.strictEqual(missionCard.hidden, true);
+  assert.strictEqual(getUserMediaCalls, 1);
+  assert.strictEqual(recognitionInstances, 1);
+  assert.strictEqual(statusEl.textContent, "Escuchando");
+  assert.ok(lastRecognition.startCalls >= 2);
+
+  levelSelect.value = "frases_cortas";
+  context.setLesson("caballo perro");
+  context.window.__lectovozVoiceGateOverrideMs = 0;
+  context.window.__lectovozListeningGateOverrideMs = 500;
+  context.processTranscript("capallo", 1, true);
+  let pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 0);
+  assert.strictEqual(pedagogy.chunkAttempts.length, 0);
+
+  context.window.__lectovozVoiceGateOverrideMs = 350;
+  context.processTranscript("capallo", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 1);
+  assert.strictEqual(pedagogy.chunkAttempts[0].evaluationStatus, "approximate");
+
+  context.processTranscript("capallo", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 2);
+
+  context.processTranscript("capallo", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 1);
+  assert.strictEqual(pedagogy.attemptCount, 0);
+  assert.strictEqual(pedagogy.notMasteredChunks.length, 1);
+  assert.strictEqual(pedagogy.notMasteredChunks[0].status, "not_mastered");
+  assert.strictEqual(pedagogy.notMasteredChunks[0].attempts, 3);
+  assert.strictEqual(pedagogy.notMasteredChunks[0].observedDifference.expectedPart, "ba");
+  assert.strictEqual(pedagogy.notMasteredChunks[0].observedDifference.recognizedPart, "pa");
+
+  context.setLesson("caballo perro");
+  context.processTranscript("capallo", 1, true);
+  context.processTranscript("caballo", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 1);
+  assert.strictEqual(pedagogy.attemptCount, 0);
+  assert.strictEqual(pedagogy.chunkAttempts.length, 1);
+  assert.strictEqual(pedagogy.notMasteredChunks.length, 0);
+
+  context.setLesson("mariposa perro");
+  context.processTranscript("marposa", 1, true);
+  context.processTranscript("marposa", 1, true);
+  context.processTranscript("marposa", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 1);
+  assert.strictEqual(pedagogy.attemptCount, 0);
+  assert.strictEqual(pedagogy.notMasteredChunks[0].evaluationStatus, "approximate");
+  assert.strictEqual(getUserMediaCalls, 1);
+  assert.strictEqual(recognitionInstances, 1);
+
+  context.createSession("Intentos uno", "1A");
+  context.setLesson("caballo perro");
+  context.processTranscript("capallo", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 1);
+  assert.strictEqual(pedagogy.notMasteredChunks[0].attempts, 1);
+
+  context.createSession("Intentos dos", "1A");
+  context.setLesson("caballo perro");
+  context.processTranscript("capallo", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 1);
+  context.processTranscript("capallo", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 1);
+  assert.strictEqual(pedagogy.notMasteredChunks[0].attempts, 2);
+
+  context.createSession("Intentos tres", "1A");
+  context.setLesson("caballo perro");
+  context.processTranscript("capallo", 1, true);
+  context.processTranscript("capallo", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 2);
+  context.processTranscript("capallo", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 1);
+  assert.strictEqual(pedagogy.notMasteredChunks[0].attempts, 3);
+
+  context.createSession("Intentos sin valor", "1A");
+  context.setLesson("caballo perro");
+  context.processTranscript("capallo", 1, true);
+  context.processTranscript("capallo", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  context.processTranscript("capallo", 1, true);
+  assert.strictEqual(context.getPedagogicalState().notMasteredChunks[0].attempts, 3);
+
+  context.createSession("Intentos invalido", "1A");
+  context.setLesson("caballo perro");
+  context.processTranscript("capallo", 1, true);
+  context.processTranscript("capallo", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  context.processTranscript("capallo", 1, true);
+  assert.strictEqual(context.getPedagogicalState().notMasteredChunks[0].attempts, 3);
+
+  console.log(`Speech logic tests passed (${passedChecks} checks)`);
+})();

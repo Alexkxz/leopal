@@ -17,6 +17,7 @@ const consonantGrid = document.querySelector("#consonant-grid");
 const selectAllConsonantsBtn = document.querySelector("#select-all-consonants");
 const levelStart = document.querySelector("#level-start");
 const sessionGoal = document.querySelector("#session-goal");
+const maxAttemptsPerChunk = document.querySelector("#max-attempts-per-chunk");
 const shuffleSyllables = document.querySelector("#shuffle-syllables");
 const customNotes = document.querySelector("#custom-notes");
 const saveConfigBtn = document.querySelector("#save-config-btn");
@@ -107,11 +108,13 @@ function renderSelectedStudent() {
   saveConfigBtn.disabled = !hasStudent;
   levelStart.disabled = !hasStudent;
   sessionGoal.disabled = !hasStudent;
+  maxAttemptsPerChunk.disabled = !hasStudent;
   shuffleSyllables.disabled = !hasStudent;
   customNotes.disabled = !hasStudent;
   selectAllConsonantsBtn.disabled = !hasStudent;
   levelStart.value = config.levelStart;
   sessionGoal.value = config.sessionGoal;
+  maxAttemptsPerChunk.value = TeacherControl.normalizeMaxAttemptsPerChunk(config.maxAttemptsPerChunk);
   shuffleSyllables.checked = Boolean(config.shuffleSyllables);
   customNotes.value = config.notes;
   renderConsonants(student);
@@ -137,6 +140,7 @@ function readConfigFromForm() {
     consonants,
     levelStart: levelStart.value,
     sessionGoal: Number(sessionGoal.value || 10),
+    maxAttemptsPerChunk: TeacherControl.normalizeMaxAttemptsPerChunk(maxAttemptsPerChunk.value),
     shuffleSyllables: shuffleSyllables.checked,
     notes: customNotes.value.trim(),
     updatedAt: new Date().toISOString(),

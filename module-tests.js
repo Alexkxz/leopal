@@ -109,16 +109,37 @@ assert.ok(dashboard.escapeHtml('<script>"x"</script>').includes("&lt;script&gt;"
 assert.ok(dashboard.buildCsv([{ student: 'Ana "A"', text: "ma" }]).includes('"Ana ""A"""'));
 assert.ok(dashboard.buildCsv([{ student: "Ana", transcript: "ma" }]).startsWith('"fecha","alumno","grupo"'));
 
+const teacherControlHtml = fs.readFileSync("teacher-control.html", "utf8");
+const teacherControlScript = fs.readFileSync("teacher-control.js", "utf8");
+assert.ok(teacherControlHtml.includes('select id="max-attempts-per-chunk"'));
+assert.ok(teacherControlHtml.includes('<option value="1">1 intento</option>'));
+assert.ok(teacherControlHtml.includes('<option value="2">2 intentos</option>'));
+assert.ok(teacherControlHtml.includes('<option value="3">3 intentos</option>'));
+assert.ok(teacherControlScript.includes("TeacherControl.normalizeMaxAttemptsPerChunk(maxAttemptsPerChunk.value)"));
+
 const config = control.makeDefaultConfig();
 assert.strictEqual(config.levelStart, "silabas");
 assert.strictEqual(config.sessionGoal, 10);
+assert.strictEqual(config.maxAttemptsPerChunk, 3);
 assert.strictEqual(config.consonants.length, context.window.LectoVozContent.defaultConsonants.length);
+assert.strictEqual(control.normalizeMaxAttemptsPerChunk(1), 1);
+assert.strictEqual(control.normalizeMaxAttemptsPerChunk(2), 2);
+assert.strictEqual(control.normalizeMaxAttemptsPerChunk(3), 3);
+assert.strictEqual(control.normalizeMaxAttemptsPerChunk(0), 3);
+assert.strictEqual(control.normalizeMaxAttemptsPerChunk(4), 3);
+assert.strictEqual(control.normalizeMaxAttemptsPerChunk("texto"), 3);
+assert.strictEqual(control.normalizeMaxAttemptsPerChunk(null), 3);
 
 const student = control.createStudentRecord("Ana", "1A");
 assert.strictEqual(student.id, "student-id");
 assert.strictEqual(student.config.levelStart, "silabas");
+assert.strictEqual(student.config.maxAttemptsPerChunk, 3);
 assert.strictEqual(control.getSelectedStudent([student], "student-id"), student);
-assert.strictEqual(control.replaceStudentConfig([student], "student-id", { sessionGoal: 5 })[0].config.sessionGoal, 5);
+const updatedStudent = control.replaceStudentConfig([student], "student-id", { sessionGoal: 5, maxAttemptsPerChunk: 2 })[0];
+assert.strictEqual(updatedStudent.config.sessionGoal, 5);
+assert.strictEqual(updatedStudent.config.maxAttemptsPerChunk, 2);
+const normalizedStudent = control.replaceStudentConfig([student], "student-id", { ...student.config, maxAttemptsPerChunk: 9 })[0];
+assert.strictEqual(normalizedStudent.config.maxAttemptsPerChunk, 3);
 assertJson(control.deleteStudentById([student], "student-id"), []);
 
 function createSpeechHarness(overrides = {}) {
@@ -163,7 +184,7 @@ function createSpeechHarness(overrides = {}) {
   return harness;
 }
 
-function createFakeAudioContext() {
+function createFakeAudioContext(metrics = { closeCalls: 0 }) {
   const makeNode = () => ({
     type: "",
     frequency: { value: 0 },
@@ -181,6 +202,10 @@ function createFakeAudioContext() {
   return function FakeAudioContext() {
     this.state = "running";
     this.resume = () => Promise.resolve();
+    this.close = () => {
+      metrics.closeCalls += 1;
+      return Promise.resolve();
+    };
     this.createBiquadFilter = makeNode;
     this.createDynamicsCompressor = makeNode;
     this.createGain = makeNode;
@@ -218,7 +243,8 @@ async function runSpeechControllerTests() {
   assert.ok(unsupported.events.some((event) => event[0] === "feedback" && event[1].includes("no soporta reconocimiento")));
   assert.strictEqual(unsupported.controller.isListening(), false);
 
-  context.window.AudioContext = createFakeAudioContext();
+  const audioMetrics = { closeCalls: 0 };
+  context.window.AudioContext = createFakeAudioContext(audioMetrics);
   const denied = createSpeechHarness({
     recognitionCtor: function Recognition() {},
     navigator: {
@@ -285,6 +311,7 @@ async function runSpeechControllerTests() {
   controllerHarness.controller.stop();
   assert.strictEqual(controllerHarness.controller.isListening(), false);
   assert.strictEqual(track.stopped, false);
+  assert.strictEqual(audioMetrics.closeCalls, 0);
   assert.ok(controllerHarness.events.some((event) => event[0] === "status" && event[1] === "Microfono listo"));
 
   await controllerHarness.controller.start();
@@ -299,6 +326,7 @@ async function runSpeechControllerTests() {
   assert.strictEqual(controllerHarness.controller.isListening(), false);
   assert.strictEqual(controllerHarness.controller.getState(), "stopped");
   assert.strictEqual(track.stopped, true);
+  assert.strictEqual(audioMetrics.closeCalls, 1);
   const callsAfterClose = recognitionInstance.startCalls;
   recognitionInstance.onend();
   assert.strictEqual(recognitionInstance.startCalls, callsAfterClose);
