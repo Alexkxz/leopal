@@ -69,6 +69,7 @@ loadScript(context, "modules/json-backup.js");
 loadScript(context, "modules/speech-recognition.js");
 loadScript(context, "modules/teacher-dashboard.js");
 loadScript(context, "modules/teacher-control.js");
+loadScript(context, "mic-diagnostic.js");
 
 const storage = context.window.LectoVozStorage;
 const academic = context.window.LectoVozAcademic;
@@ -76,6 +77,7 @@ const jsonBackup = context.window.LectoVozJsonBackup;
 const speech = context.window.LectoVozSpeech;
 const dashboard = context.window.LectoVozTeacherDashboard;
 const control = context.window.LectoVozTeacherControl;
+const micDiagnostic = context.window.LectoVozMicDiagnostic;
 
 function assertArray(actual, expected) {
   assert.deepStrictEqual(Array.from(actual), expected);
@@ -112,6 +114,37 @@ assertJson(dashboard.calculateSummary(records), {
 assert.ok(dashboard.escapeHtml('<script>"x"</script>').includes("&lt;script&gt;"));
 assert.ok(dashboard.buildCsv([{ student: 'Ana "A"', text: "ma" }]).includes('"Ana ""A"""'));
 assert.ok(dashboard.buildCsv([{ student: "Ana", transcript: "ma" }]).startsWith('"fecha","alumno","grupo"'));
+
+assert.strictEqual(micDiagnostic.TEST_ITEMS.length, 30);
+assertJson(micDiagnostic.compareGateDurations(150, 300), {
+  100: true,
+  120: true,
+  150: true,
+  180: false,
+});
+const diagnosticAttempt = micDiagnostic.finalizeAttemptMetrics({
+  ...micDiagnostic.createEmptyAttempt("ma"),
+  rawTranscript: "mas",
+  normalizedTranscript: "mas",
+  transcript: "mas",
+  alternatives: ["ma"],
+  confidence: 0.8,
+  isFinal: true,
+  recognitionStartedAt: 100,
+  firstVoiceDetectedAt: 180,
+  finalTranscriptAt: 520,
+  voiceToInterimLatency: 190,
+  voiceToFinalLatency: 340,
+  voiceEvidenceDuration: 150,
+  averageVolume: 0.3,
+  volumeSamples: 3,
+}, 520);
+assert.strictEqual(diagnosticAttempt.voiceGateAccepted, false);
+assert.strictEqual(diagnosticAttempt.rejectionReason, "voice_evidence_below_180ms");
+assert.strictEqual(diagnosticAttempt.evaluationStatus, "correct");
+const diagnosticSummaryText = micDiagnostic.formatSummaryText([diagnosticAttempt], { userAgent: "Test Browser" });
+assert.ok(diagnosticSummaryText.includes("Silabas evaluadas: 1"));
+assert.ok(diagnosticSummaryText.includes('ma -> "mas"'));
 
 const teacherControlHtml = fs.readFileSync("teacher-control.html", "utf8");
 const teacherControlScript = fs.readFileSync("teacher-control.js", "utf8");
