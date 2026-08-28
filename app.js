@@ -32,8 +32,10 @@ const continueBtn = document.querySelector("#continue-btn");
 const missionLogoutBtn = document.querySelector("#mission-logout-btn");
 
 const Content = window.LectoVozContent;
+const Academic = window.LectoVozAcademic;
 const Evaluation = window.LectoVozEvaluation;
 const Storage = window.LectoVozStorage;
+const JsonBackup = window.LectoVozJsonBackup;
 const lessons = Content.lessons;
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const defaultGameConfig = Content.defaultGameConfig;
@@ -59,10 +61,13 @@ let advancingToNextLesson = false;
 let attemptCount = 0;
 let chunkAttemptRecords = [];
 let notMasteredChunks = [];
+let pendingTranscript = null;
+let pendingTranscriptTimer = null;
 
 const defaultMaxAttemptsPerChunk = 3;
-const minVoiceMsForAttempt = 300;
+const minVoiceMsForAttempt = 180;
 const recognitionWarmupMs = 250;
+const transcriptBufferMs = 450;
 
 const minConfidence = 0;
 const speechController = window.LectoVozSpeech.createSpeechController({
@@ -92,6 +97,9 @@ const speechController = window.LectoVozSpeech.createSpeechController({
   },
   setVoiceLevel: (percent) => {
     voiceLevelEl.style.width = `${percent}%`;
+  },
+  onVoiceActivityChange: () => {
+    flushPendingTranscript();
   },
 });
 
@@ -174,6 +182,7 @@ function setLesson(text) {
   notMasteredChunks = [];
   lastTranscript = "";
   pendingErrorCount = 0;
+  clearPendingTranscript();
   lessonStartedAt = Date.now();
   lessonCorrect = 0;
   lessonErrors = 0;
@@ -303,12 +312,64 @@ function hasVoiceAttemptReady() {
   const overrideMs = window.__lectovozVoiceGateOverrideMs;
   const voiceMs = Number.isFinite(overrideMs)
     ? overrideMs
-    : Number(speechController.getVoiceActiveDuration?.() || 0);
+    : Number(speechController.getVoiceEvidenceDuration?.() || speechController.getVoiceActiveDuration?.() || 0);
   const listeningOverrideMs = window.__lectovozListeningGateOverrideMs;
   const listeningMs = Number.isFinite(listeningOverrideMs)
     ? listeningOverrideMs
     : Number(speechController.getListeningDuration?.() || 0);
   return voiceMs >= minVoiceMsForAttempt && listeningMs >= recognitionWarmupMs;
+}
+
+function shouldBufferTranscript() {
+  const overrideMs = window.__lectovozVoiceGateOverrideMs;
+  if (Number.isFinite(overrideMs)) {
+    return overrideMs >= 60 && overrideMs < minVoiceMsForAttempt;
+  }
+  const metrics = speechController.getDebugMetrics?.();
+  const voiceEvidence = Number(metrics?.voiceEvidenceDuration || 0);
+  return voiceEvidence >= 60 && voiceEvidence < minVoiceMsForAttempt;
+}
+
+function clearPendingTranscript() {
+  if (pendingTranscriptTimer) {
+    window.clearTimeout?.(pendingTranscriptTimer);
+    pendingTranscriptTimer = null;
+  }
+  pendingTranscript = null;
+}
+
+function queuePendingTranscript(transcript, confidence, isFinal, alternatives) {
+  pendingTranscript = {
+    transcript,
+    confidence,
+    isFinal,
+    alternatives,
+    receivedAt: Date.now(),
+  };
+  if (pendingTranscriptTimer) return;
+  pendingTranscriptTimer = window.setTimeout(() => {
+    pendingTranscriptTimer = null;
+    flushPendingTranscript(true);
+  }, transcriptBufferMs);
+}
+
+function flushPendingTranscript(expire = false) {
+  if (!pendingTranscript) return;
+  if (!hasVoiceAttemptReady()) {
+    if (expire || Date.now() - pendingTranscript.receivedAt > transcriptBufferMs) {
+      clearPendingTranscript();
+    }
+    return;
+  }
+
+  const nextTranscript = pendingTranscript;
+  clearPendingTranscript();
+  processTranscript(
+    nextTranscript.transcript,
+    nextTranscript.confidence,
+    nextTranscript.isFinal,
+    nextTranscript.alternatives,
+  );
 }
 
 function normalizeMaxAttemptsPerChunk(value) {
@@ -391,6 +452,7 @@ function handleUnmasteredChunk(evaluation) {
   setFeedbackState("approximate", "Seguiremos practicando esta palabra");
 
   if (currentIndex >= chunks.length) {
+    speechController.markEvaluationComplete?.();
     advancingToNextLesson = true;
     savePracticeRecord("completed");
     completedInSession += 1;
@@ -445,7 +507,13 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
   if (!clean || clean === lastTranscript) return;
   if (advancingToNextLesson) return;
   if (!isFinal && confidence > 0 && confidence < minConfidence) return;
-  if (!hasVoiceAttemptReady()) return;
+  if (!hasVoiceAttemptReady()) {
+    if (shouldBufferTranscript()) queuePendingTranscript(transcript, confidence, isFinal, alternatives);
+    return;
+  }
+  if (pendingTranscript && normalizeText(pendingTranscript.transcript) === clean) {
+    clearPendingTranscript();
+  }
 
   lastTranscript = clean;
   heardEl.textContent = clean;
@@ -485,6 +553,7 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
   }
 
   if (advanced > 0) {
+    speechController.markEvaluationComplete?.();
     setCurrent(currentIndex);
     setFeedbackState("correct", `¡Excelente! Sigue con: ${chunks[currentIndex]}`);
     return;
@@ -492,7 +561,8 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
 
   const expected = chunks[currentIndex];
   const bestEvaluation = getBestReadingEvaluation(candidateTranscripts, expected);
-  if (bestEvaluation?.status === "approximate") {
+  if (bestEvaluation?.status === "approximate" && isFinal) {
+    speechController.markEvaluationComplete?.();
     pendingErrorCount = 0;
     streakCount = 0;
     updateStreak();
@@ -500,7 +570,8 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
     return;
   }
 
-  if (isFinal || findError(spokenWords, expected)) {
+  if (isFinal && findError(spokenWords, expected)) {
+    speechController.markEvaluationComplete?.();
     pendingErrorCount = 0;
     handleChunkAttempt(bestEvaluation || evaluateReading(clean, expected));
   }
@@ -530,7 +601,10 @@ function savePracticeRecord(status) {
   const record = {
     id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
     status,
+    studentId: currentSession.studentId || "",
     student: currentSession.student,
+    schoolId: currentSession.schoolId || "",
+    grade: currentSession.grade || "Sin especificar",
     group: currentSession.group,
     level: levelSelect.value,
     text: activeText,
@@ -550,6 +624,7 @@ function savePracticeRecord(status) {
   };
 
   Storage.addPracticeRecord(record);
+  autoSaveOpenedBackup();
 }
 
 function updateScore(points) {
@@ -566,7 +641,12 @@ function showMissionComplete() {
   missionCountEl.textContent = completedInSession;
   missionScoreEl.textContent = score;
   missionCard.hidden = false;
+  autoSaveOpenedBackup();
   setFeedbackState("correct", "¡Misión completada!");
+}
+
+function autoSaveOpenedBackup() {
+  JsonBackup?.autoSaveOpenedBackup?.().catch(() => {});
 }
 
 function hideMissionComplete() {
@@ -587,10 +667,13 @@ function restoreSession() {
 
   if (!currentSession) return;
   const registeredStudent = findRegisteredStudent(currentSession.student, currentSession.group);
+  const fallbackSchool = getDefaultSchoolForSession();
   currentGameConfig = normalizeGameConfig(registeredStudent?.config || currentSession.config);
   currentSession = {
     ...currentSession,
     studentId: registeredStudent?.id || currentSession.studentId || "",
+    schoolId: registeredStudent?.schoolId || currentSession.schoolId || fallbackSchool?.id || "",
+    grade: registeredStudent?.grade || currentSession.grade || Academic?.defaultGrade || "Sin especificar",
     config: currentGameConfig,
   };
   Storage.saveSession(currentSession);
@@ -601,10 +684,13 @@ function restoreSession() {
 
 function createSession(student, group) {
   const registeredStudent = findRegisteredStudent(student, group);
+  const fallbackSchool = getDefaultSchoolForSession();
   const config = normalizeGameConfig(registeredStudent?.config);
   currentSession = {
     studentId: registeredStudent?.id || "",
     student,
+    schoolId: registeredStudent?.schoolId || fallbackSchool?.id || "",
+    grade: registeredStudent?.grade || Academic?.defaultGrade || "Sin especificar",
     group,
     config,
     startedAt: new Date().toISOString(),
@@ -629,6 +715,11 @@ function findRegisteredStudent(student, group) {
   return getRegisteredStudents().find((item) => (
     normalizeText(item.name) === cleanStudent && normalizeText(item.group) === cleanGroup
   ));
+}
+
+function getDefaultSchoolForSession() {
+  const schools = Storage.getSchools?.() || [];
+  return schools.find((school) => school.id === Academic?.defaultSchoolId) || schools[0];
 }
 
 function normalizeGameConfig(config) {

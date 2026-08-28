@@ -127,6 +127,7 @@ const storedStudents = [
   createConfiguredStudent(undefined, "sin valor"),
   createConfiguredStudent(9, "invalido"),
 ];
+const localStore = new Map();
 
 const context = {
   console,
@@ -152,11 +153,16 @@ const context = {
   },
   localStorage: {
     getItem(key) {
+      if (localStore.has(key)) return localStore.get(key);
       if (key === "lectovoz_students") return JSON.stringify(storedStudents);
       return null;
     },
-    setItem() {},
-    removeItem() {},
+    setItem(key, value) {
+      localStore.set(key, String(value));
+    },
+    removeItem(key) {
+      localStore.delete(key);
+    },
   },
   crypto: {
     randomUUID() {
@@ -189,7 +195,9 @@ context.window.performance = performance;
 vm.createContext(context);
 vm.runInContext(fs.readFileSync("modules/evaluation.js", "utf8"), context);
 vm.runInContext(fs.readFileSync("modules/content.js", "utf8"), context);
+vm.runInContext(fs.readFileSync("modules/academic-structure.js", "utf8"), context);
 vm.runInContext(fs.readFileSync("modules/storage.js", "utf8"), context);
+vm.runInContext(fs.readFileSync("modules/json-backup.js", "utf8"), context);
 vm.runInContext(fs.readFileSync("modules/speech-recognition.js", "utf8"), context);
 vm.runInContext(fs.readFileSync("app.js", "utf8"), context);
 
@@ -275,6 +283,10 @@ assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mi"), 
 assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mama"), true);
 
 (async () => {
+  const flushAsync = async (times = 8) => {
+    for (let index = 0; index < times; index += 1) await Promise.resolve();
+  };
+
   const continueBtn = elements.get("#continue-btn");
   const statusEl = elements.get("#mic-status");
   const missionCard = elements.get("#mission-card");
@@ -298,6 +310,83 @@ assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mama")
   assert.strictEqual(statusEl.textContent, "Escuchando");
   assert.ok(lastRecognition.startCalls >= 2);
 
+  const JsonBackup = context.window.LectoVozJsonBackup;
+  const Storage = context.window.LectoVozStorage;
+  const getStoredRecords = () => JSON.parse(localStore.get("lectovoz_records") || "[]");
+  Storage.saveRecords([]);
+  let backupWrites = 0;
+  let backupPickerCalls = 0;
+
+  context.setLesson("ma");
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  context.window.__lectovozListeningGateOverrideMs = 500;
+  context.processTranscript("ma", 1, true);
+  await flushAsync();
+  assert.strictEqual(backupWrites, 0);
+  assert.strictEqual(getStoredRecords().length, 1);
+
+  context.window.showOpenFilePicker = async () => {
+    backupPickerCalls += 1;
+    return [{
+      name: "lectovoz-datos.json",
+      getFile: async () => ({
+        name: "lectovoz-datos.json",
+        text: async () => JSON.stringify(JsonBackup.buildBackupData()),
+      }),
+      createWritable: async () => ({
+        write: async () => {
+          backupWrites += 1;
+        },
+        close: async () => {},
+      }),
+    }];
+  };
+  await JsonBackup.openBackupFile("merge");
+  backupWrites = 0;
+
+  context.setLesson("me");
+  context.processTranscript("me", 1, true);
+  await flushAsync();
+  assert.strictEqual(backupWrites, 1);
+  assert.strictEqual(backupPickerCalls, 1);
+  const recordCountAfterAutoSave = getStoredRecords().length;
+  await JsonBackup.autoSaveOpenedBackup();
+  assert.strictEqual(getStoredRecords().length, recordCountAfterAutoSave);
+
+  backupWrites = 0;
+  context.showMissionComplete();
+  await flushAsync();
+  assert.strictEqual(backupWrites, 1);
+
+  JsonBackup.setAutoSaveEnabled(false);
+  backupWrites = 0;
+  context.setLesson("mi");
+  context.processTranscript("mi", 1, true);
+  await flushAsync();
+  assert.strictEqual(backupWrites, 0);
+  const manualSave = await JsonBackup.saveToOpenedFile();
+  assert.strictEqual(manualSave.success, true);
+  assert.strictEqual(backupWrites, 1);
+  JsonBackup.setAutoSaveEnabled(true);
+
+  context.window.showOpenFilePicker = async () => [{
+    name: "lectovoz-datos.json",
+    getFile: async () => ({
+      name: "lectovoz-datos.json",
+      text: async () => JSON.stringify(JsonBackup.buildBackupData()),
+    }),
+    createWritable: async () => {
+      throw new Error("write failed");
+    },
+  }];
+  await JsonBackup.openBackupFile("merge");
+  const recordsBeforeFailedWrite = getStoredRecords().length;
+  context.setLesson("mo");
+  context.processTranscript("mo", 1, true);
+  await flushAsync();
+  assert.strictEqual(getStoredRecords().length, recordsBeforeFailedWrite + 1);
+  assert.strictEqual(JsonBackup.getBackupStatus().lastError, "write failed");
+
   levelSelect.value = "frases_cortas";
   context.setLesson("caballo perro");
   context.window.__lectovozVoiceGateOverrideMs = 0;
@@ -314,6 +403,75 @@ assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mama")
   assert.strictEqual(pedagogy.currentIndex, 0);
   assert.strictEqual(pedagogy.attemptCount, 1);
   assert.strictEqual(pedagogy.chunkAttempts[0].evaluationStatus, "approximate");
+
+  context.setLesson("ma me");
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  context.processTranscript("ma", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 1);
+  assert.strictEqual(pedagogy.attemptCount, 0);
+
+  context.setLesson("ma me");
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  context.processTranscript("ma", 1, false);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 1);
+  assert.strictEqual(pedagogy.attemptCount, 0);
+
+  context.setLesson("ma me");
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  context.processTranscript("pa", 1, false);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 0);
+
+  context.setLesson("ma me");
+  const immediateTimeout = context.window.setTimeout;
+  context.window.setTimeout = (callback, ms) => {
+    if (ms === 450) return 1;
+    callback();
+    return 1;
+  };
+  context.window.__lectovozVoiceGateOverrideMs = 100;
+  context.processTranscript("ma", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  context.flushPendingTranscript();
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 1);
+  context.window.setTimeout = immediateTimeout;
+
+  context.setLesson("ma me");
+  context.window.setTimeout = (callback, ms) => {
+    if (ms === 450) return 1;
+    callback();
+    return 1;
+  };
+  context.window.__lectovozVoiceGateOverrideMs = 100;
+  context.processTranscript("ma", 1, true);
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  context.processTranscript("ma", 1, true);
+  context.flushPendingTranscript();
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 1);
+  assert.strictEqual(pedagogy.attemptCount, 0);
+  context.window.setTimeout = immediateTimeout;
+
+  context.setLesson("ma me");
+  context.window.__lectovozVoiceGateOverrideMs = 0;
+  context.processTranscript("ma", 1, true);
+  context.flushPendingTranscript(true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 0);
+
+  context.setLesson("caballo perro");
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  context.processTranscript("capallo", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 1);
 
   context.processTranscript("capallo", 1, true);
   pedagogy = context.getPedagogicalState();

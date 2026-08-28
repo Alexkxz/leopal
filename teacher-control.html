@@ -121,12 +121,41 @@
             <strong id="summary-consonants">0</strong>
           </article>
         </div>
+
+        <article class="config-section backup-section">
+          <div class="panel-title-row">
+            <h2>Respaldo de datos</h2>
+            <span id="backup-file-badge">JSON</span>
+          </div>
+          <p class="config-note" id="backup-status">Ningun archivo abierto</p>
+          <div class="settings-grid">
+            <label for="backup-import-mode">Modo de importacion</label>
+            <select id="backup-import-mode">
+              <option value="merge">Combinar datos</option>
+              <option value="replace">Reemplazar datos</option>
+            </select>
+            <label for="backup-autosave">Guardado automatico</label>
+            <select id="backup-autosave">
+              <option value="enabled">Activado</option>
+              <option value="disabled">Desactivado</option>
+            </select>
+            <div class="backup-actions">
+              <button class="secondary" id="export-backup-btn" type="button">Exportar respaldo</button>
+              <button class="secondary" id="import-backup-btn" type="button">Importar respaldo</button>
+              <button class="secondary" id="open-backup-file-btn" type="button">Abrir archivo de datos</button>
+              <button class="primary" id="save-open-backup-btn" type="button" disabled>Guardar archivo</button>
+            </div>
+            <input id="backup-file-input" type="file" accept="application/json,.json" hidden />
+          </div>
+        </article>
       </section>
     </main>
 
     <script src="modules/content.js"></script>
+    <script src="modules/academic-structure.js"></script>
     <script src="modules/storage.js"></script>
     <script src="modules/teacher-control.js"></script>
+    <script src="modules/json-backup.js"></script>
     <script src="teacher-control.js"></script>
   </body>
 </html>

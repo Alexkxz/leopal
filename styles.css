@@ -1384,6 +1384,16 @@ body.student-page::after {
   display: none;
 }
 
+.backup-section {
+  margin-top: 18px;
+}
+
+.backup-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
 @media (max-width: 760px) {
   .student-app {
     padding: 14px;

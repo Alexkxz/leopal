@@ -63,12 +63,16 @@ const context = createContext();
 vm.createContext(context);
 loadScript(context, "modules/evaluation.js");
 loadScript(context, "modules/content.js");
+loadScript(context, "modules/academic-structure.js");
 loadScript(context, "modules/storage.js");
+loadScript(context, "modules/json-backup.js");
 loadScript(context, "modules/speech-recognition.js");
 loadScript(context, "modules/teacher-dashboard.js");
 loadScript(context, "modules/teacher-control.js");
 
 const storage = context.window.LectoVozStorage;
+const academic = context.window.LectoVozAcademic;
+const jsonBackup = context.window.LectoVozJsonBackup;
 const speech = context.window.LectoVozSpeech;
 const dashboard = context.window.LectoVozTeacherDashboard;
 const control = context.window.LectoVozTeacherControl;
@@ -78,7 +82,7 @@ function assertArray(actual, expected) {
 }
 
 function assertJson(actual, expected) {
-  assert.deepStrictEqual(JSON.parse(JSON.stringify(actual)), expected);
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(actual)), JSON.parse(JSON.stringify(expected)));
 }
 
 storage.addPracticeRecord({ id: "old", group: "1A", errors: 2, accuracy: 80 });
@@ -116,6 +120,204 @@ assert.ok(teacherControlHtml.includes('<option value="1">1 intento</option>'));
 assert.ok(teacherControlHtml.includes('<option value="2">2 intentos</option>'));
 assert.ok(teacherControlHtml.includes('<option value="3">3 intentos</option>'));
 assert.ok(teacherControlScript.includes("TeacherControl.normalizeMaxAttemptsPerChunk(maxAttemptsPerChunk.value)"));
+
+let schoolResult = academic.createSchool([], " Escuela Primaria Ignacio Allende ");
+assert.strictEqual(schoolResult.success, true);
+assert.strictEqual(schoolResult.school.name, "Escuela Primaria Ignacio Allende");
+assert.strictEqual(academic.createSchool(schoolResult.schools, "  ").reason, "school_name_required");
+assert.strictEqual(academic.createSchool(schoolResult.schools, "escuela primaria ignacio allende").reason, "duplicate_school_name");
+const secondSchoolResult = academic.createSchool(schoolResult.schools, "Escuela Benito Juarez");
+assert.strictEqual(secondSchoolResult.success, true);
+assert.ok(secondSchoolResult.schools[0].id !== secondSchoolResult.schools[1].id);
+const editedSchoolResult = academic.editSchool(secondSchoolResult.schools, schoolResult.school.id, { name: "Primaria Ignacio Allende" });
+assert.strictEqual(editedSchoolResult.success, true);
+assert.strictEqual(editedSchoolResult.school.id, schoolResult.school.id);
+assert.strictEqual(academic.listSchools(editedSchoolResult.schools).length, 2);
+assert.strictEqual(academic.getSchoolById(editedSchoolResult.schools, schoolResult.school.id).name, "Primaria Ignacio Allende");
+
+const firstStudentResult = academic.createStudent([], editedSchoolResult.schools, {
+  name: "Ana",
+  schoolId: schoolResult.school.id,
+  grade: "3",
+  group: "A",
+  config: { sessionGoal: 8, maxAttemptsPerChunk: 2, notes: "conservar" },
+});
+assert.strictEqual(firstStudentResult.success, true);
+assert.strictEqual(firstStudentResult.student.config.maxAttemptsPerChunk, 2);
+assert.strictEqual(firstStudentResult.student.config.notes, "conservar");
+const secondStudentResult = academic.createStudent(firstStudentResult.students, editedSchoolResult.schools, {
+  name: "Ana",
+  schoolId: schoolResult.school.id,
+  grade: "3",
+  group: "Multigrado",
+  config: { maxAttemptsPerChunk: 9 },
+});
+assert.strictEqual(secondStudentResult.success, true);
+assert.ok(secondStudentResult.students[0].id !== secondStudentResult.students[1].id);
+assert.strictEqual(secondStudentResult.students[1].config.maxAttemptsPerChunk, 3);
+assert.strictEqual(academic.filterStudentsBySchool(secondStudentResult.students, schoolResult.school.id).length, 2);
+assert.strictEqual(academic.filterStudentsByGrade(secondStudentResult.students, "3").length, 2);
+assert.strictEqual(academic.filterStudentsByGroup(secondStudentResult.students, " multigrado ").length, 1);
+const editedStudentResult = academic.editStudent(secondStudentResult.students, editedSchoolResult.schools, firstStudentResult.student.id, { grade: "4", group: "3A" });
+assert.strictEqual(editedStudentResult.success, true);
+assert.strictEqual(academic.getStudentById(editedStudentResult.students, firstStudentResult.student.id).grade, "4");
+assert.strictEqual(academic.deleteSchool(editedSchoolResult.schools, schoolResult.school.id, editedStudentResult.students).reason, "school_has_students");
+const deletedStudentResult = academic.deleteStudent(editedStudentResult.students, firstStudentResult.student.id);
+assert.strictEqual(deletedStudentResult.success, true);
+assert.strictEqual(deletedStudentResult.students.length, 1);
+
+const migrated = academic.migrateAcademicData({
+  schools: [],
+  students: [{ name: "Ana", group: "3A", config: { sessionGoal: 6, maxAttemptsPerChunk: 2, notes: "vieja" } }],
+});
+assert.strictEqual(migrated.version, academic.storageSchemaVersion);
+assert.strictEqual(migrated.schools.length, 1);
+assert.strictEqual(migrated.schools[0].name, academic.defaultSchoolName);
+assert.strictEqual(migrated.students[0].name, "Ana");
+assert.strictEqual(migrated.students[0].group, "3A");
+assert.strictEqual(migrated.students[0].grade, academic.defaultGrade);
+assert.ok(migrated.students[0].id.length > 0);
+assert.strictEqual(migrated.students[0].schoolId, academic.defaultSchoolId);
+assert.strictEqual(migrated.students[0].config.sessionGoal, 6);
+assert.strictEqual(migrated.students[0].config.maxAttemptsPerChunk, 2);
+assertJson(academic.migrateAcademicData(migrated), migrated);
+const migratedWithExistingDefault = academic.migrateAcademicData({
+  schools: [{ id: "custom-default", name: " sin escuela " }],
+  students: [{ name: "Luis", group: "A" }],
+});
+assert.strictEqual(migratedWithExistingDefault.schools.length, 1);
+assert.strictEqual(migratedWithExistingDefault.students[0].schoolId, "custom-default");
+
+storage.saveSchools([]);
+storage.writeJson(storage.storageKeys.students, [{ name: "Ana", group: "3A", config: { sessionGoal: 5, maxAttemptsPerChunk: 2 } }]);
+const storedMigratedStudents = storage.getStudents();
+assert.strictEqual(storage.getSchools().length, 1);
+assert.strictEqual(storedMigratedStudents[0].schoolId, academic.defaultSchoolId);
+assert.strictEqual(storedMigratedStudents[0].grade, academic.defaultGrade);
+assert.strictEqual(storedMigratedStudents[0].config.maxAttemptsPerChunk, 2);
+assertJson(storage.getStudents(), storedMigratedStudents);
+
+storage.saveRecords([
+  { id: "new-record", studentId: storedMigratedStudents[0].id, student: "Ana", schoolId: academic.defaultSchoolId, grade: "3", group: "3A", chunkAttempts: [{ expected: "ma" }], notMasteredChunks: [{ expected: "pa" }] },
+  { id: "legacy-record", student: "Luis", group: "A", chunkAttempts: [{ expected: "la" }], notMasteredChunks: [{ expected: "sa" }] },
+]);
+const storedRecords = storage.getRecords();
+assert.strictEqual(storedRecords[0].studentId, storedMigratedStudents[0].id);
+assert.strictEqual(storedRecords[1].student, "Luis");
+assert.strictEqual(storedRecords[0].chunkAttempts.length, 1);
+assert.strictEqual(storedRecords[0].notMasteredChunks.length, 1);
+assert.strictEqual(storedRecords[1].chunkAttempts.length, 1);
+assert.strictEqual(storedRecords[1].notMasteredChunks.length, 1);
+const exportBefore = JSON.stringify({
+  schools: storage.getSchools(),
+  students: storage.getStudents(),
+  records: storage.getRecords(),
+});
+const exported = storage.exportLocalData();
+assert.strictEqual(exported.version, academic.storageSchemaVersion);
+assert.ok(exported.exportedAt.length > 0);
+assert.strictEqual(exported.schools.length, 1);
+assert.strictEqual(exported.students.length, 1);
+assert.strictEqual(exported.records.length, 2);
+assert.strictEqual(JSON.stringify({
+  schools: storage.getSchools(),
+  students: storage.getStudents(),
+  records: storage.getRecords(),
+}), exportBefore);
+
+const backupData = jsonBackup.buildBackupData();
+assert.strictEqual(backupData.format, "lectovoz-backup");
+assert.strictEqual(backupData.version, 1);
+assert.strictEqual(backupData.storageSchemaVersion, academic.storageSchemaVersion);
+assert.ok(backupData.exportedAt.length > 0);
+assert.strictEqual(Array.isArray(backupData.schools), true);
+assert.strictEqual(Array.isArray(backupData.students), true);
+assert.strictEqual(Array.isArray(backupData.records), true);
+assert.strictEqual(jsonBackup.validateBackupData(backupData).valid, true);
+assert.strictEqual(jsonBackup.parseBackupJson("{").reason, "invalid_backup_file");
+assert.strictEqual(jsonBackup.validateBackupData({ ...backupData, format: "other" }).reason, "invalid_backup_format");
+assert.strictEqual(jsonBackup.validateBackupData({ ...backupData, version: 99 }).reason, "unsupported_backup_version");
+assert.strictEqual(jsonBackup.validateBackupData({ ...backupData, schools: {} }).reason, "invalid_schools");
+assert.strictEqual(jsonBackup.validateBackupData({ ...backupData, students: {} }).reason, "invalid_students");
+assert.strictEqual(jsonBackup.validateBackupData({ ...backupData, records: {} }).reason, "invalid_records");
+assert.strictEqual(jsonBackup.validateBackupData({ ...backupData, schools: [{ id: "x" }] }).reason, "invalid_schools");
+
+const beforeInvalidImport = JSON.stringify({
+  schools: storage.getSchools(),
+  students: storage.getStudents(),
+  records: storage.getRecords(),
+});
+assert.strictEqual(jsonBackup.importBackupJson({ ...backupData, format: "bad" }).success, false);
+assert.strictEqual(JSON.stringify({
+  schools: storage.getSchools(),
+  students: storage.getStudents(),
+  records: storage.getRecords(),
+}), beforeInvalidImport);
+
+const validImport = {
+  format: "lectovoz-backup",
+  version: 1,
+  storageSchemaVersion: 2,
+  exportedAt: "2026-01-01T00:00:00.000Z",
+  schools: [{ id: "school-a", name: "Escuela A", createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z" }],
+  students: [{ id: "student-a", name: "Ana", schoolId: "school-a", grade: "2", group: "A", config: { sessionGoal: 7, maxAttemptsPerChunk: 2 } }],
+  records: [{ id: "record-a", studentId: "student-a", student: "Ana", schoolId: "school-a", grade: "2", group: "A", chunkAttempts: [{ expected: "ma" }], notMasteredChunks: [{ expected: "pa" }], createdAt: "2026-01-01T00:00:00.000Z" }],
+};
+assert.strictEqual(jsonBackup.importBackupJson(JSON.stringify(validImport), "replace").success, true);
+assert.strictEqual(storage.getSchools().some((school) => school.id === "school-a"), true);
+assert.strictEqual(storage.getStudents().find((item) => item.id === "student-a").config.maxAttemptsPerChunk, 2);
+assert.strictEqual(storage.getRecords()[0].chunkAttempts.length, 1);
+assert.strictEqual(storage.getRecords()[0].notMasteredChunks.length, 1);
+
+storage.writeJson("unrelated_key", { keep: true });
+const replaceImport = {
+  ...validImport,
+  schools: [{ id: "school-b", name: "Escuela B", createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-02T00:00:00.000Z" }],
+  students: [{ id: "student-b", name: "Luis", schoolId: "school-b", grade: "4", group: "B", config: { maxAttemptsPerChunk: 3 } }],
+  records: [{ id: "record-b", studentId: "student-b", student: "Luis", createdAt: "2026-01-02T00:00:00.000Z" }],
+};
+assert.strictEqual(jsonBackup.replaceLocalData(replaceImport).success, true);
+assert.strictEqual(storage.getStudents().some((item) => item.id === "student-a"), false);
+assert.strictEqual(storage.getStudents().some((item) => item.id === "student-b"), true);
+assertJson(storage.readJson("unrelated_key", null), { keep: true });
+
+const mergeImport = {
+  ...validImport,
+  schools: [
+    { id: "school-b", name: "Escuela B", createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-03T00:00:00.000Z" },
+    { id: "school-b-duplicate", name: " escuela b ", createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z" },
+  ],
+  students: [
+    { id: "student-b", name: "Luis editado", schoolId: "school-b", grade: "5", group: "B", updatedAt: "2026-01-03T00:00:00.000Z", config: { maxAttemptsPerChunk: 1 } },
+    { id: "student-c", name: "Luis", schoolId: "school-b-duplicate", grade: "5", group: "B", config: { maxAttemptsPerChunk: 2 } },
+  ],
+  records: [
+    { id: "record-b", studentId: "student-b", student: "Luis", createdAt: "2026-01-02T00:00:00.000Z" },
+    { studentId: "student-c", student: "Luis", text: "ma", level: "silabas", createdAt: "2026-01-03T00:00:00.000Z" },
+  ],
+};
+assert.strictEqual(jsonBackup.mergeBackupData(mergeImport).success, true);
+const schoolsAfterMerge = storage.getSchools().filter((school) => academic.normalizeComparable(school.name) === academic.normalizeComparable("Escuela B"));
+assert.strictEqual(schoolsAfterMerge.length, 1);
+assert.strictEqual(storage.getStudents().filter((item) => item.id === "student-b").length, 1);
+assert.strictEqual(storage.getStudents().some((item) => item.id === "student-c" && item.name === "Luis"), true);
+assert.strictEqual(storage.getRecords().filter((record) => record.id === "record-b").length, 1);
+const mergeSnapshot = JSON.stringify({
+  schools: storage.getSchools(),
+  students: storage.getStudents(),
+  records: storage.getRecords(),
+});
+assert.strictEqual(jsonBackup.mergeBackupData(mergeImport).success, true);
+assert.strictEqual(JSON.stringify({
+  schools: storage.getSchools(),
+  students: storage.getStudents(),
+  records: storage.getRecords(),
+}), mergeSnapshot);
+
+const fallbackExport = jsonBackup.exportBackupJson();
+assert.strictEqual(fallbackExport.success, true);
+assert.strictEqual(fallbackExport.filename, "lectovoz-datos.json");
+assert.ok(["json", "download"].includes(fallbackExport.method));
 
 const config = control.makeDefaultConfig();
 assert.strictEqual(config.levelStart, "silabas");
@@ -232,6 +434,118 @@ function createTrack() {
 }
 
 async function runSpeechControllerTests() {
+  const flushAsync = async (times = 8) => {
+    for (let index = 0; index < times; index += 1) await Promise.resolve();
+  };
+
+  const noOpenedAutoSave = await jsonBackup.autoSaveOpenedBackup();
+  assert.strictEqual(noOpenedAutoSave.skipped, true);
+  assert.strictEqual(noOpenedAutoSave.reason, "no_open_file");
+
+  let openPickerCalls = 0;
+  let writableWrites = 0;
+  let writableCloses = 0;
+  context.window.showOpenFilePicker = async () => {
+    openPickerCalls += 1;
+    return [{
+      name: "lectovoz-datos.json",
+      getFile: async () => ({
+        name: "lectovoz-datos.json",
+        text: async () => JSON.stringify(validImport),
+      }),
+      createWritable: async () => ({
+        write: async (value) => {
+          writableWrites += String(value).includes("lectovoz-backup") ? 1 : 0;
+        },
+        close: async () => {
+          writableCloses += 1;
+        },
+      }),
+    }];
+  };
+  const openedFile = await jsonBackup.openBackupFile("merge");
+  assert.strictEqual(openedFile.success, true);
+  assert.strictEqual(openedFile.fileName, "lectovoz-datos.json");
+  assert.strictEqual(openPickerCalls, 1);
+  assert.strictEqual(jsonBackup.hasOpenedWritableFile(), true);
+  jsonBackup.setAutoSaveEnabled(false);
+  const disabledAutoSave = await jsonBackup.autoSaveOpenedBackup();
+  assert.strictEqual(disabledAutoSave.skipped, true);
+  assert.strictEqual(disabledAutoSave.reason, "autosave_disabled");
+  const savedOpenedFile = await jsonBackup.saveToOpenedFile();
+  assert.strictEqual(savedOpenedFile.success, true);
+  assert.strictEqual(writableWrites, 1);
+  assert.strictEqual(writableCloses, 1);
+  jsonBackup.setAutoSaveEnabled(true);
+  const autoSavedOpenedFile = await jsonBackup.autoSaveOpenedBackup();
+  assert.strictEqual(autoSavedOpenedFile.success, true);
+  assert.strictEqual(writableWrites, 2);
+  const savedAgain = await jsonBackup.saveToOpenedFile();
+  assert.strictEqual(savedAgain.success, true);
+  assert.strictEqual(openPickerCalls, 1);
+  assert.strictEqual(writableWrites, 3);
+  assert.strictEqual(jsonBackup.getBackupStatus().lastError, null);
+
+  context.window.showOpenFilePicker = async () => [{
+    name: "lectovoz-datos.json",
+    getFile: async () => ({
+      name: "lectovoz-datos.json",
+      text: async () => JSON.stringify(validImport),
+    }),
+    createWritable: async () => {
+      throw new Error("disk full");
+    },
+  }];
+  await jsonBackup.openBackupFile("merge");
+  const beforeFailedAutoSave = JSON.stringify(storage.getRecords());
+  const failedAutoSave = await jsonBackup.autoSaveOpenedBackup();
+  assert.strictEqual(failedAutoSave.success, false);
+  assert.strictEqual(failedAutoSave.reason, "write_failed");
+  assert.strictEqual(JSON.stringify(storage.getRecords()), beforeFailedAutoSave);
+  assert.strictEqual(jsonBackup.getBackupStatus().lastError, "disk full");
+
+  const releaseWrites = [];
+  let slowWrites = 0;
+  let slowOpenPickerCalls = 0;
+  context.window.showOpenFilePicker = async () => {
+    slowOpenPickerCalls += 1;
+    return [{
+      name: "lectovoz-datos.json",
+      getFile: async () => ({
+        name: "lectovoz-datos.json",
+        text: async () => JSON.stringify(validImport),
+      }),
+      createWritable: async () => ({
+        write: async () => {
+          slowWrites += 1;
+          await new Promise((resolve) => {
+            releaseWrites.push(resolve);
+          });
+        },
+        close: async () => {},
+      }),
+    }];
+  };
+  await jsonBackup.openBackupFile("merge");
+  const firstQueuedSave = jsonBackup.autoSaveOpenedBackup();
+  await flushAsync(4);
+  const secondQueuedSave = jsonBackup.autoSaveOpenedBackup();
+  assert.strictEqual(jsonBackup.getBackupStatus().saving, true);
+  assert.strictEqual(jsonBackup.getBackupStatus().pending, true);
+  assert.strictEqual(releaseWrites.length, 1);
+  releaseWrites[0]();
+  await flushAsync(20);
+  assert.strictEqual(releaseWrites.length, 2);
+  releaseWrites[1]();
+  await Promise.all([firstQueuedSave, secondQueuedSave]);
+  assert.strictEqual(slowWrites, 2);
+  assert.strictEqual(slowOpenPickerCalls, 1);
+  delete context.window.showOpenFilePicker;
+  const noFileApi = await jsonBackup.openBackupFile("merge");
+  assert.strictEqual(noFileApi.reason, "file_system_access_unavailable");
+  const inputImport = await jsonBackup.readFileInput({ text: async () => JSON.stringify(validImport) }, "merge");
+  assert.strictEqual(inputImport.success, true);
+
   const missingSession = createSpeechHarness({ recognitionCtor: function Recognition() {} });
   missingSession.session = null;
   await missingSession.controller.start();
@@ -337,6 +651,45 @@ async function runSpeechControllerTests() {
   });
   await unavailable.controller.start();
   assert.ok(unavailable.events.some((event) => event[0] === "feedback" && event[1].includes("microfono no esta disponible")));
+
+  const fragmentedVoice = createSpeechHarness({ recognitionCtor: function Recognition() {} });
+  fragmentedVoice.controller.debugSetNoiseFloor(0.01);
+  fragmentedVoice.controller.debugSampleVolume(0.03, 100);
+  fragmentedVoice.controller.debugSampleVolume(0.03, 280);
+  fragmentedVoice.controller.debugSampleVolume(0.011, 320);
+  fragmentedVoice.controller.debugSampleVolume(0.03, 430);
+  fragmentedVoice.controller.debugSampleVolume(0.03, 590);
+  assert.ok(fragmentedVoice.controller.getVoiceEvidenceDuration(590) >= 180);
+
+  const shortNoise = createSpeechHarness({ recognitionCtor: function Recognition() {} });
+  shortNoise.controller.debugSetNoiseFloor(0.01);
+  shortNoise.controller.debugSampleVolume(0.03, 100);
+  shortNoise.controller.debugSampleVolume(0.03, 140);
+  shortNoise.controller.debugSampleVolume(0.011, 180);
+  assert.ok(shortNoise.controller.getVoiceEvidenceDuration(180) < 180);
+
+  const hysteresis = createSpeechHarness({ recognitionCtor: function Recognition() {} });
+  hysteresis.controller.debugSetNoiseFloor(0.01);
+  hysteresis.controller.debugSampleVolume(0.03, 100);
+  assert.strictEqual(hysteresis.controller.isVoiceActive(), true);
+  hysteresis.controller.debugSampleVolume(0.013, 150);
+  assert.strictEqual(hysteresis.controller.isVoiceActive(), true);
+  hysteresis.controller.debugSampleVolume(0.011, 220);
+  assert.strictEqual(hysteresis.controller.isVoiceActive(), false);
+
+  const variableNoise = createSpeechHarness({ recognitionCtor: function Recognition() {} });
+  variableNoise.controller.debugSetNoiseFloor(0.01);
+  variableNoise.controller.debugSampleVolume(0.011, 100);
+  variableNoise.controller.debugSampleVolume(0.012, 180);
+  variableNoise.controller.debugSampleVolume(0.0115, 260);
+  assert.strictEqual(variableNoise.controller.isVoiceActive(), false);
+  assert.strictEqual(variableNoise.controller.getVoiceEvidenceDuration(260), 0);
+
+  const metrics = fragmentedVoice.controller.getDebugMetrics();
+  assert.strictEqual(metrics.voiceEvidenceWindowMs, 600);
+  assert.strictEqual(metrics.minVoiceEvidenceMs, 180);
+  assert.ok(Number.isFinite(metrics.noiseFloor));
+  assert.ok(Number.isFinite(metrics.currentVolume));
 }
 
 runSpeechControllerTests().then(() => {

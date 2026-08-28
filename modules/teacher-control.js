@@ -1,4 +1,6 @@
 (function initTeacherControlModule(global) {
+  const Academic = global.LectoVozAcademic;
+
   function getDefaultConsonants() {
     return [...global.LectoVozContent.defaultConsonants];
   }
@@ -16,11 +18,13 @@
   }
 
   function normalizeMaxAttemptsPerChunk(value) {
-    const attempts = Number(value);
-    return [1, 2, 3].includes(attempts) ? attempts : 3;
+    return Academic?.normalizeMaxAttemptsPerChunk
+      ? Academic.normalizeMaxAttemptsPerChunk(value)
+      : [1, 2, 3].includes(Number(value)) ? Number(value) : 3;
   }
 
   function normalizeStudentConfig(config) {
+    if (Academic?.normalizeConfig) return Academic.normalizeConfig(config);
     return {
       ...makeDefaultConfig(),
       ...(config || {}),
@@ -29,12 +33,18 @@
   }
 
   function createStudentRecord(name, group) {
+    const schools = global.LectoVozStorage.getSchools?.() || [];
+    const defaultSchool = Academic?.ensureDefaultSchool?.(schools).school;
+    const timestamp = new Date().toISOString();
     return {
       id: global.LectoVozStorage.createId(),
-      name,
-      group,
+      name: Academic?.normalizeStudentName ? Academic.normalizeStudentName(name) : name,
+      schoolId: defaultSchool?.id || Academic?.defaultSchoolId || "school-unassigned",
+      grade: Academic?.defaultGrade || "Sin especificar",
+      group: Academic?.normalizeGroup ? Academic.normalizeGroup(group) : group,
       config: makeDefaultConfig(),
-      createdAt: new Date().toISOString(),
+      createdAt: timestamp,
+      updatedAt: timestamp,
     };
   }
 

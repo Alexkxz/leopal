@@ -19,12 +19,21 @@
     let voiceActiveStartedAt = 0;
     let lastVoiceActiveDuration = 0;
     let lastVoiceDetectedAt = 0;
+    let voiceCurrentlyActive = false;
+    let lastVoiceSampleAt = 0;
+    let voiceEvidence = [];
+    let lastTranscriptReceivedAt = 0;
+    let lastEvaluationAt = 0;
     let recognitionStartedAt = 0;
     let state = "idle";
     let audioReady = false;
     let listening = false;
     let userStopped = false;
     let fatalError = false;
+
+    const voiceEvidenceWindowMs = 600;
+    const minVoiceEvidenceMs = 180;
+    const maxTranscriptBufferMs = 450;
 
     async function start() {
       if (!options.getCurrentSession()) {
@@ -199,6 +208,7 @@
             alternatives.push(result[altIndex].transcript);
           }
         }
+        lastTranscriptReceivedAt = getNow();
         options.processTranscript(transcript, confidence, isFinal, alternatives);
       };
 
@@ -275,6 +285,9 @@
       voiceActiveStartedAt = 0;
       lastVoiceActiveDuration = 0;
       lastVoiceDetectedAt = 0;
+      voiceCurrentlyActive = false;
+      lastVoiceSampleAt = 0;
+      voiceEvidence = [];
     }
 
     function shouldRestartRecognition() {
@@ -332,6 +345,9 @@
       voiceActiveStartedAt = 0;
       lastVoiceActiveDuration = 0;
       lastVoiceDetectedAt = 0;
+      voiceCurrentlyActive = false;
+      lastVoiceSampleAt = 0;
+      voiceEvidence = [];
       audioReady = false;
       options.setVoiceLevel(0);
     }
@@ -345,8 +361,10 @@
         await new Promise((resolve) => win.setTimeout(resolve, 70));
       }
 
-      const average = samples.reduce((sum, value) => sum + value, 0) / Math.max(samples.length, 1);
-      noiseFloor = Math.max(0.006, average * 1.2);
+      const sorted = samples.slice().sort((left, right) => left - right);
+      const median = sorted[Math.floor(sorted.length / 2)] || 0;
+      const percentile75 = sorted[Math.floor(sorted.length * 0.75)] || median;
+      noiseFloor = Math.max(0.006, Math.min(percentile75, median * 1.8) * 1.25);
       options.setNoiseLevel(Math.min(100, Math.round(noiseFloor * 650)));
     }
 
@@ -356,6 +374,7 @@
       const tick = () => {
         currentVolume = readVolume();
         updateVoiceActivity();
+        maybeNotifyVoiceActivity();
         options.setVoiceLevel(Math.min(100, Math.round(currentVolume * 650)));
         options.setNoiseLevel(Math.min(100, Math.round(noiseFloor * 650)));
         animationFrameId = win.requestAnimationFrame(tick);
@@ -382,19 +401,66 @@
       return global.performance?.now ? global.performance.now() : Date.now();
     }
 
-    function updateVoiceActivity() {
-      const now = getNow();
-      if (isVoiceActive()) {
+    function getVoiceStartThreshold() {
+      return noiseFloor + Math.max(0.0035, noiseFloor * 0.5);
+    }
+
+    function getVoiceStopThreshold() {
+      return noiseFloor + Math.max(0.0018, noiseFloor * 0.24);
+    }
+
+    function pruneVoiceEvidence(now) {
+      voiceEvidence = voiceEvidence.filter((sample) => now - sample.at <= voiceEvidenceWindowMs);
+    }
+
+    function getVoiceEvidenceDuration(now = getNow()) {
+      pruneVoiceEvidence(now);
+      return voiceEvidence.reduce((sum, sample) => sum + sample.duration, 0);
+    }
+
+    function adaptNoiseFloorFromSilence(volume) {
+      if (voiceCurrentlyActive || getVoiceEvidenceDuration() > 0) return;
+      if (volume <= 0 || volume > noiseFloor + Math.max(0.0012, noiseFloor * 0.18)) return;
+      noiseFloor = (noiseFloor * 0.992) + (volume * 0.008);
+    }
+
+    function updateVoiceActivity(now = getNow()) {
+      const startThreshold = getVoiceStartThreshold();
+      const stopThreshold = getVoiceStopThreshold();
+      if (voiceCurrentlyActive) {
+        voiceCurrentlyActive = currentVolume >= stopThreshold;
+      } else {
+        voiceCurrentlyActive = currentVolume > startThreshold;
+      }
+
+      const elapsedSinceLastSample = lastVoiceSampleAt ? now - lastVoiceSampleAt : 0;
+      const sampleDuration = Math.max(0, Math.min(elapsedSinceLastSample || 16, 120));
+      lastVoiceSampleAt = now;
+      pruneVoiceEvidence(now);
+
+      if (voiceCurrentlyActive) {
         if (!voiceActiveStartedAt) voiceActiveStartedAt = now;
         lastVoiceActiveDuration = now - voiceActiveStartedAt;
         lastVoiceDetectedAt = now;
+        voiceEvidence.push({ at: now, duration: sampleDuration });
         return;
       }
 
       voiceActiveStartedAt = 0;
+      adaptNoiseFloorFromSilence(currentVolume);
       if (!lastVoiceDetectedAt || now - lastVoiceDetectedAt > 1200) {
         lastVoiceActiveDuration = 0;
       }
+    }
+
+    function maybeNotifyVoiceActivity(now) {
+      const metrics = getDebugMetrics(now);
+      if (listening && metrics.voiceEvidenceDuration >= minVoiceEvidenceMs) {
+        options.setStatus("Te escucho...", true);
+      } else if (listening && state === "listening") {
+        options.setStatus("Escuchando", true);
+      }
+      options.onVoiceActivityChange?.(metrics);
     }
 
     function getMicrophoneErrorMessage(error) {
@@ -408,7 +474,45 @@
     }
 
     function isVoiceActive() {
-      return currentVolume > noiseFloor + 0.002;
+      return voiceCurrentlyActive;
+    }
+
+    function hasVoiceEvidence() {
+      return getVoiceEvidenceDuration() >= minVoiceEvidenceMs;
+    }
+
+    function markEvaluationComplete(startedAt = lastTranscriptReceivedAt) {
+      lastEvaluationAt = getNow();
+      return Math.max(0, lastEvaluationAt - startedAt);
+    }
+
+    function getDebugMetrics(now = getNow()) {
+      const voiceEvidenceDuration = getVoiceEvidenceDuration(now);
+      return {
+        noiseFloor,
+        currentVolume,
+        voiceEvidenceDuration,
+        voiceActiveDuration: lastVoiceActiveDuration,
+        voiceEvidenceWindowMs,
+        minVoiceEvidenceMs,
+        timeSinceVoiceStarted: voiceActiveStartedAt ? Math.max(0, now - voiceActiveStartedAt) : 0,
+        timeSinceTranscriptReceived: lastTranscriptReceivedAt ? Math.max(0, now - lastTranscriptReceivedAt) : 0,
+        timeUntilEvaluation: lastTranscriptReceivedAt && lastEvaluationAt ? Math.max(0, lastEvaluationAt - lastTranscriptReceivedAt) : 0,
+        voiceStartThreshold: getVoiceStartThreshold(),
+        voiceStopThreshold: getVoiceStopThreshold(),
+        maxTranscriptBufferMs,
+        isVoiceActive: voiceCurrentlyActive,
+      };
+    }
+
+    function debugSetNoiseFloor(value) {
+      noiseFloor = Number(value) || noiseFloor;
+    }
+
+    function debugSampleVolume(volume, now = getNow()) {
+      currentVolume = Number(volume) || 0;
+      updateVoiceActivity(now);
+      maybeNotifyVoiceActivity(now);
     }
 
     return {
@@ -420,6 +524,12 @@
       isAudioReady: () => audioReady,
       getListeningDuration: () => recognitionStartedAt ? Math.max(0, getNow() - recognitionStartedAt) : 0,
       getVoiceActiveDuration: () => lastVoiceActiveDuration,
+      getVoiceEvidenceDuration,
+      hasVoiceEvidence,
+      getDebugMetrics,
+      markEvaluationComplete,
+      debugSetNoiseFloor,
+      debugSampleVolume,
       isVoiceActive,
       readVolume,
     };
