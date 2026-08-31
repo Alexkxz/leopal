@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LectoVoz - Analizador offline de audios</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f6fa;
+        --panel: #ffffff;
+        --text: #172033;
+        --muted: #667085;
+        --line: #d8e0eb;
+        --blue: #2457d6;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      main {
+        width: min(1240px, calc(100% - 28px));
+        margin: 0 auto;
+        padding: 22px 0 36px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+      h1, h2, p { margin: 0; }
+      h1 { font-size: clamp(1.45rem, 3vw, 2.15rem); }
+      h2 { font-size: 1rem; margin-bottom: 10px; }
+      .subtitle { color: var(--muted); margin-top: 6px; line-height: 1.45; }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        margin-bottom: 14px;
+        padding: 14px;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      button, input::file-selector-button {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--text);
+        cursor: pointer;
+        font-weight: 700;
+        min-height: 40px;
+        padding: 8px 12px;
+      }
+      button.primary {
+        background: var(--blue);
+        border-color: var(--blue);
+        color: #fff;
+      }
+      button:disabled { cursor: not-allowed; opacity: 0.5; }
+      input { max-width: 100%; }
+      .progress {
+        color: var(--muted);
+        font-weight: 700;
+        margin-top: 10px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(280px, 0.7fr) minmax(0, 1.3fr);
+        gap: 14px;
+      }
+      pre {
+        background: #101828;
+        border-radius: 8px;
+        color: #f2f4f7;
+        margin: 0;
+        overflow: auto;
+        padding: 12px;
+        white-space: pre-wrap;
+      }
+      .table-wrap { overflow-x: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td {
+        border-bottom: 1px solid var(--line);
+        font-size: 0.84rem;
+        padding: 8px;
+        text-align: left;
+        vertical-align: top;
+        white-space: nowrap;
+      }
+      th {
+        color: var(--muted);
+        font-size: 0.72rem;
+        text-transform: uppercase;
+      }
+      @media (max-width: 860px) {
+        header, .grid { display: block; }
+        header .controls { margin-top: 12px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Analizador offline de audios LectoVoz</h1>
+          <p class="subtitle">Procesa localmente todos los ZIP de muestras, calcula duracion vocal, SNR, outliers y robustez de gates sin SpeechRecognition ni servicios externos.</p>
+        </div>
+        <div class="controls">
+          <button id="run-analysis" class="primary" type="button">Analizar ZIP</button>
+          <button id="export-analysis" type="button" disabled>Exportar JSON</button>
+        </div>
+      </header>
+
+      <section class="panel">
+        <h2>Dataset</h2>
+        <input id="dataset-input" type="file" accept=".zip,application/zip" webkitdirectory directory multiple>
+        <p id="progress-text" class="progress">Selecciona la carpeta Muestras/ una sola vez para incluir todos los ZIP disponibles.</p>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <h2>Resumen inicial</h2>
+          <pre id="dataset-summary">Sin analisis.</pre>
+        </div>
+        <div class="panel">
+          <h2>Recomendacion experimental</h2>
+          <pre id="recommendation">Sin analisis.</pre>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Resultados por Gate</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Gate</th>
+                <th>Aceptacion global</th>
+                <th>Rechazo</th>
+                <th>Peor alumno</th>
+                <th>Aceptacion minima</th>
+              </tr>
+            </thead>
+            <tbody id="gates-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Estadisticas por alumno/dataset</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Alumno/dataset</th>
+                <th>Audios</th>
+                <th>Mediana vocal</th>
+                <th>RMS</th>
+                <th>Noise floor</th>
+                <th>SNR</th>
+                <th>Gates</th>
+              </tr>
+            </thead>
+            <tbody id="students-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Outliers para revision</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Alumno</th>
+                <th>Archivo</th>
+                <th>Duracion vocal</th>
+                <th>SNR</th>
+                <th>Motivos</th>
+              </tr>
+            </thead>
+            <tbody id="outliers-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="modules/offline-audio-analyzer.js"></script>
+  </body>
+</html>

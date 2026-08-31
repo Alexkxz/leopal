@@ -70,6 +70,7 @@ loadScript(context, "modules/speech-recognition.js");
 loadScript(context, "modules/teacher-dashboard.js");
 loadScript(context, "modules/teacher-control.js");
 loadScript(context, "modules/mic-diagnostic.js");
+loadScript(context, "modules/offline-audio-analyzer.js");
 
 const storage = context.window.LectoVozStorage;
 const academic = context.window.LectoVozAcademic;
@@ -78,6 +79,7 @@ const speech = context.window.LectoVozSpeech;
 const dashboard = context.window.LectoVozTeacherDashboard;
 const control = context.window.LectoVozTeacherControl;
 const micDiagnostic = context.window.LectoVozMicDiagnostic;
+const offlineAnalyzer = context.window.LectoVozOfflineAudioAnalyzer;
 
 function assertArray(actual, expected) {
   assert.deepStrictEqual(Array.from(actual), expected);
@@ -152,6 +154,60 @@ assert.strictEqual(exportPayload.version, 1);
 assert.strictEqual(exportPayload.userAgent, "Test Browser");
 assert.strictEqual(exportPayload.configuration.selectedGateMs, 180);
 assert.strictEqual(exportPayload.attempts.length, 1);
+
+assertJson(offlineAnalyzer.GATES_MS, [80, 100, 120, 150, 180]);
+assert.strictEqual(offlineAnalyzer.average([80, 100, 120]), 100);
+assert.strictEqual(offlineAnalyzer.median([80, 120, 100]), 100);
+assert.strictEqual(offlineAnalyzer.percentile([100, 200, 300], 0.25), 150);
+assert.strictEqual(offlineAnalyzer.isAudioPath("voz.webm"), true);
+assert.strictEqual(offlineAnalyzer.isAudioPath("metadata.json"), false);
+const offlineDatasetInfo = offlineAnalyzer.collectDatasetInfo([
+  {
+    zipName: "leopal_muestras_Ana_2026-05-20.zip",
+    metadata: {
+      alumno: { nombre: "Ana" },
+      grabaciones: [
+        { archivo: "Ana_ma_r1.webm", palabra: "ma", repeticion: 1 },
+        { archivo: "Ana_ma_r2.webm", palabra: "ma", repeticion: 2 },
+      ],
+    },
+    audioEntries: [{ name: "Ana_ma_r1.webm" }, { name: "Ana_ma_r2.webm" }],
+  },
+]);
+assert.strictEqual(offlineDatasetInfo.zipFiles, 1);
+assert.strictEqual(offlineDatasetInfo.students, 1);
+assert.strictEqual(offlineDatasetInfo.audioFiles, 2);
+assert.strictEqual(offlineDatasetInfo.metadataValid, 1);
+assert.strictEqual(offlineDatasetInfo.repetitions, 2);
+assert.strictEqual(offlineDatasetInfo.uniqueExpectedWords, 1);
+const syntheticSamples = new Float32Array(24000);
+for (let index = 4800; index < 19200; index += 1) syntheticSamples[index] = 0.08;
+const sampleMetrics = offlineAnalyzer.analyzeSamples(syntheticSamples, 48000);
+assert.ok(sampleMetrics.voiceDurationMs >= 200);
+assert.ok(sampleMetrics.snr > 1);
+assert.ok(sampleMetrics.voiceAttackMs >= 20);
+const offlineAttempts = offlineAnalyzer.attachOutliers([
+  { datasetId: "ana:uno", studentName: "Ana", zipName: "a.zip", fileName: "a.webm", voiceDurationMs: 90, rms: 0.04, noiseFloor: 0.01, snr: 4, snrDb: 12, peakVolume: 0.2, voiceAttackMs: 30 },
+  { datasetId: "ana:uno", studentName: "Ana", zipName: "a.zip", fileName: "b.webm", voiceDurationMs: 130, rms: 0.04, noiseFloor: 0.01, snr: 4, snrDb: 12, peakVolume: 0.2, voiceAttackMs: 30 },
+  { datasetId: "luis:uno", studentName: "Luis", zipName: "l.zip", fileName: "c.webm", voiceDurationMs: 220, rms: 0.05, noiseFloor: 0.01, snr: 5, snrDb: 14, peakVolume: 0.25, voiceAttackMs: 40 },
+  { datasetId: "luis:uno", studentName: "Luis", zipName: "l.zip", fileName: "d.webm", voiceDurationMs: 240, rms: 0.001, noiseFloor: 0.01, snr: 0.5, snrDb: -6, peakVolume: 0.002, voiceAttackMs: null },
+]);
+assert.ok(offlineAttempts[3].isTechnicalOutlier);
+const offlineByStudent = offlineAnalyzer.summarizeByStudent(offlineAttempts);
+assert.strictEqual(offlineByStudent["ana:uno"].audioFiles, 2);
+assert.strictEqual(offlineByStudent["ana:uno"].gates[120].accepted, 1);
+assert.strictEqual(offlineByStudent["luis:uno"].gates[180].accepted, 2);
+const offlineBetween = offlineAnalyzer.compareStudents(offlineByStudent);
+assert.strictEqual(offlineBetween.lowestMedianVoiceStudent, "Ana");
+assert.strictEqual(offlineBetween.highestMedianVoiceStudent, "Luis");
+const offlineGateRows = offlineAnalyzer.summarizeGates(offlineAttempts, offlineByStudent);
+assert.strictEqual(offlineGateRows.find((row) => row.gate === 180).worstStudent, "Ana");
+const offlineAnalysis = offlineAnalyzer.buildAnalysis(offlineAttempts, offlineDatasetInfo, []);
+assert.strictEqual(offlineAnalysis.format, "lectovoz-offline-audio-analysis");
+assert.strictEqual(offlineAnalysis.dataset.validAudioFiles, 4);
+assert.strictEqual(offlineAnalysis.outliers.length >= 1, true);
+assert.strictEqual(Number.isFinite(offlineAnalysis.gates[0].globalAcceptanceRate), true);
+assert.strictEqual(offlineAnalysis.recommendation.gate !== null, true);
 
 const teacherControlHtml = fs.readFileSync("teacher-control.html", "utf8");
 const teacherControlScript = fs.readFileSync("teacher-control.js", "utf8");
