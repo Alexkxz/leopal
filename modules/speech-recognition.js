@@ -32,8 +32,16 @@
     let fatalError = false;
 
     const voiceEvidenceWindowMs = 600;
-    const minVoiceEvidenceMs = 180;
+    const defaultMinVoiceEvidenceMs = 180;
     const maxTranscriptBufferMs = 450;
+
+    function getMinVoiceEvidenceMs() {
+      const configured = typeof options.getMinVoiceEvidenceMs === "function"
+        ? options.getMinVoiceEvidenceMs()
+        : options.minVoiceEvidenceMs;
+      const threshold = Number(configured);
+      return Number.isFinite(threshold) && threshold > 0 ? threshold : defaultMinVoiceEvidenceMs;
+    }
 
     async function start() {
       if (!options.getCurrentSession()) {
@@ -455,7 +463,7 @@
 
     function maybeNotifyVoiceActivity(now) {
       const metrics = getDebugMetrics(now);
-      if (listening && metrics.voiceEvidenceDuration >= minVoiceEvidenceMs) {
+      if (listening && metrics.voiceEvidenceDuration >= getMinVoiceEvidenceMs()) {
         options.setStatus("Te escucho...", true);
       } else if (listening && state === "listening") {
         options.setStatus("Escuchando", true);
@@ -478,7 +486,7 @@
     }
 
     function hasVoiceEvidence() {
-      return getVoiceEvidenceDuration() >= minVoiceEvidenceMs;
+      return getVoiceEvidenceDuration() >= getMinVoiceEvidenceMs();
     }
 
     function markEvaluationComplete(startedAt = lastTranscriptReceivedAt) {
@@ -494,7 +502,7 @@
         voiceEvidenceDuration,
         voiceActiveDuration: lastVoiceActiveDuration,
         voiceEvidenceWindowMs,
-        minVoiceEvidenceMs,
+        minVoiceEvidenceMs: getMinVoiceEvidenceMs(),
         timeSinceVoiceStarted: voiceActiveStartedAt ? Math.max(0, now - voiceActiveStartedAt) : 0,
         timeSinceTranscriptReceived: lastTranscriptReceivedAt ? Math.max(0, now - lastTranscriptReceivedAt) : 0,
         timeUntilEvaluation: lastTranscriptReceivedAt && lastEvaluationAt ? Math.max(0, lastEvaluationAt - lastTranscriptReceivedAt) : 0,

@@ -69,7 +69,7 @@ loadScript(context, "modules/json-backup.js");
 loadScript(context, "modules/speech-recognition.js");
 loadScript(context, "modules/teacher-dashboard.js");
 loadScript(context, "modules/teacher-control.js");
-loadScript(context, "mic-diagnostic.js");
+loadScript(context, "modules/mic-diagnostic.js");
 
 const storage = context.window.LectoVozStorage;
 const academic = context.window.LectoVozAcademic;
@@ -115,36 +115,43 @@ assert.ok(dashboard.escapeHtml('<script>"x"</script>').includes("&lt;script&gt;"
 assert.ok(dashboard.buildCsv([{ student: 'Ana "A"', text: "ma" }]).includes('"Ana ""A"""'));
 assert.ok(dashboard.buildCsv([{ student: "Ana", transcript: "ma" }]).startsWith('"fecha","alumno","grupo"'));
 
-assert.strictEqual(micDiagnostic.TEST_ITEMS.length, 30);
-assertJson(micDiagnostic.compareGateDurations(150, 300), {
-  100: true,
-  120: true,
-  150: true,
-  180: false,
-});
-const diagnosticAttempt = micDiagnostic.finalizeAttemptMetrics({
-  ...micDiagnostic.createEmptyAttempt("ma"),
-  rawTranscript: "mas",
-  normalizedTranscript: "mas",
-  transcript: "mas",
-  alternatives: ["ma"],
-  confidence: 0.8,
-  isFinal: true,
-  recognitionStartedAt: 100,
-  firstVoiceDetectedAt: 180,
-  finalTranscriptAt: 520,
-  voiceToInterimLatency: 190,
-  voiceToFinalLatency: 340,
+assert.strictEqual(micDiagnostic.TEST_ITEMS.length, 33);
+assertJson(micDiagnostic.GATES_MS, [80, 100, 120, 150, 180]);
+assert.strictEqual(micDiagnostic.average([80, 100, 120]), 100);
+assert.strictEqual(micDiagnostic.median([180, 80, 120]), 120);
+assert.strictEqual(micDiagnostic.median([80, 100, 120, 150]), 110);
+const diagnosticAttempt = micDiagnostic.createAttempt("ma", 180, 100);
+micDiagnostic.applyMetrics(diagnosticAttempt, {
+  currentVolume: 0.08,
+  noiseFloor: 0.02,
   voiceEvidenceDuration: 150,
-  averageVolume: 0.3,
-  volumeSamples: 3,
-}, 520);
-assert.strictEqual(diagnosticAttempt.voiceGateAccepted, false);
-assert.strictEqual(diagnosticAttempt.rejectionReason, "voice_evidence_below_180ms");
-assert.strictEqual(diagnosticAttempt.evaluationStatus, "correct");
-const diagnosticSummaryText = micDiagnostic.formatSummaryText([diagnosticAttempt], { userAgent: "Test Browser" });
-assert.ok(diagnosticSummaryText.includes("Silabas evaluadas: 1"));
-assert.ok(diagnosticSummaryText.includes('ma -> "mas"'));
+  voiceStartThreshold: 0.03,
+  voiceStopThreshold: 0.025,
+  minVoiceEvidenceMs: 180,
+  isVoiceActive: true,
+}, "listening");
+micDiagnostic.applyTranscript(diagnosticAttempt, "mas", 0.8, true, ["ma"], 520);
+micDiagnostic.finalizeAttempt(diagnosticAttempt, 540);
+assert.strictEqual(diagnosticAttempt.gate.passed, false);
+assert.strictEqual(diagnosticAttempt.possibleFalseRejection, true);
+assert.strictEqual(diagnosticAttempt.evaluation.status, "correct");
+assert.ok(diagnosticAttempt.classification.includes("possible_false_rejection"));
+const diagnosticSummary = micDiagnostic.calculateSummary([diagnosticAttempt]);
+assert.strictEqual(diagnosticSummary[80].falseRejections, 0);
+assert.strictEqual(diagnosticSummary[180].falseRejections, 1);
+assert.strictEqual(diagnosticSummary[180].attempts, 1);
+assert.strictEqual(diagnosticSummary[180].voiceDetected, 1);
+assert.strictEqual(diagnosticSummary[180].transcriptReceived, 1);
+assert.strictEqual(diagnosticSummary[180].correct, 1);
+assert.strictEqual(diagnosticSummary[180].averageVoiceEvidenceMs, 150);
+assert.strictEqual(diagnosticSummary[180].medianVoiceEvidenceMs, 150);
+assert.strictEqual(diagnosticSummary[180].averageLatencyMs, 420);
+const exportPayload = micDiagnostic.buildExportPayload([diagnosticAttempt], { selectedGateMs: 180 }, { userAgent: "Test Browser" });
+assert.strictEqual(exportPayload.format, "lectovoz-mic-diagnostic");
+assert.strictEqual(exportPayload.version, 1);
+assert.strictEqual(exportPayload.userAgent, "Test Browser");
+assert.strictEqual(exportPayload.configuration.selectedGateMs, 180);
+assert.strictEqual(exportPayload.attempts.length, 1);
 
 const teacherControlHtml = fs.readFileSync("teacher-control.html", "utf8");
 const teacherControlScript = fs.readFileSync("teacher-control.js", "utf8");
@@ -415,6 +422,8 @@ function createSpeechHarness(overrides = {}) {
 
   if (overrides.navigator) options.navigator = overrides.navigator;
   if (overrides.window) options.window = { ...options.window, ...overrides.window };
+  if (overrides.minVoiceEvidenceMs !== undefined) options.minVoiceEvidenceMs = overrides.minVoiceEvidenceMs;
+  if (overrides.getMinVoiceEvidenceMs) options.getMinVoiceEvidenceMs = overrides.getMinVoiceEvidenceMs;
   harness.controller = speech.createSpeechController(options);
   return harness;
 }
@@ -723,6 +732,25 @@ async function runSpeechControllerTests() {
   assert.strictEqual(metrics.minVoiceEvidenceMs, 180);
   assert.ok(Number.isFinite(metrics.noiseFloor));
   assert.ok(Number.isFinite(metrics.currentVolume));
+
+  const diagnosticGate = createSpeechHarness({ recognitionCtor: function Recognition() {}, minVoiceEvidenceMs: 80 });
+  diagnosticGate.controller.debugSetNoiseFloor(0.01);
+  diagnosticGate.controller.debugSampleVolume(0.03, 100);
+  diagnosticGate.controller.debugSampleVolume(0.03, 190);
+  assert.strictEqual(diagnosticGate.controller.getDebugMetrics(190).minVoiceEvidenceMs, 80);
+  assert.strictEqual(diagnosticGate.controller.getVoiceEvidenceDuration(190) >= 80, true);
+
+  let selectedDiagnosticGate = 100;
+  const dynamicDiagnosticGate = createSpeechHarness({
+    recognitionCtor: function Recognition() {},
+    getMinVoiceEvidenceMs: () => selectedDiagnosticGate,
+  });
+  assert.strictEqual(dynamicDiagnosticGate.controller.getDebugMetrics().minVoiceEvidenceMs, 100);
+  selectedDiagnosticGate = 150;
+  assert.strictEqual(dynamicDiagnosticGate.controller.getDebugMetrics().minVoiceEvidenceMs, 150);
+
+  const normalGameGate = createSpeechHarness({ recognitionCtor: function Recognition() {} });
+  assert.strictEqual(normalGameGate.controller.getDebugMetrics().minVoiceEvidenceMs, 180);
 }
 
 runSpeechControllerTests().then(() => {

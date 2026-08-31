@@ -7,15 +7,15 @@
     <style>
       :root {
         color-scheme: light;
-        --bg: #f7f8fb;
+        --bg: #f5f7fb;
         --panel: #ffffff;
-        --text: #172033;
+        --text: #162033;
         --muted: #667085;
-        --line: #d9e0ea;
-        --blue: #2563eb;
-        --green: #198754;
-        --red: #c62828;
-        --yellow: #b7791f;
+        --line: #d9e1ec;
+        --blue: #2457d6;
+        --green: #147d4f;
+        --red: #b42318;
+        --amber: #a86400;
       }
 
       * { box-sizing: border-box; }
@@ -28,32 +28,27 @@
       }
 
       main {
-        width: min(1180px, calc(100% - 28px));
+        width: min(1220px, calc(100% - 28px));
         margin: 0 auto;
-        padding: 22px 0 34px;
+        padding: 20px 0 34px;
       }
 
       header {
         display: flex;
-        align-items: flex-end;
         justify-content: space-between;
+        align-items: end;
         gap: 16px;
-        margin-bottom: 18px;
+        margin-bottom: 16px;
       }
 
       h1, h2, p { margin: 0; }
-      h1 { font-size: clamp(1.45rem, 3vw, 2.15rem); }
+      h1 { font-size: clamp(1.45rem, 3vw, 2.2rem); }
       h2 { font-size: 1rem; margin-bottom: 10px; }
+      .subtitle { color: var(--muted); margin-top: 6px; }
 
-      .subtitle {
-        color: var(--muted);
-        margin-top: 6px;
-        line-height: 1.45;
-      }
-
-      .grid {
+      .layout {
         display: grid;
-        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.25fr);
+        grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
         gap: 14px;
       }
 
@@ -61,13 +56,14 @@
         background: var(--panel);
         border: 1px solid var(--line);
         border-radius: 8px;
-        padding: 16px;
+        padding: 14px;
+        margin-bottom: 14px;
       }
 
-      .controls, .export-row {
+      .controls, .gate-buttons {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 8px;
       }
 
       button {
@@ -77,10 +73,11 @@
         color: var(--text);
         cursor: pointer;
         font-weight: 700;
-        padding: 10px 13px;
+        min-height: 40px;
+        padding: 8px 12px;
       }
 
-      button.primary {
+      button.primary, button.active {
         background: var(--blue);
         border-color: var(--blue);
         color: #fff;
@@ -88,99 +85,41 @@
 
       button:disabled {
         cursor: not-allowed;
-        opacity: 0.52;
-      }
-
-      .prompt {
-        display: grid;
-        gap: 8px;
-        justify-items: start;
-        margin: 16px 0;
+        opacity: 0.5;
       }
 
       .expected {
-        font-size: clamp(3rem, 12vw, 6rem);
+        display: block;
+        font-size: clamp(4rem, 18vw, 8.5rem);
         font-weight: 800;
         letter-spacing: 0;
         line-height: 1;
+        margin: 16px 0 6px;
+        overflow-wrap: anywhere;
+        text-transform: uppercase;
       }
 
-      .state {
-        border-radius: 999px;
-        color: #fff;
-        display: inline-flex;
-        font-size: 0.78rem;
-        font-weight: 800;
-        padding: 6px 10px;
-      }
-
-      .state.silence { background: var(--muted); }
-      .state.voice { background: var(--green); }
-      .state.transcript { background: var(--blue); }
-      .state.error { background: var(--red); }
+      .muted { color: var(--muted); }
 
       .metrics {
         display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
       }
 
       .metric {
-        display: grid;
-        grid-template-columns: 145px 1fr 74px;
-        align-items: center;
-        gap: 10px;
-        color: var(--muted);
-        font-size: 0.88rem;
-      }
-
-      .bar {
-        height: 10px;
-        border-radius: 999px;
-        background: #e8edf5;
-        overflow: hidden;
-      }
-
-      .bar span {
-        display: block;
-        width: 0%;
-        height: 100%;
-        background: var(--blue);
-      }
-
-      .bar.voice span { background: var(--green); }
-      .bar.noise span { background: var(--yellow); }
-
-      .live-log {
-        background: #101828;
-        border-radius: 8px;
-        color: #f2f4f7;
-        font-family: Consolas, monospace;
-        font-size: 0.84rem;
-        min-height: 96px;
-        margin-top: 12px;
-        padding: 12px;
-        white-space: pre-wrap;
-      }
-
-      .attempt-data {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 8px;
-        margin-top: 12px;
-      }
-
-      .data-box {
         border: 1px solid var(--line);
         border-radius: 6px;
+        min-height: 70px;
         padding: 10px;
       }
 
       .label {
         color: var(--muted);
         display: block;
-        font-size: 0.72rem;
+        font-size: 0.74rem;
         font-weight: 700;
-        margin-bottom: 4px;
+        margin-bottom: 5px;
         text-transform: uppercase;
       }
 
@@ -190,40 +129,58 @@
         overflow-wrap: anywhere;
       }
 
-      table {
-        border-collapse: collapse;
-        width: 100%;
+      .bar {
+        background: #e8edf5;
+        border-radius: 999px;
+        height: 10px;
+        margin-top: 8px;
+        overflow: hidden;
       }
 
-      th, td {
-        border-bottom: 1px solid var(--line);
-        font-size: 0.86rem;
-        padding: 9px 8px;
-        text-align: left;
-        vertical-align: top;
+      .bar span {
+        background: var(--green);
+        display: block;
+        height: 100%;
+        width: 0%;
       }
 
-      th {
-        color: var(--muted);
-        font-size: 0.74rem;
-        text-transform: uppercase;
+      .live-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .transcript-box {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        min-height: 86px;
+        padding: 10px;
       }
 
       .pass { color: var(--green); font-weight: 800; }
       .fail { color: var(--red); font-weight: 800; }
-      .summary {
-        color: var(--text);
-        font-family: Consolas, monospace;
+      .warn { color: var(--amber); font-weight: 800; }
+
+      .table-wrap { overflow-x: auto; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td {
+        border-bottom: 1px solid var(--line);
         font-size: 0.84rem;
-        white-space: pre-wrap;
+        padding: 8px;
+        text-align: left;
+        vertical-align: top;
+        white-space: nowrap;
+      }
+      th {
+        color: var(--muted);
+        font-size: 0.72rem;
+        text-transform: uppercase;
       }
 
       @media (max-width: 860px) {
-        header, .grid { display: block; }
-        header .controls { margin-top: 14px; }
-        .panel { margin-bottom: 14px; }
-        .attempt-data { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .metric { grid-template-columns: 118px 1fr 58px; }
+        header, .layout { display: block; }
+        header .controls { margin-top: 12px; }
+        .metrics, .live-grid { grid-template-columns: 1fr; }
       }
     </style>
   </head>
@@ -232,99 +189,121 @@
       <header>
         <div>
           <h1>Diagnostico de microfono LectoVoz</h1>
-          <p class="subtitle">Prueba independiente para comparar captura acustica, Voice Gate, SpeechRecognition y evaluacion.</p>
+          <p class="subtitle">Laboratorio independiente para medir silabas cortas, SpeechRecognition y posibles falsos rechazos del Voice Gate.</p>
         </div>
         <div class="controls">
-          <button id="start-test" class="primary" type="button">Iniciar prueba de microfono</button>
+          <button id="start-lab" class="primary" type="button">Iniciar laboratorio</button>
           <button id="finish-attempt" type="button" disabled>Terminar intento</button>
           <button id="next-attempt" type="button" disabled>Siguiente</button>
+          <button id="end-lab" type="button" disabled>Finalizar</button>
         </div>
       </header>
 
-      <section class="grid">
-        <div class="panel">
-          <h2>Intento actual</h2>
-          <div id="live-state" class="state silence">SILENCIO</div>
-          <div class="prompt">
-            <span class="label">Di:</span>
-            <span id="expected-text" class="expected">MA</span>
-          </div>
+      <section class="layout">
+        <div>
+          <section class="panel">
+            <h2>Texto esperado</h2>
+            <span id="expected-text" class="expected">ma</span>
+            <p class="muted"><span id="item-progress">1 / 33</span> · Estado: <strong id="mic-status">Microfono detenido</strong></p>
+          </section>
 
-          <div class="metrics">
-            <div class="metric">
-              <span>Volumen actual</span>
-              <div class="bar voice"><span id="volume-bar"></span></div>
-              <strong id="volume-value">0.000</strong>
+          <section class="panel">
+            <h2>Voice Gate del laboratorio</h2>
+            <div class="gate-buttons" aria-label="Seleccionar Voice Gate">
+              <button type="button" data-gate-ms="80">80 ms</button>
+              <button type="button" data-gate-ms="100">100 ms</button>
+              <button type="button" data-gate-ms="120">120 ms</button>
+              <button type="button" data-gate-ms="150">150 ms</button>
+              <button type="button" data-gate-ms="180">180 ms</button>
             </div>
-            <div class="metric">
-              <span>Noise floor</span>
-              <div class="bar noise"><span id="noise-bar"></span></div>
-              <strong id="noise-value">0.000</strong>
-            </div>
-            <div class="metric">
-              <span>Start threshold</span>
-              <div class="bar"><span id="start-threshold-bar"></span></div>
-              <strong id="start-threshold-value">0.000</strong>
-            </div>
-            <div class="metric">
-              <span>Stop threshold</span>
-              <div class="bar"><span id="stop-threshold-bar"></span></div>
-              <strong id="stop-threshold-value">0.000</strong>
-            </div>
-            <div class="metric">
-              <span>Evidencia vocal</span>
-              <div class="bar"><span id="evidence-bar"></span></div>
-              <strong id="evidence-value">0 ms</strong>
-            </div>
-          </div>
-
-          <div class="attempt-data">
-            <div class="data-box"><span class="label">Reconocido</span><span id="current-transcript" class="value">-</span></div>
-            <div class="data-box"><span class="label">Gate actual</span><span id="current-gate" class="value">-</span></div>
-            <div class="data-box"><span class="label">Evaluacion</span><span id="current-evaluation" class="value">-</span></div>
-            <div class="data-box"><span class="label">Final ms</span><span id="current-final-latency" class="value">-</span></div>
-          </div>
-
-          <div id="gate-comparison" class="live-log">Gate 100: -
-Gate 120: -
-Gate 150: -
-Gate 180: -</div>
+            <p class="muted" style="margin-top: 10px;">Seleccionado: <strong id="selected-gate">180 ms</strong></p>
+          </section>
         </div>
 
-        <div class="panel">
-          <h2>SpeechRecognition en vivo</h2>
-          <div id="live-log" class="live-log">Esperando inicio de prueba...</div>
-          <div class="export-row" style="margin-top: 12px;">
-            <button id="export-diagnostic" type="button" disabled>Exportar diagnostico</button>
-            <button id="copy-summary" type="button" disabled>Copiar resumen</button>
-          </div>
+        <div>
+          <section class="panel">
+            <h2>Metricas en tiempo real</h2>
+            <div class="metrics">
+              <div class="metric">
+                <span class="label">Volumen</span>
+                <span id="volume-value" class="value">0.000</span>
+                <div class="bar"><span id="volume-bar"></span></div>
+              </div>
+              <div class="metric"><span class="label">Noise floor</span><span id="noise-floor" class="value">0.000</span></div>
+              <div class="metric"><span class="label">Evidencia vocal</span><span id="voice-evidence" class="value">0 ms</span></div>
+              <div class="metric"><span class="label">Gate</span><span id="gate-state" class="value">No superado</span></div>
+              <div class="metric"><span class="label">Start threshold</span><span id="voice-start-threshold" class="value">0.000</span></div>
+              <div class="metric"><span class="label">Stop threshold</span><span id="voice-stop-threshold" class="value">0.000</span></div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h2>SpeechRecognition y evaluacion</h2>
+            <div class="live-grid">
+              <div class="transcript-box"><span class="label">Interim</span><span id="interim-transcript" class="value">-</span></div>
+              <div class="transcript-box"><span class="label">Final</span><span id="final-transcript" class="value">-</span></div>
+              <div class="transcript-box"><span class="label">Alternativas</span><span id="alternatives" class="value">-</span></div>
+              <div class="transcript-box"><span class="label">Evaluacion</span><span id="evaluation" class="value">-</span></div>
+              <div class="transcript-box"><span class="label">Latencia</span><span id="latency" class="value">-</span></div>
+              <div class="transcript-box"><span class="label">Falso rechazo</span><span id="false-rejection" class="value">-</span></div>
+            </div>
+          </section>
         </div>
       </section>
 
       <section class="panel">
-        <h2>Resultado por silaba o palabra</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Esperado</th>
-              <th>Reconocido</th>
-              <th>Gate</th>
-              <th>Evaluacion</th>
-              <th>Evidencia</th>
-              <th>Final ms</th>
-            </tr>
-          </thead>
-          <tbody id="results-body"></tbody>
-        </table>
+        <h2>Historial de intentos</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Esperado</th>
+                <th>Reconocido</th>
+                <th>Gate usado</th>
+                <th>Evidencia</th>
+                <th>Gate paso</th>
+                <th>Evaluacion</th>
+                <th>Latencia</th>
+              </tr>
+            </thead>
+            <tbody id="attempt-history"></tbody>
+          </table>
+        </div>
       </section>
 
       <section class="panel">
-        <h2>Resultado general</h2>
-        <div id="summary-output" class="summary">Sin intentos registrados.</div>
+        <h2>Resumen por Gate</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Gate</th>
+                <th>Intentos</th>
+                <th>Voz</th>
+                <th>Transcript</th>
+                <th>Correctas</th>
+                <th>Aprox.</th>
+                <th>Incorrectas</th>
+                <th>Falsos rechazos</th>
+                <th>Deteccion</th>
+                <th>Correctas %</th>
+                <th>Falso rechazo %</th>
+                <th>Ev. media</th>
+                <th>Ev. mediana</th>
+                <th>Lat. media</th>
+              </tr>
+            </thead>
+            <tbody id="summary-body"></tbody>
+          </table>
+        </div>
+        <div class="controls" style="margin-top: 12px;">
+          <button id="export-diagnostic" type="button" disabled>Exportar diagnostico JSON</button>
+        </div>
       </section>
     </main>
 
     <script src="modules/evaluation.js"></script>
-    <script src="mic-diagnostic.js"></script>
+    <script src="modules/speech-recognition.js"></script>
+    <script src="modules/mic-diagnostic.js"></script>
   </body>
 </html>
