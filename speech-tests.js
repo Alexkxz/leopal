@@ -13,7 +13,7 @@ let passedChecks = 0;
 
 function createFakeElement() {
   const listeners = {};
-  return {
+  const element = {
     value: "silabas",
     textContent: "",
     innerHTML: "",
@@ -22,11 +22,27 @@ function createFakeElement() {
     hidden: false,
     className: "",
     classList: {
-      add() {},
-      remove() {},
-      toggle() {},
-      contains() {
-        return false;
+      add(...names) {
+        const classes = new Set(element.className.split(/\s+/).filter(Boolean));
+        names.forEach((name) => classes.add(name));
+        element.className = Array.from(classes).join(" ");
+      },
+      remove(...names) {
+        const removed = new Set(names);
+        element.className = element.className
+          .split(/\s+/)
+          .filter((name) => name && !removed.has(name))
+          .join(" ");
+      },
+      toggle(name, force) {
+        const classes = new Set(element.className.split(/\s+/).filter(Boolean));
+        const shouldAdd = force === undefined ? !classes.has(name) : Boolean(force);
+        if (shouldAdd) classes.add(name);
+        else classes.delete(name);
+        element.className = Array.from(classes).join(" ");
+      },
+      contains(name) {
+        return element.className.split(/\s+/).includes(name);
       },
     },
     appendChild() {},
@@ -43,6 +59,7 @@ function createFakeElement() {
       return [];
     },
   };
+  return element;
 }
 
 const elements = new Map();
@@ -272,6 +289,7 @@ assertEvaluation("caza", "casa", "correct");
 
 assertEvaluation("ma", "pa", "incorrect");
 assertEvaluation("mesa", "casa", "incorrect");
+assertEvaluation("perro", "sol", "incorrect");
 assertEvaluation("sal", "sol", "incorrect");
 
 assertEvaluation("marposa", "mariposa", "approximate");
@@ -424,6 +442,95 @@ assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mama")
   pedagogy = context.getPedagogicalState();
   assert.strictEqual(pedagogy.currentIndex, 0);
   assert.strictEqual(pedagogy.attemptCount, 0);
+
+  const feedbackEl = elements.get("#feedback");
+  const heardEl = elements.get("#heard-text");
+  const scoreEl = elements.get("#score-count");
+  levelSelect.value = "frases_cortas";
+
+  context.setLesson("casa gato");
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  context.processTranscript("", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 0);
+  assert.strictEqual(pedagogy.lastReadingDebug.evaluationStatus, "no_transcript");
+  assert.strictEqual(feedbackEl.classList.contains("feedback-incorrect"), false);
+  assert.strictEqual(feedbackEl.textContent.includes("Escuche:"), false);
+
+  context.setLesson("casa gato");
+  context.window.__lectovozVoiceGateOverrideMs = 0;
+  context.processTranscript("mesa", 1, true);
+  context.flushPendingTranscript(true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 0);
+  assert.strictEqual(feedbackEl.classList.contains("feedback-incorrect"), false);
+  assert.strictEqual(feedbackEl.textContent.includes("Escuche:"), false);
+
+  context.setLesson("caballo perro");
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  context.processTranscript("capallo", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 1);
+  assert.strictEqual(pedagogy.chunkAttempts[0].evaluationStatus, "approximate");
+  assert.strictEqual(pedagogy.chunkAttempts[0].heardText, "capallo");
+  assert.strictEqual(feedbackEl.classList.contains("feedback-approximate"), true);
+  assert.strictEqual(feedbackEl.textContent.includes('Escuche: "capallo"'), true);
+  assert.strictEqual(feedbackEl.textContent.includes("Casi. Intenta decir: caballo"), true);
+
+  context.setLesson("casa gato");
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  context.processTranscript("mesa", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 1);
+  assert.strictEqual(pedagogy.chunkAttempts[0].evaluationStatus, "incorrect");
+  assert.strictEqual(pedagogy.chunkAttempts[0].heardText, "mesa");
+  assert.strictEqual(pedagogy.lastReadingDebug.evaluationStatus, "incorrect");
+  assert.strictEqual(feedbackEl.classList.contains("feedback-incorrect"), true);
+  assert.strictEqual(feedbackEl.textContent.includes('Escuche: "mesa"'), true);
+  assert.strictEqual(feedbackEl.textContent.includes("Intenta otra vez: casa"), true);
+  assert.strictEqual(heardEl.textContent, "mesa");
+
+  levelSelect.value = "frases_cortas";
+  context.setLesson("ma me");
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  context.processTranscript("pa", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 1);
+  assert.strictEqual(pedagogy.chunkAttempts[0].evaluationStatus, "incorrect");
+  assert.strictEqual(pedagogy.chunkAttempts[0].heardText, "pa");
+  assert.strictEqual(feedbackEl.classList.contains("feedback-incorrect"), true);
+  assert.strictEqual(feedbackEl.textContent.includes('Escuche: "pa"'), true);
+
+  context.setLesson("ma me");
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  const scoreBeforeCorrect = Number(scoreEl.textContent || 0);
+  context.processTranscript("ma", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 1);
+  assert.strictEqual(pedagogy.attemptCount, 0);
+  assert.strictEqual(Number(scoreEl.textContent), scoreBeforeCorrect + 10);
+  assert.strictEqual(feedbackEl.classList.contains("feedback-correct"), true);
+
+  context.createSession("Intentos tres", "1A");
+  levelSelect.value = "frases_cortas";
+  context.setLesson("sol luna");
+  const scoreBeforeNotMastered = Number(scoreEl.textContent || 0);
+  context.processTranscript("perro", 1, true);
+  context.processTranscript("perro", 1, true);
+  context.processTranscript("perro", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 1);
+  assert.strictEqual(pedagogy.notMasteredChunks[0].status, "not_mastered");
+  assert.strictEqual(pedagogy.notMasteredChunks[0].evaluationStatus, "incorrect");
+  assert.strictEqual(pedagogy.notMasteredChunks[0].heardText, "perro");
+  assert.strictEqual(Number(scoreEl.textContent), scoreBeforeNotMastered);
+  assert.strictEqual(feedbackEl.textContent.includes('Escuche: "perro"'), true);
+  assert.strictEqual(feedbackEl.textContent.includes("Seguiremos practicando esta palabra."), true);
 
   context.setLesson("ma me");
   const immediateTimeout = context.window.setTimeout;

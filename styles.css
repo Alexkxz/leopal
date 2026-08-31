@@ -1213,6 +1213,7 @@ body.student-page::after {
   color: var(--student-muted);
   font-size: clamp(20px, 3vw, 28px);
   font-weight: 900;
+  white-space: pre-line;
 }
 
 .student-page .feedback-correct {

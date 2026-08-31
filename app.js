@@ -63,6 +63,7 @@ let chunkAttemptRecords = [];
 let notMasteredChunks = [];
 let pendingTranscript = null;
 let pendingTranscriptTimer = null;
+let lastReadingDebug = null;
 
 const defaultMaxAttemptsPerChunk = 3;
 const minVoiceMsForAttempt = 180;
@@ -145,6 +146,38 @@ function setFeedbackState(state, message) {
   feedbackEl.textContent = message;
   feedbackEl.classList.remove("feedback-correct", "feedback-approximate", "feedback-incorrect");
   if (state !== "neutral") feedbackEl.classList.add(`feedback-${state}`);
+}
+
+function getDisplayTranscript(value) {
+  return String(value ?? "")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 120);
+}
+
+function attachTranscriptFeedback(evaluation, rawTranscript) {
+  if (!evaluation) return evaluation;
+  const heardText = getDisplayTranscript(rawTranscript);
+  return {
+    ...evaluation,
+    expectedRaw: chunks[currentIndex] || evaluation.normalizedExpected,
+    spokenRaw: rawTranscript,
+    rawTranscript,
+    heardText,
+  };
+}
+
+function buildAttemptFeedback(evaluation, fallbackMessage) {
+  const expected = evaluation.normalizedExpected || chunks[currentIndex] || "";
+  const heardLine = evaluation.heardText ? `Escuche: "${evaluation.heardText}"\n` : "";
+  if (evaluation.status === "approximate") {
+    return `${heardLine}Casi. Intenta decir: ${expected}`;
+  }
+  if (evaluation.status === "incorrect") {
+    return `${heardLine}${fallbackMessage || `Intenta otra vez: ${expected}`}`;
+  }
+  return fallbackMessage || "";
 }
 
 function setMicrophoneLabel(value) {
@@ -302,9 +335,11 @@ function findError(spokenWords, expected) {
 }
 
 function getBestReadingEvaluation(candidateTranscripts, expected) {
-  const candidates = candidateTranscripts.flatMap((candidate) => buildSpokenCandidates(candidate));
+  const candidates = candidateTranscripts.flatMap((transcript) => (
+    buildSpokenCandidates(transcript).map((candidate) => ({ candidate, transcript }))
+  ));
   return candidates
-    .map((candidate) => evaluateReading(candidate, expected))
+    .map(({ candidate, transcript }) => attachTranscriptFeedback(evaluateReading(candidate, expected), transcript))
     .sort((left, right) => right.score - left.score)[0];
 }
 
@@ -419,6 +454,8 @@ function registerChunkAttempt(evaluation) {
   const attempt = {
     expected: evaluation.normalizedExpected,
     spoken: evaluation.normalizedSpoken,
+    heardText: evaluation.heardText || "",
+    rawTranscript: evaluation.rawTranscript || evaluation.spokenRaw || "",
     status: "attempt",
     attempts: attemptCount,
     evaluationStatus: evaluation.status,
@@ -433,6 +470,8 @@ function handleUnmasteredChunk(evaluation) {
   const record = {
     expected: evaluation.normalizedExpected,
     spoken: evaluation.normalizedSpoken,
+    heardText: evaluation.heardText || "",
+    rawTranscript: evaluation.rawTranscript || evaluation.spokenRaw || "",
     status: "not_mastered",
     attempts: attemptCount,
     evaluationStatus: evaluation.status,
@@ -449,7 +488,7 @@ function handleUnmasteredChunk(evaluation) {
   currentIndex += 1;
   attemptCount = 0;
   lastTranscript = "";
-  setFeedbackState("approximate", "Seguiremos practicando esta palabra");
+  setFeedbackState("approximate", buildAttemptFeedback(evaluation, "Seguiremos practicando esta palabra."));
 
   if (currentIndex >= chunks.length) {
     speechController.markEvaluationComplete?.();
@@ -479,10 +518,11 @@ function handleChunkAttempt(evaluation) {
     markChunk(currentIndex, "error");
   }
 
-  const message = attemptCount === 1
-    ? "Intentalo otra vez"
-    : "Muy cerca. Vamos una vez mas";
-  setFeedbackState(evaluation.status === "approximate" ? "approximate" : "incorrect", message);
+  const message = `Intenta otra vez: ${evaluation.normalizedExpected}`;
+  setFeedbackState(
+    evaluation.status === "approximate" ? "approximate" : "incorrect",
+    buildAttemptFeedback(evaluation, message),
+  );
   window.setTimeout(() => setCurrent(currentIndex), 700);
 }
 
@@ -503,7 +543,16 @@ function continueAfterCompletedLesson() {
 }
 
 function processTranscript(transcript, confidence = 1, isFinal = false, alternatives = []) {
+  const rawTranscript = getDisplayTranscript(transcript);
   const clean = normalizeText(transcript);
+  const metrics = speechController.getDebugMetrics?.();
+  lastReadingDebug = {
+    expected: chunks[currentIndex] || "",
+    rawTranscript,
+    normalizedTranscript: clean,
+    evaluationStatus: clean ? "pending" : "no_transcript",
+    voiceEvidenceMs: Number(metrics?.voiceEvidenceDuration || 0),
+  };
   if (!clean || clean === lastTranscript) return;
   if (advancingToNextLesson) return;
   if (!isFinal && confidence > 0 && confidence < minConfidence) return;
@@ -516,11 +565,10 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
   }
 
   lastTranscript = clean;
-  heardEl.textContent = clean;
+  heardEl.textContent = rawTranscript || clean;
   confidenceLevelEl.textContent = confidence > 0 ? `${Math.round(confidence * 100)}%` : "-";
 
-  const spokenWords = clean.split(" ").filter(Boolean);
-  const candidateTranscripts = [clean, ...alternatives.map(normalizeText)].filter(Boolean);
+  const candidateTranscripts = [rawTranscript || transcript, ...alternatives].filter((candidate) => normalizeText(candidate));
   let advanced = 0;
 
   while (
@@ -561,6 +609,7 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
 
   const expected = chunks[currentIndex];
   const bestEvaluation = getBestReadingEvaluation(candidateTranscripts, expected);
+  if (bestEvaluation) lastReadingDebug.evaluationStatus = bestEvaluation.status;
   if (bestEvaluation?.status === "approximate" && isFinal) {
     speechController.markEvaluationComplete?.();
     pendingErrorCount = 0;
@@ -570,10 +619,10 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
     return;
   }
 
-  if (isFinal && findError(spokenWords, expected)) {
+  if (bestEvaluation?.status === "incorrect" && isFinal) {
     speechController.markEvaluationComplete?.();
     pendingErrorCount = 0;
-    handleChunkAttempt(bestEvaluation || evaluateReading(clean, expected));
+    handleChunkAttempt(bestEvaluation);
   }
 }
 
@@ -782,6 +831,7 @@ function getPedagogicalState() {
     attemptCount,
     chunkAttempts: chunkAttemptRecords,
     notMasteredChunks,
+    lastReadingDebug,
     getUserMediaCalls: undefined,
   };
 }
