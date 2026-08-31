@@ -744,6 +744,39 @@ async function runSpeechControllerTests() {
   recognitionInstance.onend();
   assert.strictEqual(recognitionInstance.startCalls, callsAfterClose);
 
+  const restartTrack = createTrack();
+  let queuedRestart = null;
+  const staleRestart = createSpeechHarness({
+    recognitionCtor: FakeRecognition,
+    navigator: {
+      mediaDevices: {
+        getUserMedia() {
+          return Promise.resolve({ getTracks: () => [restartTrack] });
+        },
+      },
+    },
+    window: {
+      setTimeout(callback, ms) {
+        if (ms === 180) {
+          queuedRestart = callback;
+          return 77;
+        }
+        callback();
+        return 1;
+      },
+      clearTimeout(id) {
+        staleRestart.events.push(["clearTimeout", id]);
+      },
+    },
+  });
+  await staleRestart.controller.start();
+  const restartStartCalls = recognitionInstance.startCalls;
+  recognitionInstance.onend();
+  assert.ok(queuedRestart);
+  staleRestart.controller.beginListeningWindow();
+  queuedRestart();
+  assert.strictEqual(recognitionInstance.startCalls, restartStartCalls);
+
   const unavailable = createSpeechHarness({
     recognitionCtor: function Recognition() {},
     navigator: {},

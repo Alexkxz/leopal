@@ -30,6 +30,8 @@
     let listening = false;
     let userStopped = false;
     let fatalError = false;
+    let listeningGeneration = 0;
+    let listeningWindowStartedAt = 0;
 
     const voiceEvidenceWindowMs = 600;
     const defaultMinVoiceEvidenceMs = 180;
@@ -201,6 +203,8 @@
       recognition.maxAlternatives = 5;
 
       recognition.onresult = (event) => {
+        const eventGeneration = listeningGeneration;
+        const eventTimeMs = Number(event.timeStamp);
         let transcript = "";
         let confidence = 0;
         let isFinal = false;
@@ -217,12 +221,22 @@
           }
         }
         lastTranscriptReceivedAt = getNow();
-        options.processTranscript(transcript, confidence, isFinal, alternatives);
+        options.processTranscript(transcript, confidence, isFinal, alternatives, {
+          ...options.getListeningContext?.(),
+          speechGeneration: eventGeneration,
+          eventTimeMs,
+        });
       };
 
       recognition.onerror = (event) => {
+        const eventGeneration = listeningGeneration;
+        const eventTimeMs = Number(event.timeStamp);
         if (event.error === "no-speech") {
-          options.onUncertain?.("no_speech");
+          options.onUncertain?.("no_speech", {
+            ...options.getListeningContext?.(),
+            speechGeneration: eventGeneration,
+            eventTimeMs,
+          });
           return;
         }
 
@@ -257,9 +271,15 @@
         options.setStatus("Reintentando microfono", true);
       };
 
-      recognition.onend = () => {
+      recognition.onend = (event) => {
+        const eventTimeMs = Number(event?.timeStamp);
+        if (Number.isFinite(eventTimeMs) && eventTimeMs < listeningWindowStartedAt) {
+          recognitionActive = false;
+          return;
+        }
+        const endedGeneration = listeningGeneration;
         recognitionActive = false;
-        if (shouldRestartRecognition()) scheduleRestart();
+        if (shouldRestartRecognition(endedGeneration)) scheduleRestart(endedGeneration);
       };
     }
 
@@ -276,6 +296,7 @@
         recognitionActive = true;
       }
       recognitionStartedAt = getNow();
+      if (!listeningWindowStartedAt) listeningWindowStartedAt = recognitionStartedAt;
       state = "listening";
       options.setStatus("Escuchando", true);
       options.setStartLabel("Escuchando...");
@@ -290,31 +311,27 @@
         if (error.name !== "InvalidStateError") throw error;
       }
       recognitionActive = false;
-      voiceActiveStartedAt = 0;
-      lastVoiceActiveDuration = 0;
-      lastVoiceDetectedAt = 0;
-      voiceCurrentlyActive = false;
-      lastVoiceSampleAt = 0;
-      voiceEvidence = [];
+      resetVoiceEvidence();
     }
 
-    function shouldRestartRecognition() {
+    function shouldRestartRecognition(expectedGeneration = listeningGeneration) {
       return Boolean(
         listening
         && !userStopped
         && !fatalError
         && micStream
         && options.getCurrentSession()
+        && expectedGeneration === listeningGeneration
       );
     }
 
-    function scheduleRestart() {
+    function scheduleRestart(scheduledGeneration = listeningGeneration) {
       if (restartTimer) return;
       state = "restarting";
       options.setStatus("Reintentando microfono", true);
       restartTimer = win.setTimeout(() => {
         restartTimer = undefined;
-        if (!shouldRestartRecognition()) return;
+        if (!shouldRestartRecognition(scheduledGeneration)) return;
         startRecognition();
       }, 180);
     }
@@ -426,6 +443,25 @@
       return voiceEvidence.reduce((sum, sample) => sum + sample.duration, 0);
     }
 
+    function resetVoiceEvidence() {
+      voiceActiveStartedAt = 0;
+      lastVoiceActiveDuration = 0;
+      lastVoiceDetectedAt = 0;
+      voiceCurrentlyActive = false;
+      lastVoiceSampleAt = 0;
+      voiceEvidence = [];
+    }
+
+    function beginListeningWindow() {
+      listeningGeneration += 1;
+      listeningWindowStartedAt = getNow();
+      lastTranscriptReceivedAt = 0;
+      lastEvaluationAt = 0;
+      resetVoiceEvidence();
+      clearRestartTimer();
+      return listeningGeneration;
+    }
+
     function adaptNoiseFloorFromSilence(volume) {
       if (voiceCurrentlyActive || getVoiceEvidenceDuration() > 0) return;
       if (volume <= 0 || volume > noiseFloor + Math.max(0.0012, noiseFloor * 0.18)) return;
@@ -531,8 +567,11 @@
       isListening: () => listening,
       isAudioReady: () => audioReady,
       getListeningDuration: () => recognitionStartedAt ? Math.max(0, getNow() - recognitionStartedAt) : 0,
+      getListeningGeneration: () => listeningGeneration,
+      beginListeningWindow,
       getVoiceActiveDuration: () => lastVoiceActiveDuration,
       getVoiceEvidenceDuration,
+      resetVoiceEvidence,
       hasVoiceEvidence,
       getDebugMetrics,
       markEvaluationComplete,

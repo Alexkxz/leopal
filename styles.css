@@ -1425,6 +1425,7 @@ body.student-page::after {
 
   .student-page .prompt-shell,
   .student-page .feedback,
+  .heard-transcript,
   .mic-button,
   .student-progress,
   .student-badges,
@@ -1579,6 +1580,29 @@ body.student-page::after {
   line-height: 1.22;
 }
 
+.heard-transcript {
+  justify-self: center;
+  width: min(100%, 52rem);
+  border: 1px solid rgba(93, 247, 255, 0.26);
+  border-radius: 1rem;
+  padding: clamp(0.65rem, 3vw, 0.9rem) clamp(0.8rem, 4vw, 1rem);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--student-muted);
+  font-size: clamp(1rem, 4.5vw, 1.25rem);
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.heard-transcript[hidden] {
+  display: none;
+}
+
+.heard-transcript strong {
+  color: #ffffff;
+  overflow-wrap: anywhere;
+}
+
 .mic-button {
   width: min(100%, 25rem);
   min-height: clamp(3.5rem, 15vw, 4.75rem);
@@ -1693,6 +1717,7 @@ body.student-page::after {
   }
 
   .student-page .feedback,
+  .heard-transcript,
   .mic-button,
   .student-progress,
   .student-badges,
@@ -1718,6 +1743,7 @@ body.student-page::after {
 
   .student-page .prompt-shell,
   .student-page .feedback,
+  .heard-transcript,
   .mic-button,
   .student-progress,
   .student-badges,
