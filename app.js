@@ -102,6 +102,9 @@ const speechController = window.LectoVozSpeech.createSpeechController({
   onVoiceActivityChange: () => {
     flushPendingTranscript();
   },
+  onUncertain: (reason) => {
+    handleUncertain(reason);
+  },
 });
 
 function normalizeText(value) {
@@ -144,7 +147,7 @@ function renderPrompt() {
 
 function setFeedbackState(state, message) {
   feedbackEl.textContent = message;
-  feedbackEl.classList.remove("feedback-correct", "feedback-approximate", "feedback-incorrect");
+  feedbackEl.classList.remove("feedback-correct", "feedback-uncertain", "feedback-approximate", "feedback-incorrect");
   if (state !== "neutral") feedbackEl.classList.add(`feedback-${state}`);
 }
 
@@ -170,14 +173,45 @@ function attachTranscriptFeedback(evaluation, rawTranscript) {
 
 function buildAttemptFeedback(evaluation, fallbackMessage) {
   const expected = evaluation.normalizedExpected || chunks[currentIndex] || "";
-  const heardLine = evaluation.heardText ? `Escuche: "${evaluation.heardText}"\n` : "";
   if (evaluation.status === "approximate") {
-    return `${heardLine}Casi. Intenta decir: ${expected}`;
+    const heardLine = evaluation.heardText ? `\u26a0 Escuché: "${evaluation.heardText}"\n` : "";
+    return `${heardLine}\u26a0 Casi. Intenta otra vez: ${expected}`;
   }
   if (evaluation.status === "incorrect") {
+    const heardLine = evaluation.heardText ? `\u2715 Escuché: "${evaluation.heardText}"\n` : "\u2715 ";
     return `${heardLine}${fallbackMessage || `Intenta otra vez: ${expected}`}`;
   }
   return fallbackMessage || "";
+}
+
+function createUncertainEvaluation(reason, rawTranscript = "") {
+  return {
+    status: "uncertain",
+    score: 0,
+    reason,
+    spoken: "",
+    expected: normalizeText(chunks[currentIndex] || ""),
+    normalizedSpoken: "",
+    normalizedExpected: normalizeText(chunks[currentIndex] || ""),
+    rawTranscript,
+    heardText: "",
+  };
+}
+
+function handleUncertain(reason, rawTranscript = "") {
+  const metrics = speechController.getDebugMetrics?.();
+  const evaluation = createUncertainEvaluation(reason, rawTranscript);
+  lastReadingDebug = {
+    expected: chunks[currentIndex] || "",
+    rawTranscript: "",
+    normalizedTranscript: normalizeText(rawTranscript),
+    evaluationStatus: evaluation.status,
+    uncertaintyReason: reason,
+    voiceEvidenceMs: Number(metrics?.voiceEvidenceDuration || 0),
+  };
+  confidenceLevelEl.textContent = "-";
+  setFeedbackState("uncertain", "\u26a0 No pude escucharte con claridad.\nIntenta otra vez.");
+  return evaluation;
 }
 
 function setMicrophoneLabel(value) {
@@ -488,7 +522,10 @@ function handleUnmasteredChunk(evaluation) {
   currentIndex += 1;
   attemptCount = 0;
   lastTranscript = "";
-  setFeedbackState("approximate", buildAttemptFeedback(evaluation, "Seguiremos practicando esta palabra."));
+  setFeedbackState(
+    evaluation.status === "approximate" ? "approximate" : "incorrect",
+    buildAttemptFeedback(evaluation, "Seguiremos practicando esta palabra."),
+  );
 
   if (currentIndex >= chunks.length) {
     speechController.markEvaluationComplete?.();
@@ -553,11 +590,16 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
     evaluationStatus: clean ? "pending" : "no_transcript",
     voiceEvidenceMs: Number(metrics?.voiceEvidenceDuration || 0),
   };
-  if (!clean || clean === lastTranscript) return;
   if (advancingToNextLesson) return;
+  if (!clean) {
+    if (isFinal) handleUncertain("empty_transcript", rawTranscript);
+    return;
+  }
+  if (clean === lastTranscript) return;
   if (!isFinal && confidence > 0 && confidence < minConfidence) return;
   if (!hasVoiceAttemptReady()) {
     if (shouldBufferTranscript()) queuePendingTranscript(transcript, confidence, isFinal, alternatives);
+    else if (isFinal) handleUncertain("insufficient_voice_evidence", rawTranscript);
     return;
   }
   if (pendingTranscript && normalizeText(pendingTranscript.transcript) === clean) {
@@ -592,7 +634,7 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
 
   if (currentIndex >= chunks.length) {
     advancingToNextLesson = true;
-    setFeedbackState("correct", "¡Muy bien!");
+    setFeedbackState("correct", "\u2713 ¡Muy bien!");
     savePracticeRecord("completed");
     completedInSession += 1;
     updateMeter();
@@ -603,7 +645,7 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
   if (advanced > 0) {
     speechController.markEvaluationComplete?.();
     setCurrent(currentIndex);
-    setFeedbackState("correct", `¡Excelente! Sigue con: ${chunks[currentIndex]}`);
+    setFeedbackState("correct", `\u2713 ¡Excelente! Sigue con: ${chunks[currentIndex]}`);
     return;
   }
 

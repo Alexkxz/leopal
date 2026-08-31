@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LectoVoz - Recolector de voz</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="sampler-page">
+    <main class="sampler-app" aria-labelledby="sampler-title">
+      <header class="sampler-header">
+        <div>
+          <p class="sampler-eyebrow">Herramienta local de investigacion</p>
+          <h1 id="sampler-title">Recolector de voz LectoVoz</h1>
+          <p>Los audios permanecen en este navegador durante la sesion y se descargan en un ZIP local.</p>
+        </div>
+        <a class="sampler-link" href="offline-audio-analyzer.html">Abrir analizador</a>
+      </header>
+
+      <section class="sampler-panel" id="setup-panel">
+        <h2>Datos de la sesion</h2>
+        <p class="sampler-note">Para investigacion se recomienda utilizar un identificador en lugar del nombre completo.</p>
+        <p class="sampler-setup-feedback" id="setup-feedback" role="status"></p>
+        <form id="sampler-form" class="sampler-form">
+          <label>
+            Identificador o nombre
+            <input id="participant-id" required placeholder="ALUMNO_001" autocomplete="off">
+          </label>
+          <label>
+            Grado
+            <input id="participant-grade" required placeholder="3">
+          </label>
+          <label>
+            Edad opcional
+            <input id="participant-age" type="number" min="1" max="18" placeholder="8">
+          </label>
+          <label>
+            Grupo opcional
+            <input id="participant-group" placeholder="A">
+          </label>
+          <label>
+            Region opcional
+            <input id="participant-region" placeholder="Colima, Mexico">
+          </label>
+          <label class="sampler-wide">
+            Observaciones opcionales
+            <textarea id="participant-notes" rows="3" placeholder="Contexto de grabacion, microfono, salon, etc."></textarea>
+          </label>
+
+          <label>
+            Modo de sesion
+            <select id="session-mode">
+              <option value="quick">Sesion rapida</option>
+              <option value="priority-syllables">Silabas prioritarias</option>
+              <option value="syllables">Solo silabas</option>
+              <option value="short-words">Palabras cortas</option>
+              <option value="medium-words">Palabras medianas</option>
+              <option value="long-words">Palabras largas</option>
+              <option value="phrases">Frases</option>
+              <option value="complete">Dataset completo</option>
+            </select>
+          </label>
+          <label>
+            Repeticiones silabas
+            <select id="syllable-repetitions">
+              <option value="3">3 recomendado</option>
+              <option value="2">2</option>
+              <option value="1">1</option>
+            </select>
+          </label>
+          <label>
+            Repeticiones palabras
+            <select id="word-repetitions">
+              <option value="2">2 recomendado</option>
+              <option value="3">3</option>
+              <option value="1">1</option>
+            </select>
+          </label>
+          <label>
+            Repeticiones frases
+            <select id="phrase-repetitions">
+              <option value="2">2 recomendado</option>
+              <option value="3">3</option>
+              <option value="1">1</option>
+            </select>
+          </label>
+          <label class="sampler-toggle">
+            <input id="random-order" type="checkbox" checked>
+            Orden aleatorio
+          </label>
+          <button class="sampler-primary sampler-wide" type="submit">Comenzar sesion</button>
+        </form>
+      </section>
+
+      <section class="sampler-capture" id="capture-panel" hidden>
+        <div class="sampler-progress-row">
+          <strong id="sample-progress">Muestra 0 de 0</strong>
+          <span id="sample-detail">-</span>
+          <span id="mic-state">Microfono listo</span>
+        </div>
+
+        <div class="sampler-target" id="target-text">MA</div>
+        <p class="sampler-feedback" id="sampler-feedback" role="status">Listo para grabar.</p>
+        <audio id="sample-audio" controls hidden></audio>
+
+        <div class="sampler-actions">
+          <button id="record-btn" class="sampler-primary" type="button">Grabar</button>
+          <button id="stop-btn" type="button" disabled>Detener</button>
+          <button id="play-btn" type="button" disabled>Escuchar</button>
+          <button id="retry-btn" type="button" disabled>Repetir</button>
+          <button id="accept-btn" type="button" disabled>Aceptar</button>
+          <button id="skip-btn" type="button">Omitir</button>
+          <button id="pause-btn" type="button">Pausar sesion</button>
+          <button id="finish-btn" type="button">Finalizar</button>
+        </div>
+
+        <details class="sampler-tech">
+          <summary>Panel tecnico</summary>
+          <pre id="technical-output">Sin grabacion.</pre>
+        </details>
+      </section>
+
+      <section class="sampler-panel" id="summary-panel" hidden>
+        <h2>Resumen para exportar</h2>
+        <pre id="summary-output"></pre>
+        <button id="download-btn" class="sampler-primary" type="button">Descargar ZIP</button>
+      </section>
+    </main>
+
+    <script src="modules/content.js"></script>
+    <script src="modules/voice-sampler.js"></script>
+  </body>
+</html>

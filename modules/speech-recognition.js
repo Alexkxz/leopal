@@ -222,7 +222,7 @@
 
       recognition.onerror = (event) => {
         if (event.error === "no-speech") {
-          options.setFeedback("Sigo escuchando. Habla normal, cerca del microfono.");
+          options.onUncertain?.("no_speech");
           return;
         }
 

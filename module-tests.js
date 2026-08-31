@@ -469,6 +469,7 @@ function createSpeechHarness(overrides = {}) {
     getCurrentChunk: () => harness.currentChunk,
     processTranscript: (...args) => harness.transcriptCalls.push(args),
     onMissingSession: () => events.push(["missingSession"]),
+    onUncertain: (reason) => events.push(["uncertain", reason]),
     setFeedback: (value) => events.push(["feedback", value]),
     setStatus: (value, isListening) => events.push(["status", value, isListening]),
     setStartLabel: (value) => events.push(["label", value]),
@@ -728,7 +729,7 @@ async function runSpeechControllerTests() {
 
   await controllerHarness.controller.start();
   recognitionInstance.onerror({ error: "no-speech" });
-  assert.ok(controllerHarness.events.some((event) => event[0] === "feedback" && event[1].includes("Sigo escuchando")));
+  assert.ok(controllerHarness.events.some((event) => event[0] === "uncertain" && event[1] === "no_speech"));
   recognitionInstance.onerror({ error: "network" });
   assert.ok(controllerHarness.events.some((event) => event[0] === "status" && event[1] === "Reintentando microfono"));
   recognitionInstance.onerror({ error: "aborted" });

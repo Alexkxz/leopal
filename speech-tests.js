@@ -300,6 +300,12 @@ assert.strictEqual(context.canAdvanceWithTranscript("marposa", "mariposa"), fals
 assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mi"), true);
 assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mama"), true);
 
+const styles = fs.readFileSync("styles.css", "utf8");
+assert.ok(styles.includes(".student-page .feedback-correct"));
+assert.ok(styles.includes(".student-page .feedback-uncertain"));
+assert.ok(styles.includes(".student-page .feedback-approximate"));
+assert.ok(styles.includes(".student-page .feedback-incorrect"));
+
 (async () => {
   const flushAsync = async (times = 8) => {
     for (let index = 0; index < times; index += 1) await Promise.resolve();
@@ -450,13 +456,18 @@ assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mama")
 
   context.setLesson("casa gato");
   context.window.__lectovozVoiceGateOverrideMs = 180;
+  const scoreBeforeEmptyTranscript = Number(scoreEl.textContent || 0);
   context.processTranscript("", 1, true);
   pedagogy = context.getPedagogicalState();
   assert.strictEqual(pedagogy.currentIndex, 0);
   assert.strictEqual(pedagogy.attemptCount, 0);
-  assert.strictEqual(pedagogy.lastReadingDebug.evaluationStatus, "no_transcript");
+  assert.strictEqual(pedagogy.lastReadingDebug.evaluationStatus, "uncertain");
+  assert.strictEqual(pedagogy.lastReadingDebug.uncertaintyReason, "empty_transcript");
+  assert.strictEqual(feedbackEl.classList.contains("feedback-uncertain"), true);
   assert.strictEqual(feedbackEl.classList.contains("feedback-incorrect"), false);
-  assert.strictEqual(feedbackEl.textContent.includes("Escuche:"), false);
+  assert.strictEqual(feedbackEl.textContent.includes("No pude escucharte con claridad."), true);
+  assert.strictEqual(feedbackEl.textContent.includes("Escuché:"), false);
+  assert.strictEqual(Number(scoreEl.textContent), scoreBeforeEmptyTranscript);
 
   context.setLesson("casa gato");
   context.window.__lectovozVoiceGateOverrideMs = 0;
@@ -465,8 +476,33 @@ assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mama")
   pedagogy = context.getPedagogicalState();
   assert.strictEqual(pedagogy.currentIndex, 0);
   assert.strictEqual(pedagogy.attemptCount, 0);
+  assert.strictEqual(pedagogy.lastReadingDebug.evaluationStatus, "uncertain");
+  assert.strictEqual(pedagogy.lastReadingDebug.uncertaintyReason, "insufficient_voice_evidence");
+  assert.strictEqual(feedbackEl.classList.contains("feedback-uncertain"), true);
   assert.strictEqual(feedbackEl.classList.contains("feedback-incorrect"), false);
-  assert.strictEqual(feedbackEl.textContent.includes("Escuche:"), false);
+  assert.strictEqual(feedbackEl.textContent.includes("Escuché:"), false);
+
+  context.setLesson("casa gato");
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  lastRecognition.onerror({ error: "no-speech" });
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 0);
+  assert.strictEqual(pedagogy.lastReadingDebug.evaluationStatus, "uncertain");
+  assert.strictEqual(pedagogy.lastReadingDebug.uncertaintyReason, "no_speech");
+  assert.strictEqual(feedbackEl.classList.contains("feedback-uncertain"), true);
+  assert.strictEqual(feedbackEl.classList.contains("feedback-incorrect"), false);
+
+  context.setLesson("casa gato");
+  context.window.__lectovozVoiceGateOverrideMs = 0;
+  context.processTranscript("", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(pedagogy.attemptCount, 0);
+  assert.strictEqual(pedagogy.lastReadingDebug.evaluationStatus, "uncertain");
+  assert.strictEqual(feedbackEl.classList.contains("feedback-uncertain"), true);
+  assert.strictEqual(feedbackEl.classList.contains("feedback-incorrect"), false);
+  assert.strictEqual(feedbackEl.textContent.includes("Escuché:"), false);
 
   context.setLesson("caballo perro");
   context.window.__lectovozVoiceGateOverrideMs = 180;
@@ -477,8 +513,9 @@ assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mama")
   assert.strictEqual(pedagogy.chunkAttempts[0].evaluationStatus, "approximate");
   assert.strictEqual(pedagogy.chunkAttempts[0].heardText, "capallo");
   assert.strictEqual(feedbackEl.classList.contains("feedback-approximate"), true);
-  assert.strictEqual(feedbackEl.textContent.includes('Escuche: "capallo"'), true);
-  assert.strictEqual(feedbackEl.textContent.includes("Casi. Intenta decir: caballo"), true);
+  assert.strictEqual(feedbackEl.classList.contains("feedback-incorrect"), false);
+  assert.strictEqual(feedbackEl.textContent.includes('Escuché: "capallo"'), true);
+  assert.strictEqual(feedbackEl.textContent.includes("Casi. Intenta otra vez: caballo"), true);
 
   context.setLesson("casa gato");
   context.window.__lectovozVoiceGateOverrideMs = 180;
@@ -490,7 +527,7 @@ assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mama")
   assert.strictEqual(pedagogy.chunkAttempts[0].heardText, "mesa");
   assert.strictEqual(pedagogy.lastReadingDebug.evaluationStatus, "incorrect");
   assert.strictEqual(feedbackEl.classList.contains("feedback-incorrect"), true);
-  assert.strictEqual(feedbackEl.textContent.includes('Escuche: "mesa"'), true);
+  assert.strictEqual(feedbackEl.textContent.includes('Escuché: "mesa"'), true);
   assert.strictEqual(feedbackEl.textContent.includes("Intenta otra vez: casa"), true);
   assert.strictEqual(heardEl.textContent, "mesa");
 
@@ -504,7 +541,7 @@ assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mama")
   assert.strictEqual(pedagogy.chunkAttempts[0].evaluationStatus, "incorrect");
   assert.strictEqual(pedagogy.chunkAttempts[0].heardText, "pa");
   assert.strictEqual(feedbackEl.classList.contains("feedback-incorrect"), true);
-  assert.strictEqual(feedbackEl.textContent.includes('Escuche: "pa"'), true);
+  assert.strictEqual(feedbackEl.textContent.includes('Escuché: "pa"'), true);
 
   context.setLesson("ma me");
   context.window.__lectovozVoiceGateOverrideMs = 180;
@@ -515,6 +552,7 @@ assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mama")
   assert.strictEqual(pedagogy.attemptCount, 0);
   assert.strictEqual(Number(scoreEl.textContent), scoreBeforeCorrect + 10);
   assert.strictEqual(feedbackEl.classList.contains("feedback-correct"), true);
+  assert.strictEqual(feedbackEl.classList.contains("feedback-incorrect"), false);
 
   context.createSession("Intentos tres", "1A");
   levelSelect.value = "frases_cortas";
@@ -529,7 +567,7 @@ assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mama")
   assert.strictEqual(pedagogy.notMasteredChunks[0].evaluationStatus, "incorrect");
   assert.strictEqual(pedagogy.notMasteredChunks[0].heardText, "perro");
   assert.strictEqual(Number(scoreEl.textContent), scoreBeforeNotMastered);
-  assert.strictEqual(feedbackEl.textContent.includes('Escuche: "perro"'), true);
+  assert.strictEqual(feedbackEl.textContent.includes('Escuché: "perro"'), true);
   assert.strictEqual(feedbackEl.textContent.includes("Seguiremos practicando esta palabra."), true);
 
   context.setLesson("ma me");

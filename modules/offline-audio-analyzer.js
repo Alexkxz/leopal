@@ -58,11 +58,13 @@
   }
 
   function getStudentName(metadata, zipName) {
-    return metadata?.alumno?.nombre || metadata?.student?.name || inferStudentFromZipName(zipName);
+    return metadata?.participant?.id || metadata?.alumno?.nombre || metadata?.student?.name || inferStudentFromZipName(zipName);
   }
 
   function getRecordingMetadata(metadata) {
-    return Array.isArray(metadata?.grabaciones) ? metadata.grabaciones : [];
+    if (Array.isArray(metadata?.grabaciones)) return metadata.grabaciones;
+    if (Array.isArray(metadata?.recordings)) return metadata.recordings;
+    return [];
   }
 
   function matchRecordingMetadata(metadata, entryName) {
@@ -92,7 +94,7 @@
       record.audioEntries.forEach((entry) => {
         audioFiles += 1;
         const meta = matchRecordingMetadata(metadata, entry.name);
-        const word = meta.palabra_objetivo || meta.palabra || meta.expected || meta.word;
+        const word = meta.palabra_objetivo || meta.palabra || meta.target || meta.expected || meta.word;
         if (word) expectedWords.add(normalizeComparable(word));
         const repetition = meta.repeticion || meta.repetition;
         if (repetition !== undefined) repetitions.add(String(repetition));
@@ -456,9 +458,10 @@
       datasetId: makeDatasetId(zipName, metadata),
       studentName: getStudentName(metadata, zipName),
       fileName: entry.name,
-      expected: item.palabra_objetivo || item.palabra || item.expected || "",
+      expected: item.palabra_objetivo || item.palabra || item.target || item.expected || "",
       spokenLabel: item.palabra || "",
       category: item.categoria || item.category || "",
+      subcategory: item.subcategoria || item.subcategory || "",
       repetition: item.repeticion || item.repetition || null,
       mode: item.modo || item.mode || "",
       sourceSnr: Number.isFinite(Number(item.snr)) ? Number(item.snr) : null,
