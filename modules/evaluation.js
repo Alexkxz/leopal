@@ -225,16 +225,12 @@
 
   function hasSharedWordShape(normalizedSpoken, normalizedExpected, phoneticSpoken, phoneticExpected) {
     const prefixLength = commonPrefixLength(normalizedSpoken, normalizedExpected);
-    const suffixLength = commonSuffixLength(normalizedSpoken, normalizedExpected);
     const phoneticPrefixLength = commonPrefixLength(phoneticSpoken, phoneticExpected);
-    const phoneticSuffixLength = commonSuffixLength(phoneticSpoken, phoneticExpected);
     const requiredEdge = normalizedExpected.length >= 8 ? 2 : 1;
 
     return (
       prefixLength >= requiredEdge
-      || suffixLength >= requiredEdge
       || phoneticPrefixLength >= requiredEdge
-      || phoneticSuffixLength >= requiredEdge
     );
   }
 

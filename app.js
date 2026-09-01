@@ -81,17 +81,21 @@ let lastReadingDebug = null;
 let listeningGeneration = 0;
 let isTransitioning = false;
 let listeningWindowStartedAt = 0;
+let lastAcceptedTranscript = null;
 let calibrationCompleted = false;
 let calibrationIndex = -1;
 let calibrationSamples = [];
+let calibrationPrompts = [];
+let calibrationStartingPromise = null;
 
 const defaultMaxAttemptsPerChunk = 3;
 const minVoiceMsForAttempt = 180;
 const recognitionWarmupMs = 250;
 const transcriptBufferMs = 450;
+const acceptedTranscriptCarryoverMs = 8000;
 
 const minConfidence = 0;
-const calibrationPrompts = [
+const fallbackCalibrationPrompts = [
   { target: "ma", label: "silaba" },
   { target: "poco", label: "palabra" },
   { target: "mi mama me quiere", label: "frase" },
@@ -171,8 +175,35 @@ function renderPrompt() {
   updateMeter();
 }
 
+function pickCalibrationItem(items, fallback) {
+  const list = (items || [])
+    .map((item) => getExerciseExpectedText(item))
+    .map((item) => normalizeText(item))
+    .filter(Boolean);
+  if (!list.length) return fallback;
+  return list[Math.floor(Math.random() * list.length)] || fallback;
+}
+
+function createCalibrationPrompts() {
+  return [
+    {
+      target: pickCalibrationItem(Content.getItems?.("syllables", "syllables"), fallbackCalibrationPrompts[0].target),
+      label: "silaba",
+    },
+    {
+      target: pickCalibrationItem(Content.getItems?.("words", "simple"), fallbackCalibrationPrompts[1].target),
+      label: "palabra",
+    },
+    {
+      target: pickCalibrationItem(Content.getItems?.("sentences", "short"), fallbackCalibrationPrompts[2].target),
+      label: "frase",
+    },
+  ];
+}
+
 function showCalibrationScreen() {
   if (!calibrationScreen || calibrationCompleted) return;
+  calibrationPrompts = createCalibrationPrompts();
   calibrationIndex = -1;
   calibrationSamples = [];
   calibrationScreen.classList.remove("hidden");
@@ -212,21 +243,31 @@ function summarizeCalibration() {
 }
 
 async function startCalibration() {
+  if (calibrationStartingPromise) return calibrationStartingPromise;
   calibrationStartBtn.disabled = true;
   calibrationSkipBtn.disabled = true;
-  calibrationStatusEl.textContent = "Solicitando permiso y escuchando el ambiente...";
-  const result = await speechController.prepareMicrophone?.();
-  if (!result?.ok) {
-    calibrationStatusEl.textContent = result?.error || "No se pudo acceder al microfono.";
-    calibrationStartBtn.disabled = false;
+  calibrationStatusEl.textContent = speechController.isAudioReady?.()
+    ? "Microfono listo. Preparando muestras..."
+    : "Solicitando permiso y escuchando el ambiente...";
+  calibrationStartingPromise = (async () => {
+    const result = await speechController.prepareMicrophone?.();
+    if (!result?.ok) {
+      calibrationStatusEl.textContent = result?.error || "No se pudo acceder al microfono.";
+      calibrationStartBtn.disabled = false;
+      calibrationSkipBtn.disabled = false;
+      return;
+    }
+    calibrationStartBtn.hidden = true;
+    calibrationRecordBtn.hidden = false;
     calibrationSkipBtn.disabled = false;
-    return;
+    calibrationIndex = 0;
+    renderCalibrationPrompt();
+  })();
+  try {
+    await calibrationStartingPromise;
+  } finally {
+    calibrationStartingPromise = null;
   }
-  calibrationStartBtn.hidden = true;
-  calibrationRecordBtn.hidden = false;
-  calibrationSkipBtn.disabled = false;
-  calibrationIndex = 0;
-  renderCalibrationPrompt();
 }
 
 async function recordCalibrationSample() {
@@ -281,6 +322,36 @@ function resetChunkRecognitionState() {
   pendingErrorCount = 0;
   clearVisibleHeardTranscript();
   speechController.resetVoiceEvidence?.();
+}
+
+function clearAcceptedTranscriptMemory() {
+  lastAcceptedTranscript = null;
+}
+
+function rememberAcceptedTranscript(transcript, expected) {
+  lastAcceptedTranscript = {
+    transcript: normalizeText(transcript),
+    expected: normalizeText(expected),
+    acceptedAt: Date.now(),
+  };
+}
+
+function refreshAcceptedTranscriptMemory() {
+  if (lastAcceptedTranscript) lastAcceptedTranscript.acceptedAt = Date.now();
+}
+
+function isLikelyAcceptedTranscriptCarryover(candidateTranscripts, currentExpected) {
+  if (!lastAcceptedTranscript) return false;
+  if (Date.now() - lastAcceptedTranscript.acceptedAt > acceptedTranscriptCarryoverMs) return false;
+
+  const expected = normalizeText(currentExpected);
+  if (!expected || expected === lastAcceptedTranscript.expected) return false;
+  if (candidateTranscripts.some((candidate) => canAdvanceWithTranscript(candidate, expected))) return false;
+
+  return candidateTranscripts.some((candidate) => (
+    normalizeText(candidate) === lastAcceptedTranscript.transcript
+    || canAdvanceWithTranscript(candidate, lastAcceptedTranscript.expected)
+  ));
 }
 
 function openChunkListeningWindow() {
@@ -439,7 +510,7 @@ function getExerciseExpectedText(exercise) {
   return Content.makeExercise?.(exercise).expectedText || String(exercise ?? "");
 }
 
-function setLesson(exercise) {
+function setLesson(exercise, options = {}) {
   activeDisplayText = getExerciseDisplayText(exercise);
   activeText = normalizeText(getExerciseExpectedText(exercise));
   chunks = splitIntoChunks(activeText);
@@ -455,6 +526,8 @@ function setLesson(exercise) {
   notMasteredChunks = [];
   lastTranscript = "";
   pendingErrorCount = 0;
+  if (options.preserveAcceptedTranscript) refreshAcceptedTranscriptMemory();
+  else clearAcceptedTranscriptMemory();
   clearPendingTranscript();
   lessonStartedAt = Date.now();
   lessonCorrect = 0;
@@ -466,14 +539,14 @@ function setLesson(exercise) {
   renderPrompt();
 }
 
-function loadCurrentLesson() {
+function loadCurrentLesson(options = {}) {
   const list = getLessonList(levelSelect.value);
   if (!list.length) {
     setLesson("ma me mi mo mu");
     setFeedbackState("neutral", "No hay ejercicios para esas consonantes en este nivel.");
     return;
   }
-  setLesson(list[lessonIndex % list.length]);
+  setLesson(list[lessonIndex % list.length], options);
 }
 
 function getLessonList(level) {
@@ -607,6 +680,10 @@ function shouldBufferTranscript() {
   return voiceEvidence >= 60 && voiceEvidence < minVoiceMsForAttempt;
 }
 
+function shouldEvaluateFinalWordTranscript(isFinal, cleanTranscript) {
+  return Boolean(isFinal && cleanTranscript && getLevelKind(levelSelect.value) === "words");
+}
+
 function clearPendingTranscript() {
   if (pendingTranscriptTimer) {
     window.clearTimeout?.(pendingTranscriptTimer);
@@ -727,7 +804,7 @@ function handleUnmasteredChunk(evaluation) {
     observedDifference: describeObservedDifference(evaluation.normalizedExpected, evaluation.normalizedSpoken),
   };
   notMasteredChunks.push(record);
-  markChunk(currentIndex, "not-mastered");
+  markChunk(currentIndex, evaluation.status === "approximate" ? "not-mastered" : "error");
   errorCount += 1;
   lessonErrors += 1;
   errorCountEl.textContent = errorCount;
@@ -776,7 +853,6 @@ function handleChunkAttempt(evaluation) {
     evaluation.status === "approximate" ? "approximate" : "incorrect",
     buildAttemptFeedback(evaluation, message),
   );
-  window.setTimeout(() => setCurrent(currentIndex), 700);
 }
 
 function continueAfterCompletedLesson() {
@@ -788,7 +864,7 @@ function continueAfterCompletedLesson() {
 
   window.setTimeout(() => {
     lessonIndex += 1;
-    loadCurrentLesson();
+    loadCurrentLesson({ preserveAcceptedTranscript: true });
     if (speechController.isListening()) {
       setFeedbackState("neutral", `Lee ahora: ${chunks[currentIndex]}`);
     }
@@ -814,7 +890,14 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
   }
   if (clean === lastTranscript) return;
   if (!isFinal && confidence > 0 && confidence < minConfidence) return;
-  if (!hasVoiceAttemptReady()) {
+
+  const candidateTranscripts = [rawTranscript || transcript, ...alternatives].filter((candidate) => normalizeText(candidate));
+  if (isLikelyAcceptedTranscriptCarryover(candidateTranscripts, chunks[currentIndex])) {
+    lastReadingDebug.evaluationStatus = "ignored_carryover";
+    return;
+  }
+
+  if (!hasVoiceAttemptReady() && !shouldEvaluateFinalWordTranscript(isFinal, clean)) {
     if (shouldBufferTranscript()) queuePendingTranscript(transcript, confidence, isFinal, alternatives, listeningContext);
     else if (isFinal) handleUncertain("insufficient_voice_evidence", rawTranscript, listeningContext);
     return;
@@ -828,13 +911,14 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
   setVisibleHeardTranscript(rawTranscript || transcript);
   confidenceLevelEl.textContent = confidence > 0 ? `${Math.round(confidence * 100)}%` : "-";
 
-  const candidateTranscripts = [rawTranscript || transcript, ...alternatives].filter((candidate) => normalizeText(candidate));
   let advanced = 0;
+  let acceptedTranscript = "";
 
   if (
     currentIndex < chunks.length
     && candidateTranscripts.some((candidate) => canAdvanceWithTranscript(candidate, chunks[currentIndex]))
   ) {
+    acceptedTranscript = candidateTranscripts.find((candidate) => canAdvanceWithTranscript(candidate, chunks[currentIndex])) || clean;
     pendingErrorCount = 0;
     markChunk(currentIndex, "correct");
     correctCount += 1;
@@ -844,6 +928,7 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
     attemptCount = 0;
     streakCount += 1;
     updateStreak();
+    rememberAcceptedTranscript(acceptedTranscript, chunks[currentIndex]);
     invalidateChunkListeningWindow();
     currentIndex += 1;
     advanced += 1;
