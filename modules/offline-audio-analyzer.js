@@ -94,7 +94,7 @@
       record.audioEntries.forEach((entry) => {
         audioFiles += 1;
         const meta = matchRecordingMetadata(metadata, entry.name);
-        const word = meta.palabra_objetivo || meta.palabra || meta.target || meta.expected || meta.word;
+        const word = meta.expectedText || meta.palabra_objetivo || meta.palabra || meta.target || meta.expected || meta.word;
         if (word) expectedWords.add(normalizeComparable(word));
         const repetition = meta.repeticion || meta.repetition;
         if (repetition !== undefined) repetitions.add(String(repetition));
@@ -458,10 +458,12 @@
       datasetId: makeDatasetId(zipName, metadata),
       studentName: getStudentName(metadata, zipName),
       fileName: entry.name,
-      expected: item.palabra_objetivo || item.palabra || item.target || item.expected || "",
-      spokenLabel: item.palabra || "",
+      expected: item.expectedText || item.palabra_objetivo || item.palabra || item.target || item.expected || "",
+      displayText: item.displayText || item.palabra || item.target || "",
+      spokenLabel: item.displayText || item.palabra || "",
       category: item.categoria || item.category || "",
-      subcategory: item.subcategoria || item.subcategory || "",
+      sublevel: item.sublevel || item.subnivel || "",
+      subcategory: item.subcategoria || item.subcategory || item.sublevel || "",
       repetition: item.repeticion || item.repetition || null,
       mode: item.modo || item.mode || "",
       sourceSnr: Number.isFinite(Number(item.snr)) ? Number(item.snr) : null,

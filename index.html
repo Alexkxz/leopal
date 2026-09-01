@@ -20,6 +20,29 @@
       </form>
     </section>
 
+    <section class="calibration-screen hidden" id="calibration-screen" aria-labelledby="calibration-title">
+      <div class="calibration-card">
+        <p class="eyebrow">Antes de jugar</p>
+        <h1 id="calibration-title">Calibremos el microfono</h1>
+        <p class="login-copy" id="calibration-instruction">
+          Primero escuchare el ambiente. Despues lee unas muestras cortas para afinar la deteccion.
+        </p>
+        <div class="calibration-target" id="calibration-target">Silencio</div>
+        <div class="calibration-progress">
+          <span id="calibration-step">Paso 1 de 4</span>
+          <div class="meter" aria-hidden="true"><div id="calibration-meter-fill"></div></div>
+        </div>
+        <p class="calibration-status" id="calibration-status" role="status">
+          Presiona comenzar para permitir el microfono.
+        </p>
+        <div class="calibration-actions">
+          <button class="primary" id="calibration-start-btn" type="button">Permitir microfono y calibrar</button>
+          <button class="primary" id="calibration-record-btn" type="button" hidden>Escuchar muestra</button>
+          <button class="secondary" id="calibration-skip-btn" type="button">Saltar calibracion</button>
+        </div>
+      </div>
+    </section>
+
     <main class="student-app app">
       <section class="student-practice practice" aria-labelledby="app-title">
         <header class="student-header">
@@ -34,6 +57,27 @@
             <small>PUNTOS</small>
           </div>
         </header>
+
+        <section class="practice-chooser" id="practice-chooser" aria-labelledby="practice-title">
+          <h2 id="practice-title">¿Qué quieres practicar?</h2>
+          <div class="practice-category-grid">
+            <div class="practice-category">
+              <strong>SILABAS</strong>
+              <button class="practice-option active" type="button" data-practice-level="syllables">Silabas</button>
+              <button class="practice-option" type="button" data-practice-level="segmentedWords">Palabras silabeadas</button>
+            </div>
+            <div class="practice-category">
+              <strong>PALABRAS</strong>
+              <button class="practice-option" type="button" data-practice-level="simpleWords">Simples</button>
+              <button class="practice-option" type="button" data-practice-level="complexWords">Complejas</button>
+            </div>
+            <div class="practice-category">
+              <strong>ORACIONES</strong>
+              <button class="practice-option" type="button" data-practice-level="shortSentences">Cortas</button>
+              <button class="practice-option" type="button" data-practice-level="longSentences">Amplias</button>
+            </div>
+          </div>
+        </section>
 
         <div class="student-reader reader" aria-live="polite">
           <div class="leo-space" aria-hidden="true">
@@ -104,13 +148,12 @@
         <div class="level-row">
           <label for="level-select">Nivel</label>
           <select id="level-select">
-            <option value="silabas">Silabas</option>
-            <option value="palabras_cortas">Palabras pequenas</option>
-            <option value="palabras_medianas">Palabras medianas</option>
-            <option value="palabras_largas">Palabras grandes</option>
-            <option value="frases_cortas">Frases 3 a 5</option>
-            <option value="frases_medianas">Frases 5 a 8</option>
-            <option value="frases_largas">Frases 8 a 10</option>
+            <option value="syllables">Silabas</option>
+            <option value="segmentedWords">Palabras silabeadas</option>
+            <option value="simpleWords">Palabras simples</option>
+            <option value="complexWords">Palabras complejas</option>
+            <option value="shortSentences">Oraciones cortas</option>
+            <option value="longSentences">Oraciones amplias</option>
           </select>
         </div>
         <div class="stat">

@@ -43,16 +43,17 @@
   function splitIntoChunks(text, options = {}) {
     const normalized = normalizeText(text);
     const level = options.level || "silabas";
-    if (level === "silabas") {
+    if (level === "silabas" || level === "syllables") {
       const syllables = normalized.split(" ").filter(Boolean);
       return options.shuffleSyllables ? shuffleList(syllables) : syllables;
     }
 
+    if (level === "segmentedWords" || level === "simpleWords" || level === "complexWords") {
+      return normalized ? [normalized] : [];
+    }
+
     if (level.startsWith("palabras")) {
-      return normalized
-        .split(" ")
-        .flatMap((word) => syllabifyWord(word))
-        .filter(Boolean);
+      return normalized ? [normalized] : [];
     }
 
     return normalized.split(" ").filter(Boolean);

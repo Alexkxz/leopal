@@ -3,128 +3,45 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Control del maestro</title>
+    <title>Centro de control LectoVoz</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="teacher-app control-app">
-      <header class="teacher-hero">
-        <div>
+      <header class="teacher-hero control-hero">
+        <div class="control-brand">
           <p class="eyebrow">Panel docente</p>
-          <h1>Control del maestro</h1>
+          <h1><span aria-hidden="true">🎮</span> LECTOVOZ</h1>
+          <strong>CENTRO DE CONTROL</strong>
+          <p id="classroom-context">Sin escuela asignada</p>
         </div>
-        <div class="teacher-actions">
-          <a class="secondary nav-button" href="teacher.html">Registros</a>
-          <a class="primary nav-button" href="index.html">Ir al juego</a>
-        </div>
+        <nav class="teacher-actions control-actions" aria-label="Accesos secundarios">
+          <button class="secondary nav-button" id="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel">
+            <span aria-hidden="true">⚙</span> Configuracion
+          </button>
+          <button class="secondary nav-button" type="button" data-tab-link="progress">
+            <span aria-hidden="true">📊</span> Progreso
+          </button>
+          <a class="primary nav-button" href="index.html"><span aria-hidden="true">▶</span> Ir al juego</a>
+        </nav>
       </header>
 
       <section class="control-tabs" aria-label="Secciones del control">
-        <button class="tab-button active" type="button" data-tab="students">Alumnos</button>
-        <button class="tab-button" type="button" data-tab="game">Partida</button>
-        <button class="tab-button" type="button" data-tab="summary">Resumen</button>
+        <button class="tab-button active" type="button" data-tab="players">
+          <span aria-hidden="true">👥</span> JUGADORES
+        </button>
+        <button class="tab-button" type="button" data-tab="missions">
+          <span aria-hidden="true">🎯</span> MISIONES
+        </button>
+        <button class="tab-button" type="button" data-tab="progress">
+          <span aria-hidden="true">📊</span> PROGRESO
+        </button>
       </section>
 
-      <section class="control-panel active" id="tab-students">
-        <div class="control-layout">
-          <article class="student-register">
-            <h2>Registrar alumno</h2>
-            <form id="student-form" class="student-form">
-              <label for="new-student-name">Nombre</label>
-              <input id="new-student-name" required autocomplete="name" placeholder="Nombre del alumno" />
-              <label for="new-student-group">Grupo</label>
-              <input id="new-student-group" required placeholder="Ej. 1A" />
-              <button class="primary full" type="submit">Registrar</button>
-            </form>
-          </article>
-
-          <article class="student-list-panel">
-            <div class="panel-title-row">
-              <h2>Alumnos registrados</h2>
-              <span id="student-count">0</span>
-            </div>
-            <div class="student-list" id="student-list"></div>
-            <p class="empty-state" id="students-empty">Todavia no hay alumnos registrados.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="control-panel" id="tab-game">
-        <div class="selected-student-card">
-          <div>
-            <p class="eyebrow">Alumno seleccionado</p>
-            <h2 id="selected-student-name">Selecciona un alumno</h2>
-            <p id="selected-student-meta">Desde la pestana Alumnos puedes escoger a quien configurar.</p>
-          </div>
-          <button class="danger" id="delete-student-btn" type="button" disabled>Eliminar alumno</button>
-        </div>
-
-        <div class="game-config-grid">
-          <article class="config-section">
-            <div class="panel-title-row">
-              <h2>Consonantes</h2>
-              <button class="secondary small-button" id="select-all-consonants" type="button">Todas</button>
-            </div>
-            <p class="config-note">El orden final se puede ajustar cuando me pases la secuencia exacta.</p>
-            <div class="consonant-grid" id="consonant-grid"></div>
-          </article>
-
-          <article class="config-section">
-            <h2>Ajustes de partida</h2>
-            <div class="settings-grid">
-              <label for="level-start">Nivel inicial</label>
-              <select id="level-start">
-                <option value="silabas">Silabas</option>
-                <option value="palabras_cortas">Palabras pequenas</option>
-                <option value="palabras_medianas">Palabras medianas</option>
-                <option value="palabras_largas">Palabras grandes</option>
-                <option value="frases_cortas">Frases 3 a 5</option>
-                <option value="frases_medianas">Frases 5 a 8</option>
-                <option value="frases_largas">Frases 8 a 10</option>
-              </select>
-
-              <label for="session-goal">Meta de ejercicios</label>
-              <input id="session-goal" type="number" min="1" max="50" value="10" />
-
-              <label for="max-attempts-per-chunk">Intentos maximos por palabra</label>
-              <select id="max-attempts-per-chunk">
-                <option value="1">1 intento</option>
-                <option value="2">2 intentos</option>
-                <option value="3">3 intentos</option>
-              </select>
-
-              <label class="setting-toggle" for="shuffle-syllables">
-                <input id="shuffle-syllables" type="checkbox" />
-                <span>Revolver silabas</span>
-              </label>
-
-              <label for="custom-notes">Notas</label>
-              <textarea id="custom-notes" rows="5" placeholder="Observaciones para esta partida"></textarea>
-            </div>
-            <button class="primary full" id="save-config-btn" type="button" disabled>Guardar configuracion</button>
-          </article>
-        </div>
-      </section>
-
-      <section class="control-panel" id="tab-summary">
-        <div class="dashboard-grid">
-          <article class="teacher-stat">
-            <span>Alumnos</span>
-            <strong id="summary-students">0</strong>
-          </article>
-          <article class="teacher-stat">
-            <span>Configurados</span>
-            <strong id="summary-configured">0</strong>
-          </article>
-          <article class="teacher-stat">
-            <span>Consonantes activas</span>
-            <strong id="summary-consonants">0</strong>
-          </article>
-        </div>
-
+      <section class="settings-drawer" id="settings-panel" hidden>
         <article class="config-section backup-section">
           <div class="panel-title-row">
-            <h2>Respaldo de datos</h2>
+            <h2><span aria-hidden="true">💾</span> RESPALDO DE DATOS</h2>
             <span id="backup-file-badge">JSON</span>
           </div>
           <p class="config-note" id="backup-status">Ningun archivo abierto</p>
@@ -148,6 +65,176 @@
             <input id="backup-file-input" type="file" accept="application/json,.json" hidden />
           </div>
         </article>
+      </section>
+
+      <section class="control-panel active" id="tab-players">
+        <div class="control-layout">
+          <section class="players-column" aria-label="Lista de jugadores">
+            <article class="student-list-panel">
+              <div class="panel-title-row">
+                <h2><span aria-hidden="true">👥</span> JUGADORES</h2>
+                <span id="student-count">0</span>
+              </div>
+              <div class="student-tools">
+                <label class="search-field" for="student-search">
+                  <span aria-hidden="true">🔎</span>
+                  <input id="student-search" type="search" autocomplete="off" placeholder="Buscar alumno..." />
+                </label>
+                <button class="primary" id="new-player-toggle" type="button">+ NUEVO JUGADOR</button>
+              </div>
+              <form id="student-form" class="student-form new-player-form" hidden>
+                <label for="new-student-name">Nombre</label>
+                <input id="new-student-name" required autocomplete="name" placeholder="Nombre del alumno" />
+                <label for="new-student-group">Grupo</label>
+                <input id="new-student-group" required placeholder="Ej. 3A" />
+                <button class="primary full" type="submit">Registrar jugador</button>
+              </form>
+              <div class="student-list" id="student-list"></div>
+              <p class="empty-state" id="students-empty">Todavia no hay alumnos registrados.</p>
+            </article>
+          </section>
+
+          <aside class="group-summary-card" aria-label="Resumen del grupo">
+            <h2>RESUMEN DEL GRUPO</h2>
+            <strong id="summary-students">0 jugadores</strong>
+            <p><span class="status-dot ready"></span><span id="summary-ready">0 listos</span></p>
+            <p><span class="status-dot progress"></span><span id="summary-progress">0 en progreso</span></p>
+            <p><span class="status-dot unconfigured"></span><span id="summary-unconfigured">0 sin configurar</span></p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="control-panel" id="tab-missions">
+        <div class="mission-layout">
+          <section class="mission-main">
+            <article class="selected-student-card">
+              <div>
+                <p class="eyebrow">Jugador seleccionado</p>
+                <h2 id="selected-student-name">Selecciona un alumno</h2>
+                <p id="selected-student-meta">Desde JUGADORES puedes escoger a quien configurar.</p>
+              </div>
+              <button class="danger" id="delete-student-btn" type="button" disabled>Eliminar alumno</button>
+            </article>
+
+            <article class="config-section">
+              <h2><span aria-hidden="true">🎯</span> CONFIGURAR MISION</h2>
+              <div class="category-card-grid" id="category-card-grid" role="radiogroup" aria-label="Categorias">
+                <button class="category-card active" type="button" data-category="syllables" role="radio" aria-checked="true">
+                  <span aria-hidden="true">🔤</span>
+                  <strong>SILABAS</strong>
+                </button>
+                <button class="category-card" type="button" data-category="words" role="radio" aria-checked="false">
+                  <span aria-hidden="true">🔠</span>
+                  <strong>PALABRAS</strong>
+                </button>
+                <button class="category-card" type="button" data-category="sentences" role="radio" aria-checked="false">
+                  <span aria-hidden="true">📖</span>
+                  <strong>ORACIONES</strong>
+                </button>
+              </div>
+              <input id="category-start" type="hidden" value="syllables" />
+
+              <div class="sublevel-panel">
+                <h3>Subnivel</h3>
+                <div class="sublevel-grid" id="sublevel-grid" role="radiogroup" aria-label="Subniveles"></div>
+                <select id="level-start" class="sr-only" aria-label="Subnivel">
+                  <option value="syllables" data-category="syllables">Silabas</option>
+                  <option value="segmentedWords" data-category="syllables">Palabras silabeadas</option>
+                  <option value="simpleWords" data-category="words">Simples</option>
+                  <option value="complexWords" data-category="words">Complejas</option>
+                  <option value="shortSentences" data-category="sentences">Cortas</option>
+                  <option value="longSentences" data-category="sentences">Amplias</option>
+                </select>
+              </div>
+            </article>
+
+            <article class="config-section">
+              <h2><span aria-hidden="true">⚙</span> CONFIGURACION DE PARTIDA</h2>
+              <div class="settings-grid mission-settings">
+                <div>
+                  <label for="session-goal">Meta</label>
+                  <div class="quick-button-row" id="goal-buttons" aria-label="Meta de ejercicios">
+                    <button type="button" data-goal="10">10</button>
+                    <button type="button" data-goal="15">15</button>
+                    <button type="button" data-goal="20">20</button>
+                    <button type="button" data-goal="30">30</button>
+                  </div>
+                  <input id="session-goal" type="number" min="1" max="50" value="10" />
+                </div>
+
+                <div>
+                  <label for="max-attempts-per-chunk">Intentos por ejercicio</label>
+                  <div class="quick-button-row" id="attempt-buttons" aria-label="Intentos por ejercicio">
+                    <button type="button" data-attempts="1">1</button>
+                    <button type="button" data-attempts="2">2</button>
+                    <button type="button" data-attempts="3">3</button>
+                  </div>
+                  <select id="max-attempts-per-chunk" aria-label="Intentos maximos por ejercicio">
+                    <option value="1">1 intento</option>
+                    <option value="2">2 intentos</option>
+                    <option value="3">3 intentos</option>
+                  </select>
+                </div>
+
+                <label class="setting-toggle" for="shuffle-syllables">
+                  <input id="shuffle-syllables" type="checkbox" />
+                  <span>Orden aleatorio</span>
+                </label>
+
+                <label for="custom-notes">Notas</label>
+                <textarea id="custom-notes" rows="4" placeholder="Observaciones para esta partida"></textarea>
+              </div>
+            </article>
+
+            <article class="config-section" id="consonants-section">
+              <div class="panel-title-row">
+                <h2>Consonantes</h2>
+                <button class="secondary small-button" id="select-all-consonants" type="button">Todas</button>
+              </div>
+              <p class="config-note">Solo aparece para SILABAS cuando corresponde.</p>
+              <div class="consonant-grid" id="consonant-grid"></div>
+            </article>
+          </section>
+
+          <aside class="mission-side">
+            <article class="mission-preview">
+              <p class="eyebrow">Vista previa</p>
+              <h2 id="mission-preview-title">MISION</h2>
+              <div id="mission-preview"></div>
+              <button class="primary full launch-save" id="save-config-btn" type="button" disabled>
+                <span aria-hidden="true">🚀</span> GUARDAR MISION
+              </button>
+              <p class="save-feedback" id="save-feedback" role="status" aria-live="polite"></p>
+            </article>
+
+            <article class="config-section bulk-section">
+              <div class="panel-title-row">
+                <h2><span aria-hidden="true">⚡</span> CONFIGURACION MASIVA</h2>
+                <span id="bulk-count">0</span>
+              </div>
+              <p class="config-note">Aplica la mision actual a varios jugadores.</p>
+              <div class="bulk-list" id="bulk-student-list"></div>
+              <button class="secondary full" id="apply-bulk-config-btn" type="button" disabled>Aplicar a seleccionados</button>
+            </article>
+          </aside>
+        </div>
+      </section>
+
+      <section class="control-panel" id="tab-progress">
+        <div class="progress-layout">
+          <article class="progress-card">
+            <p class="eyebrow">Alumno seleccionado</p>
+            <h2 id="progress-student-name">Selecciona un alumno</h2>
+            <div id="progress-summary"></div>
+          </article>
+          <aside class="group-summary-card progress-side" aria-label="Resumen lateral del grupo">
+            <h2>RESUMEN DEL GRUPO</h2>
+            <strong id="progress-total-students">0 jugadores</strong>
+            <p><span class="status-dot ready"></span><span id="progress-ready">0 listos</span></p>
+            <p><span class="status-dot progress"></span><span id="progress-in-progress">0 en progreso</span></p>
+            <p><span class="status-dot unconfigured"></span><span id="progress-unconfigured">0 sin configurar</span></p>
+          </aside>
+        </div>
       </section>
     </main>
 

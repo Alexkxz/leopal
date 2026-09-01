@@ -87,6 +87,34 @@
       options.setFeedback(`Lee ahora: ${options.getCurrentChunk()}`);
     }
 
+    async function prepareMicrophone() {
+      try {
+        await prepareAudioSession();
+        return { ok: true, metrics: getDebugMetrics() };
+      } catch (error) {
+        listening = false;
+        fatalError = true;
+        state = "error";
+        clearRestartTimer();
+        options.setStatus("Microfono detenido", false);
+        options.setStartLabel("Permitir microfono y comenzar");
+        options.setFeedback(getMicrophoneErrorMessage(error));
+        return { ok: false, error: getMicrophoneErrorMessage(error) };
+      }
+    }
+
+    async function sampleVoiceEvidence(durationMs = 1300) {
+      resetVoiceEvidence();
+      const startedAt = getNow();
+      await new Promise((resolve) => win.setTimeout(resolve, Math.max(250, Number(durationMs) || 1300)));
+      const metrics = getDebugMetrics();
+      resetVoiceEvidence();
+      return {
+        ...metrics,
+        sampledForMs: Math.max(0, getNow() - startedAt),
+      };
+    }
+
     function stop(updateText = true) {
       userStopped = true;
       listening = false;
@@ -561,6 +589,7 @@
 
     return {
       start,
+      prepareMicrophone,
       stop,
       close,
       getState: () => state,
@@ -577,6 +606,7 @@
       markEvaluationComplete,
       debugSetNoiseFloor,
       debugSampleVolume,
+      sampleVoiceEvidence,
       isVoiceActive,
       readVolume,
     };

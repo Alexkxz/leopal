@@ -53,7 +53,9 @@
   function makeDefaultConfig() {
     return {
       consonants: getDefaultConsonants(),
-      levelStart: "silabas",
+      levelStart: "syllables",
+      category: "syllables",
+      sublevel: "syllables",
       sessionGoal: 10,
       shuffleSyllables: false,
       maxAttemptsPerChunk: 3,
@@ -64,9 +66,16 @@
   function normalizeConfig(config) {
     const base = makeDefaultConfig();
     const source = config || {};
+    const normalizedLevel = global.LectoVozContent?.normalizeLevelId
+      ? global.LectoVozContent.normalizeLevelId(source.levelStart || source.sublevel)
+      : source.levelStart || base.levelStart;
+    const definition = global.LectoVozContent?.getLevelDefinition?.(normalizedLevel);
     return {
       ...base,
       ...source,
+      levelStart: definition ? normalizedLevel : base.levelStart,
+      category: definition?.category || base.category,
+      sublevel: definition ? normalizedLevel : base.sublevel,
       consonants: Array.isArray(source.consonants) && source.consonants.length
         ? source.consonants
         : base.consonants,

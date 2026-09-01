@@ -80,6 +80,7 @@ const dashboard = context.window.LectoVozTeacherDashboard;
 const control = context.window.LectoVozTeacherControl;
 const micDiagnostic = context.window.LectoVozMicDiagnostic;
 const offlineAnalyzer = context.window.LectoVozOfflineAudioAnalyzer;
+const content = context.window.LectoVozContent;
 
 function assertArray(actual, expected) {
   assert.deepStrictEqual(Array.from(actual), expected);
@@ -88,6 +89,22 @@ function assertArray(actual, expected) {
 function assertJson(actual, expected) {
   assert.deepStrictEqual(JSON.parse(JSON.stringify(actual)), JSON.parse(JSON.stringify(expected)));
 }
+
+assertArray(Object.keys(content.contentTree), ["syllables", "words", "sentences"]);
+assert.strictEqual(Object.keys(content.contentTree.syllables.sublevels).length, 2);
+assert.strictEqual(Object.keys(content.contentTree.words.sublevels).length, 2);
+assert.strictEqual(Object.keys(content.contentTree.sentences.sublevels).length, 2);
+assert.strictEqual(content.lessons.syllables.length, 19);
+assert.strictEqual(content.lessons.segmentedWords.length >= 60, true);
+assert.strictEqual(content.lessons.simpleWords.length >= 80, true);
+assert.strictEqual(content.lessons.complexWords.length >= 80, true);
+assert.strictEqual(content.lessons.shortSentences.length >= 40, true);
+assert.strictEqual(content.lessons.longSentences.length >= 40, true);
+const segmentedCamioneta = content.lessons.segmentedWords.find((item) => item.expectedText === "camioneta");
+assert.strictEqual(segmentedCamioneta.displayText, "ca-mio-ne-ta");
+assert.strictEqual(segmentedCamioneta.expectedText, "camioneta");
+assert.strictEqual(content.normalizeLevelId("palabras_largas"), "complexWords");
+assert.strictEqual(content.normalizeLevelId("frases_cortas"), "shortSentences");
 
 storage.addPracticeRecord({ id: "old", group: "1A", errors: 2, accuracy: 80 });
 storage.addPracticeRecord({ id: "new", group: "1B", errors: 0, accuracy: 100 });
@@ -211,11 +228,23 @@ assert.strictEqual(offlineAnalysis.recommendation.gate !== null, true);
 
 const teacherControlHtml = fs.readFileSync("teacher-control.html", "utf8");
 const teacherControlScript = fs.readFileSync("teacher-control.js", "utf8");
+assert.ok(teacherControlHtml.includes("CENTRO DE CONTROL"));
+assert.ok(teacherControlHtml.includes("data-tab=\"players\""));
+assert.ok(teacherControlHtml.includes("data-tab=\"missions\""));
+assert.ok(teacherControlHtml.includes("data-tab=\"progress\""));
+assert.ok(teacherControlHtml.includes("id=\"student-search\""));
+assert.ok(teacherControlHtml.includes("id=\"category-card-grid\""));
+assert.ok(teacherControlHtml.includes("id=\"sublevel-grid\""));
+assert.ok(teacherControlHtml.includes("id=\"bulk-student-list\""));
+assert.ok(teacherControlHtml.includes("RESPALDO DE DATOS"));
 assert.ok(teacherControlHtml.includes('select id="max-attempts-per-chunk"'));
 assert.ok(teacherControlHtml.includes('<option value="1">1 intento</option>'));
 assert.ok(teacherControlHtml.includes('<option value="2">2 intentos</option>'));
 assert.ok(teacherControlHtml.includes('<option value="3">3 intentos</option>'));
 assert.ok(teacherControlScript.includes("TeacherControl.normalizeMaxAttemptsPerChunk(maxAttemptsPerChunk.value)"));
+assert.ok(teacherControlScript.includes("normalizeComparable(student.name).includes(studentFilter)"));
+assert.ok(teacherControlScript.includes("shouldShowConsonants()"));
+assert.ok(teacherControlScript.includes("replaceManyStudentConfigs"));
 
 let schoolResult = academic.createSchool([], " Escuela Primaria Ignacio Allende ");
 assert.strictEqual(schoolResult.success, true);
@@ -416,9 +445,12 @@ assert.strictEqual(fallbackExport.filename, "lectovoz-datos.json");
 assert.ok(["json", "download"].includes(fallbackExport.method));
 
 const config = control.makeDefaultConfig();
-assert.strictEqual(config.levelStart, "silabas");
+assert.strictEqual(config.levelStart, "syllables");
+assert.strictEqual(config.category, "syllables");
+assert.strictEqual(config.sublevel, "syllables");
 assert.strictEqual(config.sessionGoal, 10);
 assert.strictEqual(config.maxAttemptsPerChunk, 3);
+assert.strictEqual(config.isConfigured, false);
 assert.strictEqual(config.consonants.length, context.window.LectoVozContent.defaultConsonants.length);
 assert.strictEqual(control.normalizeMaxAttemptsPerChunk(1), 1);
 assert.strictEqual(control.normalizeMaxAttemptsPerChunk(2), 2);
@@ -430,15 +462,80 @@ assert.strictEqual(control.normalizeMaxAttemptsPerChunk(null), 3);
 
 const student = control.createStudentRecord("Ana", "1A");
 assert.strictEqual(student.id, "student-id");
-assert.strictEqual(student.config.levelStart, "silabas");
+assert.strictEqual(student.config.levelStart, "syllables");
+assert.strictEqual(student.config.isConfigured, false);
 assert.strictEqual(student.config.maxAttemptsPerChunk, 3);
 assert.strictEqual(control.getSelectedStudent([student], "student-id"), student);
 const updatedStudent = control.replaceStudentConfig([student], "student-id", { sessionGoal: 5, maxAttemptsPerChunk: 2 })[0];
 assert.strictEqual(updatedStudent.config.sessionGoal, 5);
 assert.strictEqual(updatedStudent.config.maxAttemptsPerChunk, 2);
+assert.strictEqual(updatedStudent.config.isConfigured, true);
+assert.ok(updatedStudent.config.updatedAt.length > 0);
+assert.strictEqual(control.replaceStudentConfig([student], "student-id", { levelStart: "frases_largas" })[0].config.levelStart, "longSentences");
 const normalizedStudent = control.replaceStudentConfig([student], "student-id", { ...student.config, maxAttemptsPerChunk: 9 })[0];
 assert.strictEqual(normalizedStudent.config.maxAttemptsPerChunk, 3);
 assertJson(control.deleteStudentById([student], "student-id"), []);
+assert.strictEqual(control.getCategoryLabel("syllables"), "SILABAS");
+assert.strictEqual(control.getCategoryLabel("words"), "PALABRAS");
+assert.strictEqual(control.getCategoryLabel("sentences"), "ORACIONES");
+assert.strictEqual(control.getLevelLabel("segmentedWords"), "Palabras silabeadas");
+assert.strictEqual(control.getLevelLabel("simpleWords"), "Simples");
+assert.strictEqual(control.getLevelLabel("complexWords"), "Complejas");
+assert.strictEqual(control.getLevelLabel("shortSentences"), "Cortas");
+assert.strictEqual(control.getLevelLabel("longSentences"), "Amplias");
+assert.strictEqual(context.window.LectoVozContent.getLevelDefinition("syllables").category, "syllables");
+assert.strictEqual(context.window.LectoVozContent.getLevelDefinition("segmentedWords").category, "syllables");
+assert.strictEqual(context.window.LectoVozContent.getLevelDefinition("simpleWords").category, "words");
+assert.strictEqual(context.window.LectoVozContent.getLevelDefinition("complexWords").category, "words");
+assert.strictEqual(context.window.LectoVozContent.getLevelDefinition("shortSentences").category, "sentences");
+assert.strictEqual(context.window.LectoVozContent.getLevelDefinition("longSentences").category, "sentences");
+
+const unconfiguredStudent = { ...student, config: { ...student.config, isConfigured: false } };
+const readyStudent = { ...student, id: "ready", config: { ...student.config, isConfigured: true } };
+const progressStudent = { ...student, id: "progress" };
+const progressRecords = [
+  {
+    studentId: "progress",
+    student: "Ana",
+    group: "1A",
+    level: "simpleWords",
+    accuracy: 82,
+    correct: 34,
+    errors: 6,
+    chunkAttempts: [
+      { evaluation: { status: "correct" } },
+      { evaluation: { status: "approximate" } },
+      { evaluation: { status: "incorrect" } },
+      { evaluation: { status: "uncertain" } },
+    ],
+    notMasteredChunks: [{ expected: "tra" }, { expected: "pla" }],
+  },
+];
+assert.strictEqual(control.getStudentStatus(unconfiguredStudent, []).label, "SIN CONFIGURAR");
+assert.strictEqual(control.getStudentStatus(readyStudent, []).label, "LISTO");
+assert.strictEqual(control.getStudentStatus(progressStudent, progressRecords).label, "EN PROGRESO");
+const progressSummary = control.summarizeStudentProgress(progressStudent, progressRecords);
+assert.strictEqual(progressSummary.accuracy, 82);
+assert.strictEqual(progressSummary.correct, 34);
+assert.strictEqual(progressSummary.approximate, 1);
+assert.strictEqual(progressSummary.incorrect, 6);
+assert.strictEqual(progressSummary.unevaluated, 0);
+assertArray(progressSummary.weakChunks, ["tra", "pla"]);
+assertJson(control.summarizeGroup([unconfiguredStudent, readyStudent, progressStudent], progressRecords), {
+  total: 3,
+  ready: 1,
+  progress: 1,
+  unconfigured: 1,
+});
+const bulkConfigured = control.replaceManyStudentConfigs([unconfiguredStudent, readyStudent], [unconfiguredStudent.id, readyStudent.id], {
+  levelStart: "longSentences",
+  sessionGoal: 20,
+  maxAttemptsPerChunk: 1,
+});
+assert.strictEqual(bulkConfigured[0].config.levelStart, "longSentences");
+assert.strictEqual(bulkConfigured[1].config.sessionGoal, 20);
+assert.strictEqual(bulkConfigured[0].config.maxAttemptsPerChunk, 1);
+assert.strictEqual(bulkConfigured[0].config.isConfigured, true);
 
 function createSpeechHarness(overrides = {}) {
   const events = [];
@@ -679,6 +776,7 @@ async function runSpeechControllerTests() {
     recognitionInstances += 1;
     this.startCalls = 0;
     this.stopCalls = 0;
+    this.abortCalls = 0;
     this.continuous = false;
   }
   FakeRecognition.prototype.start = function start() {
@@ -697,9 +795,39 @@ async function runSpeechControllerTests() {
       throw error;
     }
   };
+  FakeRecognition.prototype.abort = function abort() {
+    this.abortCalls += 1;
+  };
+
+  const calibrationTrack = createTrack();
+  let calibrationGetUserMediaCalls = 0;
+  const calibrationHarness = createSpeechHarness({
+    recognitionCtor: FakeRecognition,
+    navigator: {
+      mediaDevices: {
+        getUserMedia() {
+          calibrationGetUserMediaCalls += 1;
+          return Promise.resolve({ getTracks: () => [calibrationTrack] });
+        },
+      },
+    },
+  });
+  const recognitionInstancesBeforeCalibration = recognitionInstances;
+  const calibrationReady = await calibrationHarness.controller.prepareMicrophone();
+  assert.strictEqual(calibrationReady.ok, true);
+  assert.strictEqual(calibrationHarness.controller.isListening(), false);
+  assert.strictEqual(calibrationHarness.controller.isAudioReady(), true);
+  assert.strictEqual(calibrationGetUserMediaCalls, 1);
+  assert.strictEqual(recognitionInstances, recognitionInstancesBeforeCalibration);
+  await calibrationHarness.controller.prepareMicrophone();
+  assert.strictEqual(calibrationGetUserMediaCalls, 1);
+  await calibrationHarness.controller.start();
+  assert.strictEqual(calibrationGetUserMediaCalls, 1);
+  assert.strictEqual(calibrationTrack.stopped, false);
 
   const track = createTrack();
   let getUserMediaCalls = 0;
+  const recognitionInstancesBeforeStartHarness = recognitionInstances;
   const controllerHarness = createSpeechHarness({
     recognitionCtor: FakeRecognition,
     navigator: {
@@ -715,10 +843,10 @@ async function runSpeechControllerTests() {
   assert.strictEqual(controllerHarness.controller.isListening(), true);
   assert.strictEqual(controllerHarness.controller.getState(), "listening");
   assert.strictEqual(getUserMediaCalls, 1);
-  assert.strictEqual(recognitionInstances, 1);
+  assert.strictEqual(recognitionInstances, recognitionInstancesBeforeStartHarness + 1);
   await controllerHarness.controller.start();
   assert.strictEqual(getUserMediaCalls, 1);
-  assert.strictEqual(recognitionInstances, 1);
+  assert.strictEqual(recognitionInstances, recognitionInstancesBeforeStartHarness + 1);
   assert.strictEqual(recognitionInstance.continuous, true);
   controllerHarness.controller.stop();
   controllerHarness.controller.stop();

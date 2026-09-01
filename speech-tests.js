@@ -14,7 +14,7 @@ let passedChecks = 0;
 function createFakeElement() {
   const listeners = {};
   const element = {
-    value: "silabas",
+    value: "syllables",
     textContent: "",
     innerHTML: "",
     style: {},
@@ -65,6 +65,7 @@ function createFakeElement() {
 const elements = new Map();
 let recognitionInstances = 0;
 let lastRecognition;
+const recognitionHistory = [];
 let getUserMediaCalls = 0;
 const mediaTrack = {
   stopped: false,
@@ -76,8 +77,10 @@ const mediaTrack = {
 function FakeSpeechRecognition() {
   recognitionInstances += 1;
   lastRecognition = this;
+  recognitionHistory.push(this);
   this.startCalls = 0;
   this.stopCalls = 0;
+  this.abortCalls = 0;
 }
 
 FakeSpeechRecognition.prototype.start = function start() {
@@ -86,6 +89,10 @@ FakeSpeechRecognition.prototype.start = function start() {
 
 FakeSpeechRecognition.prototype.stop = function stop() {
   this.stopCalls += 1;
+};
+
+FakeSpeechRecognition.prototype.abort = function abort() {
+  this.abortCalls += 1;
 };
 
 function createAudioNode() {
@@ -129,7 +136,7 @@ function createConfiguredStudent(maxAttemptsPerChunk, label) {
     group: "1A",
     config: {
       consonants: ["m", "p", "l", "s", "t", "n", "r", "c", "q", "b", "d", "f", "g", "j", "v", "z", "y", "h", "k", "w", "x", "ch", "ll", "rr"],
-      levelStart: "frases_cortas",
+      levelStart: "shortSentences",
       sessionGoal: 10,
       shuffleSyllables: false,
       maxAttemptsPerChunk,
@@ -231,17 +238,20 @@ assertArray(context.syllabifyWord("mama"), ["ma", "ma"]);
 assertArray(context.syllabifyWord("pelota"), ["pe", "lo", "ta"]);
 assertArray(context.splitIntoChunks("Mi mama me quiere"), ["mi", "mama", "me", "quiere"]);
 
-assert.ok(context.getLessonList("palabras_cortas").length > 100);
-assert.ok(context.getLessonList("palabras_medianas").length > 100);
-assert.ok(context.getLessonList("palabras_largas").length > 50);
-assert.ok(context.getLessonList("frases_cortas").length > 50);
-assert.ok(context.getLessonList("frases_medianas").length > 50);
-assert.ok(context.getLessonList("frases_largas").length > 30);
+assert.strictEqual(context.window.LectoVozContent.lessons.syllables.length, 19);
+assert.ok(context.getLessonList("syllables").length >= 18);
+assert.ok(context.getLessonList("segmentedWords").length >= 60);
+assert.ok(context.getLessonList("simpleWords").length >= 80);
+assert.ok(context.getLessonList("complexWords").length >= 80);
+assert.ok(context.getLessonList("shortSentences").length >= 40);
+assert.ok(context.getLessonList("longSentences").length >= 40);
 
-levelSelect.value = "palabras_cortas";
-assertArray(context.splitIntoChunks("mapa"), ["ma", "pa"]);
+levelSelect.value = "simpleWords";
+assertArray(context.splitIntoChunks("mapa"), ["mapa"]);
+assertArray(context.splitIntoChunks("ca-mio-ne-ta"), ["camioneta"]);
+assert.strictEqual(context.evaluateReading("camioneta", "ca-mio-ne-ta").status, "correct");
 
-levelSelect.value = "frases_cortas";
+levelSelect.value = "shortSentences";
 assertArray(context.splitIntoChunks("Mi mama me quiere"), ["mi", "mama", "me", "quiere"]);
 
 assert.strictEqual(context.canAdvanceWithTranscript("ma me mi", "ma"), true);
@@ -314,8 +324,17 @@ assert.ok(styles.includes(".student-page .feedback-incorrect"));
   const continueBtn = elements.get("#continue-btn");
   const statusEl = elements.get("#mic-status");
   const missionCard = elements.get("#mission-card");
+  const calibrationScreen = elements.get("#calibration-screen");
+  const calibrationSkipBtn = elements.get("#calibration-skip-btn");
 
   context.createSession("Ana", "1A");
+  assert.strictEqual(calibrationScreen.classList.contains("hidden"), false);
+  await context.startListening();
+  assert.strictEqual(getUserMediaCalls, 0);
+  assert.strictEqual(recognitionInstances, 0);
+  assert.strictEqual(calibrationScreen.classList.contains("hidden"), false);
+  calibrationSkipBtn.click();
+  assert.strictEqual(calibrationScreen.classList.contains("hidden"), true);
   await context.startListening();
   assert.strictEqual(getUserMediaCalls, 1);
   assert.strictEqual(recognitionInstances, 1);
@@ -411,7 +430,7 @@ assert.ok(styles.includes(".student-page .feedback-incorrect"));
   assert.strictEqual(getStoredRecords().length, recordsBeforeFailedWrite + 1);
   assert.strictEqual(JsonBackup.getBackupStatus().lastError, "write failed");
 
-  levelSelect.value = "frases_cortas";
+  levelSelect.value = "shortSentences";
   context.setLesson("caballo perro");
   context.window.__lectovozVoiceGateOverrideMs = 0;
   context.window.__lectovozListeningGateOverrideMs = 500;
@@ -453,7 +472,7 @@ assert.ok(styles.includes(".student-page .feedback-incorrect"));
   const heardFeedbackEl = elements.get("#heard-feedback");
   const heardEl = elements.get("#heard-text");
   const scoreEl = elements.get("#score-count");
-  levelSelect.value = "frases_cortas";
+  levelSelect.value = "shortSentences";
 
   context.setLesson("casa gato");
   context.window.__lectovozVoiceGateOverrideMs = 180;
@@ -552,7 +571,7 @@ assert.ok(styles.includes(".student-page .feedback-incorrect"));
   assert.strictEqual(feedbackEl.textContent.includes('Intenta nuevamente: "casa"'), true);
   assert.strictEqual(heardEl.textContent, "mesa");
 
-  levelSelect.value = "frases_cortas";
+  levelSelect.value = "shortSentences";
   context.setLesson("ma me");
   context.window.__lectovozVoiceGateOverrideMs = 180;
   context.processTranscript("pa", 1, true);
@@ -580,6 +599,8 @@ assert.ok(styles.includes(".student-page .feedback-incorrect"));
   context.setLesson("pa me");
   context.window.__lectovozVoiceGateOverrideMs = 180;
   const paWindow = context.getActiveListeningContext();
+  const recognitionBeforePaAdvance = lastRecognition;
+  const getUserMediaBeforePaAdvance = getUserMediaCalls;
   context.processTranscript("ma", 1, true, [], paWindow);
   pedagogy = context.getPedagogicalState();
   assert.strictEqual(pedagogy.currentIndex, 0);
@@ -593,6 +614,9 @@ assert.ok(styles.includes(".student-page .feedback-incorrect"));
   assert.strictEqual(feedbackEl.classList.contains("feedback-correct"), true);
   assert.strictEqual(heardFeedbackEl.hidden, true);
   assert.strictEqual(heardFeedbackEl.dataset.transcript, "");
+  assert.strictEqual(lastRecognition, recognitionBeforePaAdvance);
+  assert.strictEqual(recognitionBeforePaAdvance.abortCalls, 0);
+  assert.strictEqual(getUserMediaCalls, getUserMediaBeforePaAdvance);
   const scoreAfterPaAdvance = Number(scoreEl.textContent || 0);
   const generationAfterPaAdvance = pedagogy.listeningGeneration;
   const feedbackAfterPaAdvance = feedbackEl.textContent;
@@ -670,7 +694,7 @@ assert.ok(styles.includes(".student-page .feedback-incorrect"));
   assert.strictEqual(heardFeedbackEl.hidden, true);
 
   context.createSession("Intentos tres", "1A");
-  levelSelect.value = "frases_cortas";
+  levelSelect.value = "shortSentences";
   context.setLesson("sol luna");
   const scoreBeforeNotMastered = Number(scoreEl.textContent || 0);
   context.processTranscript("perro", 1, true);

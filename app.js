@@ -15,6 +15,15 @@ const noiseLevelEl = document.querySelector("#noise-level");
 const voiceLevelEl = document.querySelector("#voice-level");
 const confidenceLevelEl = document.querySelector("#confidence-level");
 const loginScreen = document.querySelector("#login-screen");
+const calibrationScreen = document.querySelector("#calibration-screen");
+const calibrationInstructionEl = document.querySelector("#calibration-instruction");
+const calibrationTargetEl = document.querySelector("#calibration-target");
+const calibrationStepEl = document.querySelector("#calibration-step");
+const calibrationStatusEl = document.querySelector("#calibration-status");
+const calibrationMeterFill = document.querySelector("#calibration-meter-fill");
+const calibrationStartBtn = document.querySelector("#calibration-start-btn");
+const calibrationRecordBtn = document.querySelector("#calibration-record-btn");
+const calibrationSkipBtn = document.querySelector("#calibration-skip-btn");
 const loginForm = document.querySelector("#login-form");
 const studentNameInput = document.querySelector("#student-name");
 const studentGroupInput = document.querySelector("#student-group");
@@ -31,6 +40,8 @@ const missionCountEl = document.querySelector("#mission-count");
 const missionScoreEl = document.querySelector("#mission-score");
 const continueBtn = document.querySelector("#continue-btn");
 const missionLogoutBtn = document.querySelector("#mission-logout-btn");
+const practiceChooser = document.querySelector("#practice-chooser");
+const practiceButtons = document.querySelectorAll?.("[data-practice-level]") || [];
 
 const Content = window.LectoVozContent;
 const Academic = window.LectoVozAcademic;
@@ -42,7 +53,9 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 const defaultGameConfig = Content.defaultGameConfig;
 
 let activeText = "";
+let activeDisplayText = "";
 let chunks = [];
+let displayChunks = [];
 let currentIndex = 0;
 let lessonIndex = 0;
 let correctCount = 0;
@@ -68,6 +81,9 @@ let lastReadingDebug = null;
 let listeningGeneration = 0;
 let isTransitioning = false;
 let listeningWindowStartedAt = 0;
+let calibrationCompleted = false;
+let calibrationIndex = -1;
+let calibrationSamples = [];
 
 const defaultMaxAttemptsPerChunk = 3;
 const minVoiceMsForAttempt = 180;
@@ -75,6 +91,11 @@ const recognitionWarmupMs = 250;
 const transcriptBufferMs = 450;
 
 const minConfidence = 0;
+const calibrationPrompts = [
+  { target: "ma", label: "silaba" },
+  { target: "poco", label: "palabra" },
+  { target: "mi mama me quiere", label: "frase" },
+];
 const speechController = window.LectoVozSpeech.createSpeechController({
   window,
   navigator,
@@ -136,18 +157,102 @@ function renderPrompt() {
   chunks.forEach((chunk, index) => {
     const span = document.createElement("span");
     span.className = "chunk";
-    span.textContent = chunk;
+    span.textContent = displayChunks[index] || chunk;
     span.dataset.index = index;
     if (index === currentIndex) span.classList.add("current");
     promptEl.appendChild(span);
 
-    if (levelSelect.value.startsWith("frases") && index < chunks.length - 1) {
+    if (getLevelKind(levelSelect.value) === "sentences" && index < chunks.length - 1) {
       const space = document.createElement("span");
       space.className = "space";
       promptEl.appendChild(space);
     }
   });
   updateMeter();
+}
+
+function showCalibrationScreen() {
+  if (!calibrationScreen || calibrationCompleted) return;
+  calibrationIndex = -1;
+  calibrationSamples = [];
+  calibrationScreen.classList.remove("hidden");
+  calibrationStartBtn.hidden = false;
+  calibrationRecordBtn.hidden = true;
+  calibrationTargetEl.textContent = "Silencio";
+  calibrationStepEl.textContent = `Paso 1 de ${calibrationPrompts.length + 1}`;
+  calibrationInstructionEl.textContent = "Primero escuchare el ambiente. Despues lee unas muestras cortas para afinar la deteccion.";
+  calibrationStatusEl.textContent = "Presiona comenzar para permitir el microfono.";
+  calibrationMeterFill.style.width = "0%";
+}
+
+function hideCalibrationScreen() {
+  calibrationCompleted = true;
+  calibrationScreen?.classList.add("hidden");
+  setFeedbackState("neutral", `Lee ahora: ${chunks[currentIndex]}`);
+}
+
+function renderCalibrationPrompt() {
+  const prompt = calibrationPrompts[calibrationIndex];
+  calibrationTargetEl.textContent = prompt.target.toUpperCase();
+  calibrationStepEl.textContent = `Paso ${calibrationIndex + 2} de ${calibrationPrompts.length + 1}`;
+  calibrationInstructionEl.textContent = `Lee esta ${prompt.label} con voz normal.`;
+  calibrationStatusEl.textContent = "Cuando este listo, presiona Escuchar muestra.";
+  calibrationMeterFill.style.width = `${Math.round((calibrationIndex / calibrationPrompts.length) * 100)}%`;
+  calibrationRecordBtn.disabled = false;
+}
+
+function summarizeCalibration() {
+  const enoughVoiceCount = calibrationSamples.filter((sample) => sample.voiceEvidenceDuration >= minVoiceMsForAttempt).length;
+  const lowVoiceCount = calibrationSamples.length - enoughVoiceCount;
+  if (!calibrationSamples.length) return "Calibracion omitida. Puedes comenzar a leer.";
+  if (lowVoiceCount) {
+    return "Listo. Si aparece amarillo con frecuencia, intenta hablar un poco mas cerca del microfono.";
+  }
+  return "Listo. El microfono detecto bien las muestras.";
+}
+
+async function startCalibration() {
+  calibrationStartBtn.disabled = true;
+  calibrationSkipBtn.disabled = true;
+  calibrationStatusEl.textContent = "Solicitando permiso y escuchando el ambiente...";
+  const result = await speechController.prepareMicrophone?.();
+  if (!result?.ok) {
+    calibrationStatusEl.textContent = result?.error || "No se pudo acceder al microfono.";
+    calibrationStartBtn.disabled = false;
+    calibrationSkipBtn.disabled = false;
+    return;
+  }
+  calibrationStartBtn.hidden = true;
+  calibrationRecordBtn.hidden = false;
+  calibrationSkipBtn.disabled = false;
+  calibrationIndex = 0;
+  renderCalibrationPrompt();
+}
+
+async function recordCalibrationSample() {
+  const prompt = calibrationPrompts[calibrationIndex];
+  if (!prompt) {
+    hideCalibrationScreen();
+    return;
+  }
+  calibrationRecordBtn.disabled = true;
+  calibrationStatusEl.textContent = "Te escucho...";
+  const metrics = await speechController.sampleVoiceEvidence?.(1300);
+  calibrationSamples.push({
+    target: prompt.target,
+    label: prompt.label,
+    voiceEvidenceDuration: Number(metrics?.voiceEvidenceDuration || 0),
+    currentVolume: Number(metrics?.currentVolume || 0),
+    noiseFloor: Number(metrics?.noiseFloor || 0),
+  });
+  calibrationIndex += 1;
+  calibrationMeterFill.style.width = `${Math.round((calibrationIndex / calibrationPrompts.length) * 100)}%`;
+  if (calibrationIndex >= calibrationPrompts.length) {
+    calibrationStatusEl.textContent = summarizeCalibration();
+    window.setTimeout(() => hideCalibrationScreen(), 700);
+    return;
+  }
+  renderCalibrationPrompt();
 }
 
 function getActiveListeningContext() {
@@ -312,20 +417,37 @@ function setMicrophoneLabel(value) {
 
 function getLevelLabel(level) {
   const labels = {
-    silabas: "Silabas",
-    palabras_cortas: "Palabras pequenas",
-    palabras_medianas: "Palabras medianas",
-    palabras_largas: "Palabras grandes",
-    frases_cortas: "Frases cortas",
-    frases_medianas: "Frases medianas",
-    frases_largas: "Frases largas",
+    syllables: "Silabas",
+    segmentedWords: "Palabras silabeadas",
+    simpleWords: "Palabras simples",
+    complexWords: "Palabras complejas",
+    shortSentences: "Oraciones cortas",
+    longSentences: "Oraciones amplias",
   };
-  return labels[level] || "Lectura";
+  return labels[Content.normalizeLevelId?.(level) || level] || "Lectura";
 }
 
-function setLesson(text) {
-  activeText = normalizeText(text);
+function getLevelKind(level) {
+  return Content.getLevelDefinition?.(level)?.category || "syllables";
+}
+
+function getExerciseDisplayText(exercise) {
+  return Content.makeExercise?.(exercise).displayText || String(exercise ?? "");
+}
+
+function getExerciseExpectedText(exercise) {
+  return Content.makeExercise?.(exercise).expectedText || String(exercise ?? "");
+}
+
+function setLesson(exercise) {
+  activeDisplayText = getExerciseDisplayText(exercise);
+  activeText = normalizeText(getExerciseExpectedText(exercise));
   chunks = splitIntoChunks(activeText);
+  displayChunks = Evaluation.splitIntoChunks(activeDisplayText, {
+    level: levelSelect.value,
+    shuffleSyllables: currentGameConfig.shuffleSyllables,
+  });
+  if (chunks.length === 1 && displayChunks.length !== 1) displayChunks = [activeDisplayText];
   currentIndex = 0;
   advancingToNextLesson = false;
   attemptCount = 0;
@@ -366,11 +488,12 @@ function getLessonList(level) {
 }
 
 function getConfiguredLessons(level) {
-  const list = lessons[level] || [];
+  const normalizedLevel = Content.normalizeLevelId?.(level) || level;
+  const list = lessons[normalizedLevel] || lessons[level] || [];
   const allowed = getAllowedConsonants();
-  if (!allowed.length) return list;
+  if (!allowed.length || getLevelKind(normalizedLevel) !== "syllables") return list;
 
-  const filtered = list.filter((text) => usesOnlyAllowedConsonants(text, allowed));
+  const filtered = list.filter((exercise) => usesOnlyAllowedConsonants(getExerciseExpectedText(exercise), allowed));
   return filtered.length ? filtered : list;
 }
 
@@ -765,6 +888,10 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
 }
 
 async function startListening() {
+  if (!calibrationCompleted) {
+    showCalibrationScreen();
+    return;
+  }
   await speechController.start();
 }
 
@@ -795,6 +922,8 @@ function savePracticeRecord(status) {
     group: currentSession.group,
     level: levelSelect.value,
     text: activeText,
+    displayText: activeDisplayText,
+    expectedText: activeText,
     correct: lessonCorrect,
     errors: lessonErrors,
     total,
@@ -867,12 +996,14 @@ function restoreSession() {
   applyGameConfig();
   loginScreen.classList.add("hidden");
   currentStudentEl.textContent = currentSession.student;
+  showCalibrationScreen();
 }
 
 function createSession(student, group) {
   const registeredStudent = findRegisteredStudent(student, group);
   const fallbackSchool = getDefaultSchoolForSession();
   const config = normalizeGameConfig(registeredStudent?.config);
+  calibrationCompleted = false;
   currentSession = {
     studentId: registeredStudent?.id || "",
     student,
@@ -890,6 +1021,7 @@ function createSession(student, group) {
   applyGameConfig();
   loginScreen.classList.add("hidden");
   currentStudentEl.textContent = student;
+  showCalibrationScreen();
 }
 
 function getRegisteredStudents() {
@@ -910,9 +1042,14 @@ function getDefaultSchoolForSession() {
 }
 
 function normalizeGameConfig(config) {
+  const normalizedLevel = Content.normalizeLevelId?.(config?.levelStart) || defaultGameConfig.levelStart;
+  const definition = Content.getLevelDefinition?.(normalizedLevel);
   return {
     ...defaultGameConfig,
     ...(config || {}),
+    levelStart: lessons[normalizedLevel] ? normalizedLevel : defaultGameConfig.levelStart,
+    category: definition?.category || defaultGameConfig.category,
+    sublevel: normalizedLevel,
     consonants: Array.isArray(config?.consonants) && config.consonants.length
       ? config.consonants
       : defaultGameConfig.consonants,
@@ -923,6 +1060,7 @@ function normalizeGameConfig(config) {
 }
 
 function applyGameConfig() {
+  currentGameConfig.levelStart = Content.normalizeLevelId?.(currentGameConfig.levelStart) || currentGameConfig.levelStart;
   if (lessons[currentGameConfig.levelStart]) {
     levelSelect.value = currentGameConfig.levelStart;
   }
@@ -936,6 +1074,9 @@ function updateGameConfigSummary() {
   activeConsonantsEl.textContent = getAllowedConsonants().length;
   sessionGoalCountEl.textContent = currentGameConfig.sessionGoal;
   currentActivityEl.textContent = getLevelLabel(levelSelect.value);
+  practiceButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.practiceLevel === levelSelect.value);
+  });
   updateMeter();
 }
 
@@ -996,11 +1137,34 @@ levelSelect.addEventListener("change", () => {
   loadCurrentLesson();
 });
 
+practiceButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    levelSelect.value = button.dataset.practiceLevel;
+    stopListening(false);
+    lessonIndex = 0;
+    updateGameConfigSummary();
+    loadCurrentLesson();
+    practiceChooser?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
+  });
+});
+
 useCustom.addEventListener("click", () => {
   const value = customText.value.trim();
   if (!value) return;
   stopListening(false);
   setLesson(value);
+});
+
+calibrationStartBtn?.addEventListener("click", () => {
+  startCalibration();
+});
+
+calibrationRecordBtn?.addEventListener("click", () => {
+  recordCalibrationSample();
+});
+
+calibrationSkipBtn?.addEventListener("click", () => {
+  hideCalibrationScreen();
 });
 
 loginForm.addEventListener("submit", (event) => {
@@ -1016,6 +1180,8 @@ logoutBtn.addEventListener("click", () => {
   Storage.clearSession();
   currentSession = null;
   currentGameConfig = Content.getDefaultGameConfig();
+  calibrationCompleted = false;
+  calibrationScreen?.classList.add("hidden");
   completedInSession = 0;
   streakCount = 0;
   updateStreak();

@@ -7,95 +7,135 @@
     "audio/mp4",
   ];
 
-  const PRIORITY_SYLLABLES = [
-    "ma", "me", "mi", "mo", "mu",
-    "pa", "pe", "pi", "po", "pu",
-    "ba", "be", "bi", "bo", "bu",
-    "la", "le", "li", "lo", "lu",
-    "sa", "se", "si", "so", "su",
-    "ta", "te", "ti", "to", "tu",
-    "da", "de", "di", "do", "du",
-    "na", "ne", "ni", "no", "nu",
-    "ra", "re", "ri", "ro", "ru",
-    "ca", "co", "cu",
-    "ga", "go", "gu",
-    "fa", "fe", "fi", "fo", "fu",
-    "ja", "je", "ji", "jo", "ju",
-    "ña", "ñe", "ñi", "ño", "ñu",
-    "cha", "che", "chi", "cho", "chu",
-  ];
+  const STRUCTURE = {
+    syllables: {
+      label: "SILABAS",
+      sublevels: {
+        syllables: { label: "Silabas" },
+        segmentedWords: { label: "Palabras silabeadas" },
+      },
+    },
+    words: {
+      label: "PALABRAS",
+      sublevels: {
+        simpleWords: { label: "Palabras simples" },
+        complexWords: { label: "Palabras complejas" },
+      },
+    },
+    sentences: {
+      label: "ORACIONES",
+      sublevels: {
+        shortSentences: { label: "Oraciones cortas" },
+        longSentences: { label: "Oraciones amplias" },
+      },
+    },
+  };
 
-  const CONTRAST_SYLLABLES = [
-    "ma", "pa", "ba", "ta", "da", "ca", "ga", "fa", "sa", "za", "ra", "la",
-  ];
+  const SUBLEVEL_CATEGORY = {
+    syllables: "syllables",
+    segmentedWords: "syllables",
+    simpleWords: "words",
+    complexWords: "words",
+    shortSentences: "sentences",
+    longSentences: "sentences",
+  };
 
-  const FALLBACK_SHORT_WORDS = [
-    "sol", "pan", "mar", "mes", "pez", "sal", "luz", "dos", "fin", "hoy",
-    "ojo", "oso", "ala", "casa", "mesa", "pato", "gato", "mano", "pala", "mapa",
-    "luna", "nube", "rosa", "lago", "flor", "nido", "sopa", "miel", "boca", "dedo",
-    "pelo", "cara", "ropa", "sala", "tela", "vela", "bola", "bota", "jugo", "vaca",
-  ];
+  const CONTENT_SUBLEVEL = {
+    syllables: "syllables",
+    segmentedWords: "segmentedWords",
+    simpleWords: "simple",
+    complexWords: "complex",
+    shortSentences: "short",
+    longSentences: "long",
+  };
 
-  const FALLBACK_MEDIUM_WORDS = [
-    "pelota", "camino", "amigos", "escuela", "puerta", "cocina", "regalo", "jardin",
-    "campo", "tiempo", "playa", "cielo", "elefante", "viento", "tierra", "verano",
-    "bosque", "ciudad", "flores", "tambor", "cohete", "noche", "tarde", "cerro",
-    "perro", "pajaro", "raton", "caballo", "conejo", "tortuga", "abuelo", "familia",
-    "lapiz", "papel", "maestra", "alumno", "recreo", "mochila", "ventana", "palmera",
-  ];
+  const QUICK_LIMITS = {
+    syllables: 24,
+    segmentedWords: 24,
+    simpleWords: 24,
+    complexWords: 24,
+    shortSentences: 12,
+    longSentences: 12,
+  };
 
-  const FALLBACK_LONG_WORDS = [
-    "mariposa", "dinosaurio", "fotografia", "cumpleaños", "electricidad",
-    "refrigerador", "funcionamiento", "responsabilidad", "cocodrilo", "guacamole",
-    "computadora", "calculadora", "television", "pizarron", "telescopio",
-    "temperatura", "universidad", "biblioteca", "supermercado", "diccionario",
-  ];
+  const GENERAL_LIMITS = {
+    syllables: 12,
+    segmentedWords: 8,
+    simpleWords: 10,
+    complexWords: 10,
+    shortSentences: 6,
+    longSentences: 6,
+  };
 
-  const FALLBACK_PHRASES = [
-    "La casa es grande", "Mi perro corre rapido", "El sol sale hoy",
-    "Mi mama me quiere", "El pato nada bien", "Voy a la escuela",
-    "Tengo un libro rojo", "La pelota bota", "El cielo esta azul",
-    "La maestra habla", "El alumno escucha", "Quiero jugar hoy",
-  ];
+  const CONTRAST_SYLLABLES = ["ma", "pa", "ba", "ta", "da", "ca", "ga", "fa", "sa", "za", "ra", "la"];
 
-  function unique(items) {
-    return [...new Set(items.map((item) => String(item || "").trim()).filter(Boolean))];
+  function uniqueBy(items, keyFn) {
+    const seen = new Set();
+    return items.filter((item) => {
+      const key = keyFn(item);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
 
-  function wordsFromLessons(lessons, key, fallback, limit) {
-    const source = Array.isArray(lessons?.[key]) ? lessons[key] : fallback;
-    const words = unique(source.flatMap((line) => String(line).split(/\s+/)));
-    return words.slice(0, limit);
+  function normalizeSamplerItem(value, category, sublevel, index = 0) {
+    const source = typeof value === "string" ? { displayText: value, expectedText: value } : value || {};
+    return {
+      category,
+      sublevel,
+      displayText: source.displayText || source.expectedText || "",
+      expectedText: source.expectedText || source.displayText || "",
+      consonant: source.consonant || "",
+      itemIndex: index + 1,
+    };
   }
 
-  function phrasesFromLessons(lessons, fallback, limit) {
-    const source = Array.isArray(lessons?.frases_cortas) ? lessons.frases_cortas : fallback;
-    return unique(source).slice(0, limit);
+  function getOfficialItems(content, category, sublevel) {
+    if (content?.getItems) {
+      return content.getItems(category, CONTENT_SUBLEVEL[sublevel] || sublevel).map((item, index) => normalizeSamplerItem(item, category, sublevel, index));
+    }
+    const lessons = content?.lessons || {};
+    const keyMap = {
+      syllables: "silabas",
+      segmentedWords: "segmentedWords",
+      simpleWords: "palabras_cortas",
+      complexWords: "palabras_largas",
+      shortSentences: "frases_cortas",
+      longSentences: "frases_largas",
+    };
+    const raw = lessons[keyMap[sublevel]] || [];
+    const flattened = sublevel === "syllables"
+      ? raw.flatMap((line) => String(line).split(/\s+/).filter(Boolean))
+      : raw;
+    return flattened.map((item, index) => normalizeSamplerItem(item, category, sublevel, index));
   }
 
   function getSamplerDataset(content = global.LectoVozContent) {
-    const lessons = content?.lessons || {};
-    const lessonSyllables = unique((lessons.silabas || []).flatMap((line) => String(line).split(/\s+/)));
-    const syllables = unique([...PRIORITY_SYLLABLES, ...CONTRAST_SYLLABLES, ...lessonSyllables]);
-    return {
-      syllables,
-      prioritySyllables: unique([...PRIORITY_SYLLABLES, ...CONTRAST_SYLLABLES]),
-      shortWords: wordsFromLessons(lessons, "palabras_cortas", FALLBACK_SHORT_WORDS, 45),
-      mediumWords: wordsFromLessons(lessons, "palabras_medianas", FALLBACK_MEDIUM_WORDS, 36),
-      longWords: wordsFromLessons(lessons, "palabras_largas", FALLBACK_LONG_WORDS, 22),
-      phrases: phrasesFromLessons(lessons, FALLBACK_PHRASES, 12),
-    };
-  }
+    const dataset = {};
+    Object.entries(SUBLEVEL_CATEGORY).forEach(([sublevel, category]) => {
+      dataset[sublevel] = uniqueBy(
+        getOfficialItems(content, category, sublevel),
+        (item) => `${item.category}:${item.sublevel}:${item.expectedText}`,
+      );
+    });
+    dataset.structure = STRUCTURE;
+    dataset.syllables = dataset.syllables || [];
+    dataset.segmentedWords = dataset.segmentedWords || [];
+    dataset.simpleWords = dataset.simpleWords || [];
+    dataset.complexWords = dataset.complexWords || [];
+    dataset.shortSentences = dataset.shortSentences || [];
+    dataset.longSentences = dataset.longSentences || [];
+    dataset.prioritySyllables = uniqueBy([
+      ...CONTRAST_SYLLABLES.map((text) => normalizeSamplerItem(text, "syllables", "syllables")),
+      ...dataset.syllables,
+    ], (item) => item.expectedText).slice(0, 30);
 
-  function makeDatasetItems(dataset = getSamplerDataset()) {
-    return {
-      syllables: dataset.syllables.map((target) => ({ target, category: "syllable", subcategory: "short" })),
-      prioritySyllables: dataset.prioritySyllables.map((target) => ({ target, category: "syllable", subcategory: "priority" })),
-      shortWords: dataset.shortWords.map((target) => ({ target, category: "word", subcategory: "short" })),
-      mediumWords: dataset.mediumWords.map((target) => ({ target, category: "word", subcategory: "medium" })),
-      longWords: dataset.longWords.map((target) => ({ target, category: "word", subcategory: "long" })),
-      phrases: dataset.phrases.map((target) => ({ target, category: "phrase", subcategory: "short" })),
-    };
+    dataset.shortWords = dataset.simpleWords.slice(0, 45).map((item) => item.expectedText);
+    dataset.mediumWords = dataset.simpleWords.slice(45, 81).map((item) => item.expectedText);
+    dataset.longWords = dataset.complexWords.slice(0, 22).map((item) => item.expectedText);
+    dataset.phrases = dataset.shortSentences.slice(0, 12).map((item) => item.expectedText);
+    return dataset;
   }
 
   function shuffle(items, random = Math.random) {
@@ -107,39 +147,30 @@
     return copy;
   }
 
-  function getModeItems(mode, dataset = getSamplerDataset()) {
-    const items = makeDatasetItems(dataset);
-    if (mode === "priority-syllables") return items.prioritySyllables;
-    if (mode === "syllables") return items.syllables;
-    if (mode === "short-words") return items.shortWords;
-    if (mode === "medium-words") return items.mediumWords;
-    if (mode === "long-words") return items.longWords;
-    if (mode === "phrases") return items.phrases;
-    if (mode === "quick") {
-      return [
-        ...items.prioritySyllables.slice(0, 24),
-        ...items.shortWords.slice(0, 12),
-        ...items.mediumWords.slice(0, 6),
-        ...items.phrases.slice(0, 4),
-      ];
-    }
-    return [...items.syllables, ...items.shortWords, ...items.mediumWords, ...items.longWords, ...items.phrases];
-  }
-
   function normalizeRepetitions(value, fallback) {
     const numeric = Number(value);
     return [1, 2, 3].includes(numeric) ? numeric : fallback;
   }
 
-  function repetitionsForItem(item, config) {
-    if (item.category === "syllable") return normalizeRepetitions(config.syllableRepetitions, 3);
-    if (item.category === "phrase") return normalizeRepetitions(config.phraseRepetitions, 2);
-    return normalizeRepetitions(config.wordRepetitions, 2);
+  function getSublevelItems(config = {}, dataset = getSamplerDataset()) {
+    const sublevel = config.sublevel || "syllables";
+    const mode = config.mode || "quick";
+    if (mode === "general") {
+      return Object.entries(GENERAL_LIMITS).flatMap(([key, limit]) => (dataset[key] || []).slice(0, limit));
+    }
+    const items = dataset[sublevel] || [];
+    if (mode === "complete") return items;
+    return items.slice(0, QUICK_LIMITS[sublevel] || 24);
+  }
+
+  function repetitionsForItem(item, config = {}) {
+    if (config.mode === "general") return 1;
+    if (item.sublevel === "syllables") return normalizeRepetitions(config.syllableRepetitions, 3);
+    return normalizeRepetitions(config.itemRepetitions, 1);
   }
 
   function buildRecordingSequence(config = {}, dataset = getSamplerDataset(), random = Math.random) {
-    const mode = config.mode || "quick";
-    const baseItems = getModeItems(mode, dataset);
+    const baseItems = getSublevelItems(config, dataset);
     const sequence = [];
     baseItems.forEach((item) => {
       const repetitions = repetitionsForItem(item, config);
@@ -163,7 +194,7 @@
   }
 
   function slugTarget(value) {
-    return sanitizeIdentifier(String(value || "muestra").toLowerCase()).slice(0, 32) || "muestra";
+    return sanitizeIdentifier(String(value || "muestra").toLowerCase().replace(/-/g, "")).slice(0, 32) || "muestra";
   }
 
   function getAudioExtension(mimeType) {
@@ -172,9 +203,20 @@
     return "webm";
   }
 
-  function makeRecordingFileName(index, target, repetition, mimeType = "audio/webm") {
+  function makeRecordingFileName(index, itemOrTarget, repetition = 1, mimeType = "audio/webm") {
+    const item = typeof itemOrTarget === "object" ? itemOrTarget : { expectedText: itemOrTarget, sublevel: "" };
     const number = String(index).padStart(3, "0");
-    return `${number}_${slugTarget(target)}_rep${repetition}.${getAudioExtension(mimeType)}`;
+    const extension = getAudioExtension(mimeType);
+    if (item.sublevel === "shortSentences" || item.sublevel === "longSentences") {
+      return `${number}_oracion_${String(item.itemIndex || index).padStart(3, "0")}_rep${repetition}.${extension}`;
+    }
+    return `${number}_${slugTarget(item.expectedText || item.displayText)}_rep${repetition}.${extension}`;
+  }
+
+  function makeZipName(participantId, session = {}, date = new Date()) {
+    const category = sanitizeIdentifier(session.category || SUBLEVEL_CATEGORY[session.sublevel] || "general").toLowerCase();
+    const sublevel = sanitizeIdentifier(session.sublevel || session.mode || "muestra").toLowerCase();
+    return `lectovoz_muestras_${sanitizeIdentifier(participantId)}_${category}_${sublevel}_${date.toISOString().slice(0, 10)}.zip`;
   }
 
   function pickSupportedMimeType(MediaRecorderCtor = global.MediaRecorder) {
@@ -182,13 +224,61 @@
     return MIME_CANDIDATES.find((type) => MediaRecorderCtor.isTypeSupported?.(type)) || "";
   }
 
-  function validateAudioMetrics(metrics = {}) {
+  function minimumDurationForItem(item = {}) {
+    if (item.sublevel === "shortSentences" || item.sublevel === "longSentences") return 700;
+    if (item.sublevel === "segmentedWords" || item.sublevel === "simpleWords" || item.sublevel === "complexWords") return 300;
+    return 250;
+  }
+
+  function validateAudioMetrics(metrics = {}, item = {}) {
     const warnings = [];
-    if (Number(metrics.durationMs || 0) < 250) warnings.push("recording_too_short");
+    if (Number(metrics.durationMs || 0) < minimumDurationForItem(item)) warnings.push("recording_too_short");
     if (Number(metrics.rms || 0) > 0 && Number(metrics.rms) < 0.008) warnings.push("volume_very_low");
     if (Number(metrics.peak || 0) >= 0.98) warnings.push("possible_saturation");
     if (Number(metrics.sizeBytes || 0) <= 0) warnings.push("empty_audio");
     return warnings;
+  }
+
+  function validateRecordingBlob(blob, mimeType = "", metrics = {}, item = {}) {
+    const supportedMime = MIME_CANDIDATES.some((candidate) => candidate.split(";")[0] === String(mimeType || blob?.type || "").split(";")[0]);
+    if (!blob || blob.size <= 0) return { valid: false, reason: "empty_blob", warnings: ["empty_audio"] };
+    if (!supportedMime) return { valid: false, reason: "invalid_mime_type", warnings: [] };
+    const warnings = validateAudioMetrics({ ...metrics, sizeBytes: blob.size }, item);
+    if (warnings.includes("empty_audio")) return { valid: false, reason: "empty_audio", warnings };
+    return { valid: true, reason: "", warnings };
+  }
+
+  function canAcceptRecording(state, blob, validation) {
+    return state === "recorded" && Boolean(blob) && validation?.valid === true;
+  }
+
+  function isStreamUsable(stream) {
+    return Boolean(stream?.active && stream.getTracks?.().some((track) => track.readyState !== "ended"));
+  }
+
+  function stopSessionStream(stream) {
+    if (!stream?.getTracks) return 0;
+    const tracks = stream.getTracks();
+    tracks.forEach((track) => track.stop?.());
+    return tracks.length;
+  }
+
+  function getMicrophoneStatus(stream) {
+    return isStreamUsable(stream) ? "connected" : "disconnected";
+  }
+
+  async function requestSessionStream(sessionState, getUserMedia, options = {}) {
+    if (isStreamUsable(sessionState.stream)) {
+      return { stream: sessionState.stream, requested: false, status: "connected" };
+    }
+    if (sessionState.stream && !options.forceReconnect) {
+      sessionState.status = "disconnected";
+      return { stream: null, requested: false, status: "disconnected" };
+    }
+    if (sessionState.stream && options.forceReconnect) stopSessionStream(sessionState.stream);
+    sessionState.stream = await getUserMedia({ audio: true });
+    sessionState.status = "connected";
+    return { stream: sessionState.stream, requested: true, status: "connected" };
   }
 
   async function calculateBlobMetrics(blob, audioContext) {
@@ -219,28 +309,38 @@
     return result;
   }
 
-  function buildMetadata({ participant, session, sequence, acceptedRecordings, skippedItems, repeatedTakes }) {
-    const recordings = acceptedRecordings.map((item) => ({
-      file: item.file,
-      archivo: item.file,
-      target: item.target,
-      palabra_objetivo: item.target,
-      palabra: item.target,
+  function buildRecordingMetadata(item, recording) {
+    return {
+      file: recording.file,
+      archivo: recording.file,
       category: item.category,
       categoria: item.category,
-      subcategory: item.subcategory,
+      sublevel: item.sublevel,
+      subcategory: item.sublevel,
+      subcategoria: item.sublevel,
+      displayText: item.displayText,
+      expectedText: item.expectedText,
+      target: item.expectedText,
+      palabra_objetivo: item.expectedText,
+      palabra: item.expectedText,
       repetition: item.repetition,
       repeticion: item.repetition,
+      repetitions: item.repetitions,
       order: item.order,
-      mimeType: item.mimeType,
-      sizeBytes: item.sizeBytes,
-      durationMs: Math.round(item.durationMs || 0),
-      recordedAt: item.recordedAt,
-      warnings: item.warnings || [],
-    }));
+      mimeType: recording.mimeType,
+      sizeBytes: recording.sizeBytes,
+      durationMs: Math.round(recording.durationMs || 0),
+      validation: recording.validation || { tooShort: false, tooQuiet: false, clipping: false },
+      warnings: recording.warnings || [],
+      recordedAt: recording.recordedAt,
+    };
+  }
+
+  function buildMetadata({ participant, session, sequence, acceptedRecordings, skippedItems, repeatedTakes }) {
+    const recordings = acceptedRecordings.map((recording) => buildRecordingMetadata(recording, recording));
     return {
       format: "lectovoz-voice-samples",
-      version: 2,
+      version: 3,
       createdAt: new Date().toISOString(),
       participant: {
         id: sanitizeIdentifier(participant.id),
@@ -258,22 +358,24 @@
         region: String(participant.region || ""),
       },
       session: {
-        mode: session.mode,
-        repetitionsConfigured: session.repetitionsConfigured,
-        syllableRepetitions: session.syllableRepetitions,
-        wordRepetitions: session.wordRepetitions,
-        phraseRepetitions: session.phraseRepetitions,
+        category: session.category || SUBLEVEL_CATEGORY[session.sublevel] || "general",
+        sublevel: session.sublevel || "general",
+        mode: session.mode || "quick",
+        repetitionsConfigured: Number(session.syllableRepetitions || 3),
+        syllableRepetitions: Number(session.syllableRepetitions || 3),
+        itemRepetitions: Number(session.itemRepetitions || 1),
         randomOrder: Boolean(session.randomOrder),
         totalExpected: sequence.length,
         totalAccepted: acceptedRecordings.length,
         totalSkipped: skippedItems.length,
         repeatedTakes,
-        order: sequence.map(({ target, category, subcategory, repetition, order }) => ({
-          target,
-          category,
-          subcategory,
-          repetition,
-          order,
+        order: sequence.map((item) => ({
+          category: item.category,
+          sublevel: item.sublevel,
+          displayText: item.displayText,
+          expectedText: item.expectedText,
+          repetition: item.repetition,
+          order: item.order,
         })),
       },
       recordings,
@@ -286,9 +388,7 @@
     let crc = -1;
     for (let index = 0; index < bytes.length; index += 1) {
       crc ^= bytes[index];
-      for (let bit = 0; bit < 8; bit += 1) {
-        crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
-      }
+      for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
     }
     return (crc ^ -1) >>> 0;
   }
@@ -368,8 +468,12 @@
     return new Blob(chunks, { type: "application/zip" });
   }
 
-  function makeZipName(participantId, date = new Date()) {
-    return `lectovoz_muestras_${sanitizeIdentifier(participantId)}_${date.toISOString().slice(0, 10)}.zip`;
+  function formatWarningMessage(validation) {
+    if (!validation?.valid) return "No fue posible generar correctamente la grabacion. Por favor, repitela.";
+    if (validation.warnings.includes("volume_very_low")) return "Se detecto muy poco sonido. Acercate al microfono y vuelve a intentarlo, o acepta manualmente.";
+    if (validation.warnings.includes("recording_too_short")) return "La grabacion es demasiado corta. Es posible que no se haya registrado correctamente la voz.";
+    if (validation.warnings.includes("possible_saturation")) return "El volumen parece demasiado alto. Puedes repetir o aceptar manualmente.";
+    return "Grabacion lista para escuchar.";
   }
 
   function bootUI() {
@@ -381,10 +485,17 @@
     const capturePanel = doc.getElementById("capture-panel");
     const summaryPanel = doc.getElementById("summary-panel");
     const form = doc.getElementById("sampler-form");
+    const categoryInput = doc.getElementById("sampler-category");
+    const sublevelInput = doc.getElementById("sampler-sublevel");
+    const modeInput = doc.getElementById("session-mode");
+    const sublevelChoices = doc.getElementById("sublevel-choices");
+    const categoryButtons = [...doc.querySelectorAll("[data-sampler-category]")];
     const progress = doc.getElementById("sample-progress");
     const detail = doc.getElementById("sample-detail");
     const micState = doc.getElementById("mic-state");
     const targetText = doc.getElementById("target-text");
+    const categoryLabel = doc.getElementById("capture-category");
+    const sublevelLabel = doc.getElementById("capture-sublevel");
     const feedback = doc.getElementById("sampler-feedback");
     const audio = doc.getElementById("sample-audio");
     const technical = doc.getElementById("technical-output");
@@ -397,18 +508,22 @@
     const acceptBtn = doc.getElementById("accept-btn");
     const skipBtn = doc.getElementById("skip-btn");
     const pauseBtn = doc.getElementById("pause-btn");
+    const reconnectBtn = doc.getElementById("reconnect-btn");
+    const cancelBtn = doc.getElementById("cancel-btn");
     const finishBtn = doc.getElementById("finish-btn");
     const downloadBtn = doc.getElementById("download-btn");
 
     let state = "idle";
-    let stream = null;
+    let sessionStream = null;
     let recorder = null;
-    let chunks = [];
+    let recordedChunks = [];
+    let stopPromise = null;
     let sequence = [];
     let participant = {};
     let session = {};
     let currentBlob = null;
     let currentMetrics = null;
+    let currentValidation = null;
     let currentStartedAt = 0;
     let currentObjectUrl = "";
     let index = 0;
@@ -419,15 +534,40 @@
 
     function setState(next) {
       state = next;
-      const hasRecording = Boolean(currentBlob);
+      const canUseRecording = Boolean(currentBlob) && state !== "recording" && state !== "stopping";
       recordBtn.disabled = !["ready", "recorded"].includes(state);
       stopBtn.disabled = state !== "recording";
-      playBtn.disabled = !hasRecording || state === "recording";
-      retryBtn.disabled = !hasRecording || state === "recording";
-      acceptBtn.disabled = !hasRecording || state === "recording";
-      skipBtn.disabled = state === "recording" || state === "finished";
-      pauseBtn.disabled = state === "recording" || state === "finished";
-      finishBtn.disabled = state === "recording" || state === "finished";
+      playBtn.disabled = !canUseRecording;
+      retryBtn.disabled = !canUseRecording;
+      acceptBtn.disabled = !canAcceptRecording(state, currentBlob, currentValidation);
+      skipBtn.disabled = state === "recording" || state === "stopping" || state === "finished";
+      pauseBtn.disabled = state === "recording" || state === "stopping" || state === "finished";
+      cancelBtn.disabled = state === "recording" || state === "stopping" || state === "finished";
+      finishBtn.disabled = state === "recording" || state === "stopping" || state === "finished";
+      micState.textContent = state === "stopping" ? "Cerrando grabacion" : micState.textContent;
+    }
+
+    function setMicrophoneConnected() {
+      micState.textContent = "🎙 Microfono conectado";
+      reconnectBtn.hidden = true;
+      if (state === "mic-disconnected") setState(currentBlob ? "recorded" : "ready");
+    }
+
+    function setMicrophoneDisconnected() {
+      micState.textContent = "⚠ Microfono desconectado";
+      reconnectBtn.hidden = false;
+      recordBtn.disabled = true;
+      setState("mic-disconnected");
+      recordBtn.disabled = true;
+      feedback.textContent = "El microfono se desconecto. Conservamos las muestras aceptadas; reconecta manualmente para continuar.";
+    }
+
+    function watchSessionStream(stream) {
+      stream?.getTracks?.().forEach((track) => {
+        track.onended = () => {
+          if (sessionStream === stream) setMicrophoneDisconnected();
+        };
+      });
     }
 
     function currentItem() {
@@ -435,7 +575,48 @@
     }
 
     function maxDurationForItem(item) {
-      return item?.category === "syllable" || item?.subcategory === "short" ? 3000 : 5000;
+      if (item?.sublevel === "shortSentences" || item?.sublevel === "longSentences") return 10000;
+      if (item?.sublevel === "segmentedWords" || item?.sublevel === "simpleWords" || item?.sublevel === "complexWords") return 5000;
+      return 3000;
+    }
+
+    function renderSublevels(category) {
+      const options = STRUCTURE[category]?.sublevels || {};
+      sublevelChoices.innerHTML = "";
+      Object.entries(options).forEach(([sublevel, info], optionIndex) => {
+        const button = doc.createElement("button");
+        button.type = "button";
+        button.className = "sampler-sublevel-card";
+        button.dataset.samplerSublevel = sublevel;
+        button.textContent = info.label;
+        button.addEventListener("click", () => selectSublevel(sublevel));
+        sublevelChoices.appendChild(button);
+        if (optionIndex === 0) selectSublevel(sublevel);
+      });
+    }
+
+    function selectSublevel(sublevel) {
+      sublevelInput.value = sublevel;
+      [...sublevelChoices.querySelectorAll("[data-sampler-sublevel]")].forEach((button) => {
+        button.classList.toggle("active", button.dataset.samplerSublevel === sublevel);
+      });
+    }
+
+    function selectCategory(category) {
+      categoryInput.value = category;
+      categoryButtons.forEach((button) => button.classList.toggle("active", button.dataset.samplerCategory === category));
+      renderSublevels(category);
+    }
+
+    function clearCurrentRecording() {
+      currentBlob = null;
+      currentMetrics = null;
+      currentValidation = null;
+      recordedChunks = [];
+      if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+      currentObjectUrl = "";
+      audio.hidden = true;
+      audio.removeAttribute("src");
     }
 
     function renderCurrent() {
@@ -444,85 +625,111 @@
         finishSession();
         return;
       }
+      const category = STRUCTURE[item.category];
+      categoryLabel.textContent = category?.label || item.category;
+      sublevelLabel.textContent = category?.sublevels?.[item.sublevel]?.label || item.sublevel;
       progress.textContent = `Muestra ${index + 1} de ${sequence.length}`;
-      detail.textContent = `${item.target.toUpperCase()} · repeticion ${item.repetition} de ${item.repetitions}`;
-      targetText.textContent = item.target.toUpperCase();
+      detail.textContent = `Repeticion ${item.repetition} de ${item.repetitions}`;
+      targetText.textContent = item.displayText.toUpperCase();
+      targetText.classList.toggle("sentence-target", item.category === "sentences");
       feedback.textContent = index > 0 && index % 30 === 0
-        ? `Llevamos ${index} muestras. Puedes hacer una pausa.`
+        ? `Buen trabajo. Ya llevas ${index} grabaciones; puedes tomar un pequeno descanso.`
         : "Listo para grabar.";
       technical.textContent = "Sin grabacion.";
       clearCurrentRecording();
       setState("ready");
     }
 
-    function clearCurrentRecording() {
-      currentBlob = null;
-      currentMetrics = null;
-      chunks = [];
-      if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
-      currentObjectUrl = "";
-      audio.hidden = true;
-      audio.removeAttribute("src");
-    }
-
-    async function ensureStream() {
-      if (stream?.active) return stream;
+    async function connectSessionMicrophone(forceReconnect = false) {
       if (!global.MediaRecorder) throw new Error("MediaRecorder no esta disponible en este navegador.");
       if (!navigator.mediaDevices?.getUserMedia) throw new Error("Este navegador no permite acceder al microfono.");
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      micState.textContent = "Microfono activo";
-      return stream;
+      if (isStreamUsable(sessionStream)) return sessionStream;
+      if (sessionStream && !forceReconnect) throw new Error("Microfono desconectado. Usa Reconectar microfono para continuar.");
+      if (sessionStream && forceReconnect) stopSessionStream(sessionStream);
+      sessionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      watchSessionStream(sessionStream);
+      setMicrophoneConnected();
+      return sessionStream;
+    }
+
+    async function ensureSessionStream() {
+      if (isStreamUsable(sessionStream)) return sessionStream;
+      setMicrophoneDisconnected();
+      throw new Error("Microfono desconectado. Usa Reconectar microfono para continuar.");
+    }
+
+    function waitForRecorderStop(activeRecorder) {
+      return new Promise((resolve, reject) => {
+        activeRecorder.ondataavailable = (event) => {
+          if (event.data?.size) recordedChunks.push(event.data);
+        };
+        activeRecorder.onerror = (event) => reject(event.error || new Error("Error de MediaRecorder."));
+        activeRecorder.onstop = () => resolve();
+      });
     }
 
     async function startRecording() {
       try {
-        const mediaStream = await ensureStream();
+        const mediaStream = await ensureSessionStream();
         const mimeType = pickSupportedMimeType(global.MediaRecorder);
         recorder = new global.MediaRecorder(mediaStream, mimeType ? { mimeType } : undefined);
-        chunks = [];
-        recorder.ondataavailable = (event) => {
-          if (event.data?.size) chunks.push(event.data);
-        };
-        recorder.onstop = finalizeRecording;
+        recordedChunks = [];
+        stopPromise = waitForRecorderStop(recorder);
         currentStartedAt = performance.now();
         recorder.start();
         feedback.textContent = "Grabando...";
         setState("recording");
         global.setTimeout(() => {
-          if (state === "recording" && recorder?.state === "recording") recorder.stop();
+          if (state === "recording" && recorder?.state === "recording") stopRecording();
         }, maxDurationForItem(currentItem()));
       } catch (error) {
         feedback.textContent = error.message || "No se pudo iniciar el microfono.";
       }
     }
 
+    async function stopRecording() {
+      if (!recorder || recorder.state !== "recording") return;
+      setState("stopping");
+      recorder.stop();
+      try {
+        await stopPromise;
+        await finalizeRecording();
+      } catch {
+        currentValidation = { valid: false, reason: "recorder_failed", warnings: [] };
+        feedback.textContent = "No fue posible generar correctamente la grabacion. Por favor, repitela.";
+        setState("ready");
+      }
+    }
+
     async function finalizeRecording() {
       const mimeType = recorder?.mimeType || pickSupportedMimeType(global.MediaRecorder) || "audio/webm";
-      currentBlob = new Blob(chunks, { type: mimeType });
+      currentBlob = new Blob(recordedChunks, { type: mimeType });
       const AudioContextCtor = global.AudioContext || global.webkitAudioContext;
       const audioContext = AudioContextCtor ? new AudioContextCtor() : null;
       currentMetrics = await calculateBlobMetrics(currentBlob, audioContext);
       await audioContext?.close?.();
       currentMetrics.durationMs = currentMetrics.durationMs || Math.max(0, performance.now() - currentStartedAt);
       currentMetrics.sizeBytes = currentBlob.size;
-      currentMetrics.warnings = validateAudioMetrics(currentMetrics);
-      currentObjectUrl = URL.createObjectURL(currentBlob);
-      audio.src = currentObjectUrl;
-      audio.hidden = false;
-      technical.textContent = JSON.stringify(currentMetrics, null, 2);
-      feedback.textContent = currentMetrics.warnings.length
-        ? "⚠ Esta grabacion podria ser baja o corta. Puedes repetirla o aceptarla manualmente."
-        : "Grabacion lista para escuchar.";
-      setState("recorded");
+      currentValidation = validateRecordingBlob(currentBlob, mimeType, currentMetrics, currentItem());
+      currentMetrics.warnings = currentValidation.warnings;
+      if (currentValidation.valid) {
+        currentObjectUrl = URL.createObjectURL(currentBlob);
+        audio.src = currentObjectUrl;
+        audio.hidden = false;
+      }
+      technical.textContent = JSON.stringify({ ...currentMetrics, validation: currentValidation }, null, 2);
+      feedback.textContent = formatWarningMessage(currentValidation);
+      setState(currentValidation.valid ? "recorded" : "ready");
     }
 
     function acceptCurrent() {
-      if (!currentBlob) {
-        feedback.textContent = "Primero graba una muestra.";
+      if (!canAcceptRecording(state, currentBlob, currentValidation)) {
+        feedback.textContent = "Primero graba una muestra valida.";
         return;
       }
       const item = currentItem();
-      const file = makeRecordingFileName(index + 1, item.target, item.repetition, currentBlob.type);
+      const file = makeRecordingFileName(index + 1, item, item.repetition, currentBlob.type);
+      const warnings = currentValidation.warnings || [];
       acceptedRecordings.push({
         ...item,
         file,
@@ -530,9 +737,15 @@
         mimeType: currentBlob.type || "audio/webm",
         sizeBytes: currentBlob.size,
         durationMs: currentMetrics?.durationMs || 0,
-        warnings: currentMetrics?.warnings || [],
+        warnings,
+        validation: {
+          tooShort: warnings.includes("recording_too_short"),
+          tooQuiet: warnings.includes("volume_very_low"),
+          clipping: warnings.includes("possible_saturation"),
+        },
         recordedAt: new Date().toISOString(),
       });
+      setState("accepted");
       index += 1;
       renderCurrent();
     }
@@ -545,18 +758,28 @@
     }
 
     function retryCurrent() {
-      if (!currentBlob) return;
-      repeatedTakes += 1;
+      if (state === "stopping") return;
+      if (currentBlob) repeatedTakes += 1;
       clearCurrentRecording();
       feedback.textContent = "Toma descartada. Graba nuevamente el mismo objetivo.";
       setState("ready");
     }
 
+    function summarizeWarnings() {
+      const allWarnings = acceptedRecordings.flatMap((item) => item.warnings || []);
+      return {
+        tooQuiet: allWarnings.filter((warning) => warning === "volume_very_low").length,
+        tooShort: allWarnings.filter((warning) => warning === "recording_too_short").length,
+        clipping: allWarnings.filter((warning) => warning === "possible_saturation").length,
+      };
+    }
+
     async function finishSession() {
       setState("finished");
-      stream?.getTracks().forEach((track) => track.stop());
-      stream = null;
+      stopSessionStream(sessionStream);
+      sessionStream = null;
       micState.textContent = "Microfono liberado";
+      reconnectBtn.hidden = true;
       const metadata = buildMetadata({ participant, session, sequence, acceptedRecordings, skippedItems, repeatedTakes });
       const files = [
         { name: "metadata.json", blob: new Blob([JSON.stringify(metadata, null, 2)], { type: "application/json" }) },
@@ -564,16 +787,16 @@
       ];
       try {
         zipBlob = await createZipBlob(files);
-        const categories = [...new Set(acceptedRecordings.map((item) => `${item.category}:${item.subcategory}`))];
-        const totalDuration = acceptedRecordings.reduce((sum, item) => sum + Number(item.durationMs || 0), 0);
         summary.textContent = JSON.stringify({
-          muestrasPlaneadas: sequence.length,
-          grabacionesAceptadas: acceptedRecordings.length,
+          sesion: "completada",
+          categoria: STRUCTURE[metadata.session.category]?.label || metadata.session.category,
+          subnivel: STRUCTURE[metadata.session.category]?.sublevels?.[metadata.session.sublevel]?.label || metadata.session.sublevel,
+          planeadas: sequence.length,
+          aceptadas: acceptedRecordings.length,
           omitidas: skippedItems.length,
           repetidas: repeatedTakes,
-          duracionTotalAproximadaMs: Math.round(totalDuration),
-          categoriasCompletadas: categories,
-          archivoZip: makeZipName(participant.id),
+          advertencias: summarizeWarnings(),
+          archivoZip: makeZipName(participant.id, session),
         }, null, 2);
         capturePanel.hidden = true;
         summaryPanel.hidden = false;
@@ -582,6 +805,10 @@
         setState("ready");
       }
     }
+
+    categoryButtons.forEach((button) => {
+      button.addEventListener("click", () => selectCategory(button.dataset.samplerCategory));
+    });
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -594,22 +821,26 @@
         notes: doc.getElementById("participant-notes").value,
       };
       session = {
-        mode: doc.getElementById("session-mode").value,
+        category: categoryInput.value,
+        sublevel: sublevelInput.value,
+        mode: modeInput.value,
         syllableRepetitions: normalizeRepetitions(doc.getElementById("syllable-repetitions").value, 3),
-        wordRepetitions: normalizeRepetitions(doc.getElementById("word-repetitions").value, 2),
-        phraseRepetitions: normalizeRepetitions(doc.getElementById("phrase-repetitions").value, 2),
+        itemRepetitions: 1,
         randomOrder: doc.getElementById("random-order").checked,
       };
-      session.repetitionsConfigured = {
-        syllable: session.syllableRepetitions,
-        word: session.wordRepetitions,
-        phrase: session.phraseRepetitions,
-      };
+      if (session.mode === "general") {
+        session.category = "general";
+        session.sublevel = "general";
+      }
       try {
-        await ensureStream();
+        await connectSessionMicrophone(false);
         sequence = buildRecordingSequence(session);
         setupPanel.hidden = true;
         capturePanel.hidden = false;
+        index = 0;
+        acceptedRecordings = [];
+        skippedItems = [];
+        repeatedTakes = 0;
         renderCurrent();
       } catch (error) {
         setupFeedback.textContent = error.message || "No se pudo acceder al microfono.";
@@ -617,11 +848,30 @@
     });
 
     recordBtn.addEventListener("click", startRecording);
-    stopBtn.addEventListener("click", () => recorder?.state === "recording" && recorder.stop());
+    stopBtn.addEventListener("click", stopRecording);
     playBtn.addEventListener("click", () => audio.play());
     retryBtn.addEventListener("click", retryCurrent);
     acceptBtn.addEventListener("click", acceptCurrent);
     skipBtn.addEventListener("click", skipCurrent);
+    reconnectBtn.addEventListener("click", async () => {
+      try {
+        await connectSessionMicrophone(true);
+        feedback.textContent = "Microfono reconectado. Puedes continuar.";
+      } catch (error) {
+        feedback.textContent = error.message || "No se pudo reconectar el microfono.";
+      }
+    });
+    cancelBtn.addEventListener("click", () => {
+      stopSessionStream(sessionStream);
+      sessionStream = null;
+      clearCurrentRecording();
+      setupPanel.hidden = false;
+      capturePanel.hidden = true;
+      summaryPanel.hidden = true;
+      micState.textContent = "Microfono liberado";
+      reconnectBtn.hidden = true;
+      setState("idle");
+    });
     pauseBtn.addEventListener("click", () => {
       if (state === "paused") {
         feedback.textContent = "Sesion reanudada.";
@@ -639,27 +889,44 @@
       const url = URL.createObjectURL(zipBlob);
       const link = doc.createElement("a");
       link.href = url;
-      link.download = makeZipName(participant.id);
+      link.download = makeZipName(participant.id, session);
       link.click();
       URL.revokeObjectURL(url);
     });
-    global.addEventListener?.("pagehide", () => stream?.getTracks().forEach((track) => track.stop()));
+    global.addEventListener?.("pagehide", () => {
+      stopSessionStream(sessionStream);
+      sessionStream = null;
+    });
+    selectCategory("syllables");
   }
 
   global.LectoVozVoiceSampler = {
-    PRIORITY_SYLLABLES,
+    MIME_CANDIDATES,
+    STRUCTURE,
+    SUBLEVEL_CATEGORY,
+    CONTENT_SUBLEVEL,
     CONTRAST_SYLLABLES,
+    QUICK_LIMITS,
+    GENERAL_LIMITS,
     getSamplerDataset,
-    makeDatasetItems,
+    getOfficialItems,
+    normalizeSamplerItem,
     buildRecordingSequence,
     sanitizeIdentifier,
     makeRecordingFileName,
+    makeZipName,
     pickSupportedMimeType,
+    minimumDurationForItem,
     validateAudioMetrics,
+    validateRecordingBlob,
+    canAcceptRecording,
+    isStreamUsable,
+    stopSessionStream,
+    getMicrophoneStatus,
+    requestSessionStream,
     calculateBlobMetrics,
     buildMetadata,
     createZipBlob,
-    makeZipName,
   };
 
   if (global.document) {

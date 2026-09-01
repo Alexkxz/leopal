@@ -19,11 +19,11 @@
 
       <section class="sampler-panel" id="setup-panel">
         <h2>Datos de la sesion</h2>
-        <p class="sampler-note">Para investigacion se recomienda utilizar un identificador en lugar del nombre completo.</p>
+        <p class="sampler-note">Para proteger la privacidad, se recomienda utilizar un identificador en lugar del nombre completo. Ejemplos: ALUMNO_001, ALUMNO_002.</p>
         <p class="sampler-setup-feedback" id="setup-feedback" role="status"></p>
         <form id="sampler-form" class="sampler-form">
           <label>
-            Identificador o nombre
+            Identificador
             <input id="participant-id" required placeholder="ALUMNO_001" autocomplete="off">
           </label>
           <label>
@@ -47,17 +47,32 @@
             <textarea id="participant-notes" rows="3" placeholder="Contexto de grabacion, microfono, salon, etc."></textarea>
           </label>
 
+          <section class="sampler-wide sampler-choice-block" aria-labelledby="sampler-choice-title">
+            <h3 id="sampler-choice-title">¿Que quieres grabar?</h3>
+            <div class="sampler-category-cards">
+              <button class="sampler-category-card active" type="button" data-sampler-category="syllables">
+                <span aria-hidden="true">A</span>
+                <strong>SILABAS</strong>
+              </button>
+              <button class="sampler-category-card" type="button" data-sampler-category="words">
+                <span aria-hidden="true">AB</span>
+                <strong>PALABRAS</strong>
+              </button>
+              <button class="sampler-category-card" type="button" data-sampler-category="sentences">
+                <span aria-hidden="true">¶</span>
+                <strong>ORACIONES</strong>
+              </button>
+            </div>
+            <div class="sampler-sublevel-cards" id="sublevel-choices"></div>
+            <input id="sampler-category" type="hidden" value="syllables">
+            <input id="sampler-sublevel" type="hidden" value="syllables">
+          </section>
           <label>
             Modo de sesion
             <select id="session-mode">
               <option value="quick">Sesion rapida</option>
-              <option value="priority-syllables">Silabas prioritarias</option>
-              <option value="syllables">Solo silabas</option>
-              <option value="short-words">Palabras cortas</option>
-              <option value="medium-words">Palabras medianas</option>
-              <option value="long-words">Palabras largas</option>
-              <option value="phrases">Frases</option>
-              <option value="complete">Dataset completo</option>
+              <option value="complete">Sesion completa</option>
+              <option value="general">Muestra general</option>
             </select>
           </label>
           <label>
@@ -65,22 +80,6 @@
             <select id="syllable-repetitions">
               <option value="3">3 recomendado</option>
               <option value="2">2</option>
-              <option value="1">1</option>
-            </select>
-          </label>
-          <label>
-            Repeticiones palabras
-            <select id="word-repetitions">
-              <option value="2">2 recomendado</option>
-              <option value="3">3</option>
-              <option value="1">1</option>
-            </select>
-          </label>
-          <label>
-            Repeticiones frases
-            <select id="phrase-repetitions">
-              <option value="2">2 recomendado</option>
-              <option value="3">3</option>
               <option value="1">1</option>
             </select>
           </label>
@@ -93,6 +92,10 @@
       </section>
 
       <section class="sampler-capture" id="capture-panel" hidden>
+        <div class="sampler-capture-title">
+          <strong id="capture-category">SILABAS</strong>
+          <span id="capture-sublevel">Silabas</span>
+        </div>
         <div class="sampler-progress-row">
           <strong id="sample-progress">Muestra 0 de 0</strong>
           <span id="sample-detail">-</span>
@@ -111,6 +114,8 @@
           <button id="accept-btn" type="button" disabled>Aceptar</button>
           <button id="skip-btn" type="button">Omitir</button>
           <button id="pause-btn" type="button">Pausar sesion</button>
+          <button id="reconnect-btn" type="button" hidden>Reconectar microfono</button>
+          <button id="cancel-btn" type="button">Cancelar sesion</button>
           <button id="finish-btn" type="button">Finalizar</button>
         </div>
 
