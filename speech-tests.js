@@ -823,6 +823,18 @@ assert.ok(styles.includes(".student-page .feedback-incorrect"));
   assert.strictEqual(promptEl.querySelector('[data-index="3"]').classList.contains("current"), true);
   assert.strictEqual(promptEl.querySelector('[data-index="3"]').classList.contains("error"), false);
 
+  context.setLesson("mi hermana toco la flauta");
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  context.processTranscript("mi hermana toca la", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 3);
+  assert.strictEqual(promptEl.querySelector('[data-index="0"]').classList.contains("correct"), true);
+  assert.strictEqual(promptEl.querySelector('[data-index="1"]').classList.contains("correct"), true);
+  assert.strictEqual(promptEl.querySelector('[data-index="2"]').classList.contains("error"), true);
+  assert.strictEqual(promptEl.querySelector('[data-index="3"]').classList.contains("current"), true);
+  assert.strictEqual(promptEl.querySelector('[data-index="3"]').classList.contains("error"), false);
+  assert.strictEqual(promptEl.querySelector('[data-index="4"]').classList.contains("error"), false);
+
   levelSelect.value = "shortSentences";
   context.setLesson("mi casa grande");
   context.window.__lectovozVoiceGateOverrideMs = 180;
@@ -835,7 +847,8 @@ assert.ok(styles.includes(".student-page .feedback-incorrect"));
   assert.strictEqual(pedagogy.notMasteredChunks[0].spoken, "perro");
   assert.strictEqual(promptEl.querySelector('[data-index="0"]').classList.contains("correct"), true);
   assert.strictEqual(promptEl.querySelector('[data-index="1"]').classList.contains("error"), true);
-  assert.strictEqual(promptEl.querySelector('[data-index="2"]').classList.contains("correct"), true);
+  assert.strictEqual(promptEl.querySelector('[data-index="2"]').classList.contains("current"), true);
+  assert.strictEqual(promptEl.querySelector('[data-index="2"]').classList.contains("correct"), false);
   context.window.setTimeout = timeoutBeforeFullSentence;
 
   context.setLesson("luna brilla");

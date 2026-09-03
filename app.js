@@ -980,6 +980,7 @@ function processSentenceTranscript(rawTranscript, candidateTranscripts) {
       markSentenceChunkCorrect(spokenWord);
     } else {
       markSentenceChunkMiss(evaluation);
+      break;
     }
   }
 
