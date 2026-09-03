@@ -840,6 +840,16 @@ assert.ok(styles.includes(".student-page .feedback-incorrect"));
   assert.strictEqual(promptEl.querySelector('[data-index="3"]').classList.contains("current"), true);
   assert.strictEqual(promptEl.querySelector('[data-index="3"]').classList.contains("error"), false);
   assert.strictEqual(promptEl.querySelector('[data-index="4"]').classList.contains("error"), false);
+  context.processTranscript("mi hermana toca la", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 3);
+  assert.strictEqual(promptEl.querySelector('[data-index="3"]').classList.contains("current"), true);
+  assert.strictEqual(promptEl.querySelector('[data-index="3"]').classList.contains("correct"), false);
+  assert.strictEqual(promptEl.querySelector('[data-index="3"]').classList.contains("error"), false);
+  context.processTranscript("la", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 4);
+  assert.strictEqual(promptEl.querySelector('[data-index="3"]').classList.contains("correct"), true);
 
   levelSelect.value = "shortSentences";
   context.setLesson("mi casa grande");

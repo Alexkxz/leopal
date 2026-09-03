@@ -82,6 +82,7 @@ let listeningGeneration = 0;
 let isTransitioning = false;
 let listeningWindowStartedAt = 0;
 let lastAcceptedTranscript = null;
+let lastSentenceMissTranscript = null;
 let calibrationCompleted = false;
 let calibrationIndex = -1;
 let calibrationSamples = [];
@@ -329,6 +330,10 @@ function clearAcceptedTranscriptMemory() {
   lastAcceptedTranscript = null;
 }
 
+function clearSentenceMissMemory() {
+  lastSentenceMissTranscript = null;
+}
+
 function rememberAcceptedTranscript(transcript, expected) {
   lastAcceptedTranscript = {
     transcript: normalizeText(transcript),
@@ -339,6 +344,27 @@ function rememberAcceptedTranscript(transcript, expected) {
 
 function refreshAcceptedTranscriptMemory() {
   if (lastAcceptedTranscript) lastAcceptedTranscript.acceptedAt = Date.now();
+}
+
+function rememberSentenceMissTranscript(prefix, evaluation) {
+  lastSentenceMissTranscript = {
+    prefix: normalizeText(prefix),
+    missedWord: evaluation.normalizedSpoken,
+    expected: evaluation.normalizedExpected,
+    recordedAt: Date.now(),
+  };
+}
+
+function isLikelySentenceMissCarryover(normalizedTranscript) {
+  if (!lastSentenceMissTranscript?.prefix || !normalizedTranscript) return false;
+  if (Date.now() - lastSentenceMissTranscript.recordedAt > acceptedTranscriptCarryoverMs) {
+    clearSentenceMissMemory();
+    return false;
+  }
+  return (
+    normalizedTranscript === lastSentenceMissTranscript.prefix
+    || normalizedTranscript.startsWith(`${lastSentenceMissTranscript.prefix} `)
+  );
 }
 
 function isLikelyAcceptedTranscriptCarryover(candidateTranscripts, currentExpected) {
@@ -535,6 +561,7 @@ function setLesson(exercise, options = {}) {
   pendingErrorCount = 0;
   if (options.preserveAcceptedTranscript) refreshAcceptedTranscriptMemory();
   else clearAcceptedTranscriptMemory();
+  clearSentenceMissMemory();
   clearPendingTranscript();
   lessonStartedAt = Date.now();
   lessonCorrect = 0;
@@ -878,6 +905,7 @@ function handleChunkAttempt(evaluation) {
 }
 
 function markSentenceChunkCorrect(transcript) {
+  clearSentenceMissMemory();
   pendingErrorCount = 0;
   markChunk(currentIndex, "correct");
   correctCount += 1;
@@ -892,7 +920,8 @@ function markSentenceChunkCorrect(transcript) {
   updateMeter();
 }
 
-function markSentenceChunkMiss(evaluation) {
+function markSentenceChunkMiss(evaluation, carryoverPrefix = "") {
+  rememberSentenceMissTranscript(carryoverPrefix || evaluation.rawTranscript || evaluation.spokenRaw || "", evaluation);
   registerChunkAttempt(evaluation);
   notMasteredChunks.push({
     expected: evaluation.normalizedExpected,
@@ -963,9 +992,13 @@ function getSentenceWordsToEvaluate(rawTranscript) {
 }
 
 function processSentenceTranscript(rawTranscript, candidateTranscripts) {
+  const normalizedSentenceTranscript = normalizeText(rawTranscript);
+  if (isLikelySentenceMissCarryover(normalizedSentenceTranscript)) return false;
+
   const spokenWords = getSentenceWordsToEvaluate(rawTranscript);
   if (!spokenWords.length) return false;
 
+  const normalizedRawWords = normalizedSentenceTranscript.split(" ").filter(Boolean);
   let processed = false;
   let lastEvaluation = null;
   for (const spokenWord of spokenWords) {
@@ -979,7 +1012,11 @@ function processSentenceTranscript(rawTranscript, candidateTranscripts) {
       && chunkMatches(spokenWord, expected)) {
       markSentenceChunkCorrect(spokenWord);
     } else {
-      markSentenceChunkMiss(evaluation);
+      const rawWordIndex = normalizedRawWords.indexOf(spokenWord);
+      const carryoverPrefix = normalizedRawWords
+        .slice(0, rawWordIndex >= 0 ? rawWordIndex + 1 : 1)
+        .join(" ");
+      markSentenceChunkMiss(evaluation, carryoverPrefix);
       break;
     }
   }
