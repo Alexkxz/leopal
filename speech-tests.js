@@ -867,6 +867,25 @@ assert.ok(styles.includes(".student-page .feedback-incorrect"));
   assert.strictEqual(promptEl.querySelector('[data-index="2"]').classList.contains("correct"), false);
   context.window.setTimeout = timeoutBeforeFullSentence;
 
+  context.setLesson("mi casa grande");
+  context.window.__lectovozVoiceGateOverrideMs = 180;
+  const timeoutBeforeLastWordMiss = context.window.setTimeout;
+  context.window.setTimeout = (callback, ms) => (ms === 900 ? 1 : timeoutBeforeLastWordMiss(callback, ms));
+  context.processTranscript("mi casa perro", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 3);
+  assert.strictEqual(promptEl.querySelector('[data-index="2"]').classList.contains("error"), true);
+  context.setLesson("la luna brilla", { preserveAcceptedTranscript: true });
+  context.processTranscript("mi casa perro", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 0);
+  assert.strictEqual(promptEl.querySelector('[data-index="0"]').classList.contains("current"), true);
+  assert.strictEqual(promptEl.querySelector('[data-index="0"]').classList.contains("error"), false);
+  context.processTranscript("la", 1, true);
+  pedagogy = context.getPedagogicalState();
+  assert.strictEqual(pedagogy.currentIndex, 1);
+  context.window.setTimeout = timeoutBeforeLastWordMiss;
+
   context.setLesson("luna brilla");
   context.window.__lectovozVoiceGateOverrideMs = 180;
   const timeoutBeforeBufferedSentenceMiss = context.window.setTimeout;

@@ -334,6 +334,10 @@ function clearSentenceMissMemory() {
   lastSentenceMissTranscript = null;
 }
 
+function refreshSentenceMissMemory() {
+  if (lastSentenceMissTranscript) lastSentenceMissTranscript.recordedAt = Date.now();
+}
+
 function rememberAcceptedTranscript(transcript, expected) {
   lastAcceptedTranscript = {
     transcript: normalizeText(transcript),
@@ -559,9 +563,13 @@ function setLesson(exercise, options = {}) {
   notMasteredChunks = [];
   lastTranscript = "";
   pendingErrorCount = 0;
-  if (options.preserveAcceptedTranscript) refreshAcceptedTranscriptMemory();
-  else clearAcceptedTranscriptMemory();
-  clearSentenceMissMemory();
+  if (options.preserveAcceptedTranscript) {
+    refreshAcceptedTranscriptMemory();
+    refreshSentenceMissMemory();
+  } else {
+    clearAcceptedTranscriptMemory();
+    clearSentenceMissMemory();
+  }
   clearPendingTranscript();
   lessonStartedAt = Date.now();
   lessonCorrect = 0;
