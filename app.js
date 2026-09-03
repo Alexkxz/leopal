@@ -93,6 +93,7 @@ const minVoiceMsForAttempt = 180;
 const recognitionWarmupMs = 250;
 const transcriptBufferMs = 450;
 const acceptedTranscriptCarryoverMs = 8000;
+const interimWordEvaluationDelayMs = 650;
 
 const minConfidence = 0;
 const fallbackCalibrationPrompts = [
@@ -435,6 +436,12 @@ function buildAttemptFeedback(evaluation, fallbackMessage) {
   return fallbackMessage || "";
 }
 
+function buildSentenceAdvanceFeedback(evaluation) {
+  const next = chunks[currentIndex + 1] || "";
+  const prefix = evaluation.status === "approximate" ? "\u26a0 Casi." : "\u2715 Otra palabra.";
+  return next ? `${prefix}\nSigue con: "${next}"` : prefix;
+}
+
 function createUncertainEvaluation(reason, rawTranscript = "") {
   return {
     status: "uncertain",
@@ -605,7 +612,7 @@ function markChunk(index, state) {
 }
 
 function setCurrent(index) {
-  promptEl.querySelectorAll(".chunk").forEach((el) => el.classList.remove("current", "approximate", "error", "not-mastered"));
+  promptEl.querySelectorAll(".chunk").forEach((el) => el.classList.remove("current"));
   const el = promptEl.querySelector(`[data-index="${index}"]`);
   if (el) el.classList.add("current");
 }
@@ -680,8 +687,9 @@ function shouldBufferTranscript() {
   return voiceEvidence >= 60 && voiceEvidence < minVoiceMsForAttempt;
 }
 
-function shouldEvaluateFinalWordTranscript(isFinal, cleanTranscript) {
-  return Boolean(isFinal && cleanTranscript && getLevelKind(levelSelect.value) === "words");
+function shouldEvaluateFinalTextTranscript(isFinal, cleanTranscript) {
+  const levelKind = getLevelKind(levelSelect.value);
+  return Boolean(isFinal && cleanTranscript && (levelKind === "words" || levelKind === "sentences"));
 }
 
 function clearPendingTranscript() {
@@ -692,7 +700,7 @@ function clearPendingTranscript() {
   pendingTranscript = null;
 }
 
-function queuePendingTranscript(transcript, confidence, isFinal, alternatives, context) {
+function queuePendingTranscript(transcript, confidence, isFinal, alternatives, context, options = {}) {
   pendingTranscript = {
     transcript,
     confidence,
@@ -700,22 +708,28 @@ function queuePendingTranscript(transcript, confidence, isFinal, alternatives, c
     alternatives,
     context,
     receivedAt: Date.now(),
+    evaluateAfterMs: Number(options.evaluateAfterMs || transcriptBufferMs),
+    waitForTimer: Boolean(options.waitForTimer),
   };
   if (pendingTranscriptTimer) return;
   pendingTranscriptTimer = window.setTimeout(() => {
     pendingTranscriptTimer = null;
     flushPendingTranscript(true);
-  }, transcriptBufferMs);
+  }, pendingTranscript.evaluateAfterMs);
 }
 
 function flushPendingTranscript(expire = false) {
   if (!pendingTranscript) return;
+  const evaluateAfterMs = Number(pendingTranscript.evaluateAfterMs || transcriptBufferMs);
+  if (pendingTranscript.waitForTimer && !expire && Date.now() - pendingTranscript.receivedAt < evaluateAfterMs) return;
   if (isTransitioning || isStaleListeningContext(pendingTranscript.context)) {
     clearPendingTranscript();
     return;
   }
-  if (!hasVoiceAttemptReady()) {
-    if (expire || Date.now() - pendingTranscript.receivedAt > transcriptBufferMs) {
+  const cleanTranscript = normalizeText(pendingTranscript.transcript);
+  const canEvaluateFromFinalText = shouldEvaluateFinalTextTranscript(pendingTranscript.isFinal, cleanTranscript);
+  if (!hasVoiceAttemptReady() && !canEvaluateFromFinalText) {
+    if (expire || Date.now() - pendingTranscript.receivedAt > evaluateAfterMs) {
       clearPendingTranscript();
     }
     return;
@@ -723,6 +737,7 @@ function flushPendingTranscript(expire = false) {
 
   const nextTranscript = pendingTranscript;
   clearPendingTranscript();
+  if (nextTranscript.isFinal) lastTranscript = "";
   processTranscript(
     nextTranscript.transcript,
     nextTranscript.confidence,
@@ -836,6 +851,13 @@ function handleChunkAttempt(evaluation) {
   registerChunkAttempt(evaluation);
   lastTranscript = "";
 
+  if (getLevelKind(levelSelect.value) === "sentences") {
+    const message = buildSentenceAdvanceFeedback(evaluation);
+    handleUnmasteredChunk(evaluation);
+    setFeedbackState(evaluation.status === "approximate" ? "approximate" : "incorrect", message);
+    return;
+  }
+
   if (attemptCount >= getMaxAttemptsPerChunk()) {
     handleUnmasteredChunk(evaluation);
     return;
@@ -853,6 +875,116 @@ function handleChunkAttempt(evaluation) {
     evaluation.status === "approximate" ? "approximate" : "incorrect",
     buildAttemptFeedback(evaluation, message),
   );
+}
+
+function markSentenceChunkCorrect(transcript) {
+  pendingErrorCount = 0;
+  markChunk(currentIndex, "correct");
+  correctCount += 1;
+  lessonCorrect += 1;
+  correctCountEl.textContent = correctCount;
+  updateScore(10);
+  attemptCount = 0;
+  streakCount += 1;
+  updateStreak();
+  rememberAcceptedTranscript(transcript, chunks[currentIndex]);
+  currentIndex += 1;
+  updateMeter();
+}
+
+function markSentenceChunkMiss(evaluation) {
+  registerChunkAttempt(evaluation);
+  notMasteredChunks.push({
+    expected: evaluation.normalizedExpected,
+    spoken: evaluation.normalizedSpoken,
+    heardText: evaluation.heardText || "",
+    rawTranscript: evaluation.rawTranscript || evaluation.spokenRaw || "",
+    status: "not_mastered",
+    attempts: attemptCount,
+    evaluationStatus: evaluation.status,
+    evaluationScore: evaluation.score,
+    observedDifference: describeObservedDifference(evaluation.normalizedExpected, evaluation.normalizedSpoken),
+  });
+  markChunk(currentIndex, "error");
+  errorCount += 1;
+  lessonErrors += 1;
+  errorCountEl.textContent = errorCount;
+  attemptCount = 0;
+  streakCount = 0;
+  updateStreak();
+  currentIndex += 1;
+}
+
+function finishSentenceTranscript(lastEvaluation) {
+  speechController.markEvaluationComplete?.();
+  invalidateChunkListeningWindow();
+
+  if (currentIndex >= chunks.length) {
+    advancingToNextLesson = true;
+    setFeedbackState("correct", "\u2713 Â¡Muy bien!");
+    savePracticeRecord("completed");
+    completedInSession += 1;
+    updateMeter();
+    continueAfterCompletedLesson();
+    return;
+  }
+
+  setCurrent(currentIndex);
+  const next = chunks[currentIndex] || "";
+  const state = lastEvaluation?.status === "correct" ? "correct" : "incorrect";
+  const prefix = lastEvaluation?.status === "correct"
+    ? "\u2713 Bien."
+    : "\u2715 Otra palabra.";
+  setFeedbackState(state, `${prefix}\nSigue con: "${next}"`);
+  finishChunkTransition();
+}
+
+function getSentenceWordsToEvaluate(rawTranscript) {
+  const spokenWords = normalizeText(rawTranscript).split(" ").filter(Boolean);
+  if (!spokenWords.length) return [];
+  if (currentIndex <= 0) return spokenWords;
+
+  let prefixMatches = 0;
+  while (
+    prefixMatches < currentIndex
+    && prefixMatches < spokenWords.length
+    && chunkMatches(spokenWords[prefixMatches], chunks[prefixMatches])
+  ) {
+    prefixMatches += 1;
+  }
+
+  if (prefixMatches > 0) {
+    if (prefixMatches >= currentIndex) return spokenWords.slice(currentIndex);
+    if (spokenWords.length <= currentIndex) return [];
+    return spokenWords.slice(currentIndex);
+  }
+
+  return spokenWords;
+}
+
+function processSentenceTranscript(rawTranscript, candidateTranscripts) {
+  const spokenWords = getSentenceWordsToEvaluate(rawTranscript);
+  if (!spokenWords.length) return false;
+
+  let processed = false;
+  let lastEvaluation = null;
+  for (const spokenWord of spokenWords) {
+    if (currentIndex >= chunks.length) break;
+    const expected = chunks[currentIndex];
+    const evaluation = attachTranscriptFeedback(evaluateReading(spokenWord, expected), spokenWord);
+    lastEvaluation = evaluation;
+    processed = true;
+
+    if (candidateTranscripts.some((candidate) => canAdvanceWithTranscript(candidate, expected))
+      && chunkMatches(spokenWord, expected)) {
+      markSentenceChunkCorrect(spokenWord);
+    } else {
+      markSentenceChunkMiss(evaluation);
+    }
+  }
+
+  if (processed) finishSentenceTranscript(lastEvaluation);
+  return processed;
 }
 
 function continueAfterCompletedLesson() {
@@ -897,7 +1029,7 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
     return;
   }
 
-  if (!hasVoiceAttemptReady() && !shouldEvaluateFinalWordTranscript(isFinal, clean)) {
+  if (!hasVoiceAttemptReady() && !shouldEvaluateFinalTextTranscript(isFinal, clean)) {
     if (shouldBufferTranscript()) queuePendingTranscript(transcript, confidence, isFinal, alternatives, listeningContext);
     else if (isFinal) handleUncertain("insufficient_voice_evidence", rawTranscript, listeningContext);
     return;
@@ -910,6 +1042,11 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
   heardEl.textContent = rawTranscript || clean;
   setVisibleHeardTranscript(rawTranscript || transcript);
   confidenceLevelEl.textContent = confidence > 0 ? `${Math.round(confidence * 100)}%` : "-";
+
+  if (isFinal && getLevelKind(levelSelect.value) === "sentences") {
+    processSentenceTranscript(rawTranscript || transcript, candidateTranscripts);
+    return;
+  }
 
   let advanced = 0;
   let acceptedTranscript = "";
@@ -950,6 +1087,14 @@ function processTranscript(transcript, confidence = 1, isFinal = false, alternat
     setCurrent(currentIndex);
     setFeedbackState("correct", `\u2713 ¡Excelente! Sigue con: ${chunks[currentIndex]}`);
     finishChunkTransition();
+    return;
+  }
+
+  if (!isFinal && (getLevelKind(levelSelect.value) === "words" || getLevelKind(levelSelect.value) === "sentences")) {
+    queuePendingTranscript(transcript, confidence, true, alternatives, listeningContext, {
+      evaluateAfterMs: interimWordEvaluationDelayMs,
+      waitForTimer: true,
+    });
     return;
   }
 
