@@ -92,6 +92,19 @@
       </section>
 
       <section class="sampler-capture" id="capture-panel" hidden>
+        <div class="sampler-finish-bar">
+          <button id="finish-btn" class="sampler-finish-button" type="button">FINALIZAR SESION</button>
+        </div>
+
+        <div class="sampler-finish-confirm" id="finish-confirm" hidden>
+          <p>Hay una muestra grabada que todavia no se guardo con SIGUIENTE.</p>
+          <div>
+            <button id="finish-include-btn" type="button">Incluir ultima muestra</button>
+            <button id="finish-exclude-btn" type="button">Finalizar con anteriores</button>
+            <button id="finish-cancel-btn" type="button">Volver</button>
+          </div>
+        </div>
+
         <div class="sampler-capture-title">
           <strong id="capture-category">SÍLABAS</strong>
           <span id="capture-sublevel">Sílabas</span>
@@ -107,16 +120,11 @@
         <audio id="sample-audio" controls hidden></audio>
 
         <div class="sampler-actions">
-          <button id="record-btn" class="sampler-primary" type="button">Grabar</button>
-          <button id="stop-btn" type="button" disabled>Detener</button>
+          <button id="record-btn" class="sampler-primary sampler-main-record" type="button">GRABAR</button>
           <button id="play-btn" type="button" disabled>Escuchar</button>
-          <button id="retry-btn" type="button" disabled>Repetir</button>
-          <button id="accept-btn" type="button" disabled>Aceptar</button>
-          <button id="skip-btn" type="button">Omitir</button>
-          <button id="pause-btn" type="button">Pausar sesion</button>
+          <button id="retry-btn" type="button" disabled>VOLVER A GRABAR</button>
+          <button id="next-btn" class="sampler-next" type="button" disabled>SIGUIENTE -></button>
           <button id="reconnect-btn" type="button" hidden>Reconectar micrófono</button>
-          <button id="cancel-btn" type="button">Cancelar sesion</button>
-          <button id="finish-btn" type="button">Finalizar</button>
         </div>
 
         <details class="sampler-tech">

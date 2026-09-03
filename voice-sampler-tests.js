@@ -40,12 +40,19 @@ vm.runInContext(fs.readFileSync("modules/voice-sampler.js", "utf8"), context);
 const sampler = context.window.LectoVozVoiceSampler;
 const analyzer = context.window.LectoVozOfflineAudioAnalyzer;
 const content = context.window.LectoVozContent;
+const samplerHtml = fs.readFileSync("voice-sampler.html", "utf8");
 
 function plain(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
 const dataset = sampler.getSamplerDataset(content);
+assert.ok(samplerHtml.includes('id="record-btn"'));
+assert.ok(samplerHtml.includes('id="next-btn"'));
+assert.ok(samplerHtml.includes('id="finish-btn"'));
+["stop-btn", "accept-btn", "skip-btn", "pause-btn", "cancel-btn"].forEach((id) => {
+  assert.strictEqual(samplerHtml.includes(`id="${id}"`), false);
+});
 assert.deepStrictEqual(Object.keys(sampler.STRUCTURE), ["syllables", "words", "sentences"]);
 assert.strictEqual(Object.keys(sampler.STRUCTURE.syllables.sublevels).length, 2);
 assert.strictEqual(Object.keys(sampler.STRUCTURE.words.sublevels).length, 2);
@@ -149,6 +156,27 @@ assert.strictEqual(validBlobResult.valid, true);
 assert.strictEqual(sampler.canAcceptRecording("stopping", new Blob([new Uint8Array([1])], { type: "audio/webm" }), validBlobResult), false);
 assert.strictEqual(sampler.canAcceptRecording("recording", new Blob([new Uint8Array([1])], { type: "audio/webm" }), validBlobResult), false);
 assert.strictEqual(sampler.canAcceptRecording("recorded", new Blob([new Uint8Array([1])], { type: "audio/webm" }), validBlobResult), true);
+assert.deepStrictEqual(plain(sampler.getSamplerControls("ready", false, null)), {
+  recordVisible: true,
+  recordDisabled: false,
+  recordMode: "record",
+  reviewVisible: false,
+  nextDisabled: true,
+  reconnectVisible: false,
+  finishDisabled: false,
+});
+assert.strictEqual(sampler.getSamplerControls("recording", false, null).recordMode, "stop");
+assert.strictEqual(sampler.getSamplerControls("recording", false, null).reviewVisible, false);
+assert.strictEqual(sampler.getSamplerControls("processing", false, null).recordDisabled, true);
+assert.strictEqual(sampler.getSamplerControls("recorded", true, validBlobResult).reviewVisible, true);
+assert.strictEqual(sampler.getSamplerControls("recorded", true, validBlobResult).nextDisabled, false);
+assert.strictEqual(sampler.getSamplerControls("ready", false, null).reviewVisible, false);
+const lowVolumeResult = sampler.validateRecordingBlob(new Blob([new Uint8Array([1])], { type: "audio/webm" }), "audio/webm", { durationMs: 700, rms: 0.003, peak: 0.5 }, simpleQuick[0]);
+assert.strictEqual(lowVolumeResult.valid, true);
+assert.deepStrictEqual(plain(lowVolumeResult.warnings), ["volume_very_low"]);
+assert.strictEqual(sampler.getSamplerControls("recorded", true, lowVolumeResult).nextDisabled, false);
+assert.strictEqual(sampler.getSamplerControls("mic-disconnected", false, null).reconnectVisible, true);
+assert.strictEqual(sampler.getSamplerControls("finished", false, null).finishDisabled, true);
 
 function makeStream(label = "stream") {
   const track = {

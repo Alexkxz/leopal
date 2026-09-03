@@ -9,9 +9,9 @@
 
   const STRUCTURE = {
     syllables: {
-      label: "SÍLABAS",
+      label: "S\u00cdLABAS",
       sublevels: {
-        syllables: { label: "Sílabas" },
+        syllables: { label: "S\u00edlabas" },
         segmentedWords: { label: "Palabras silabeadas" },
       },
     },
@@ -97,7 +97,7 @@
     }
     const lessons = content?.lessons || {};
     const keyMap = {
-      syllables: "sílabas",
+      syllables: "s\u00edlabas",
       segmentedWords: "segmentedWords",
       simpleWords: "palabras_cortas",
       complexWords: "palabras_largas",
@@ -252,6 +252,19 @@
     return state === "recorded" && Boolean(blob) && validation?.valid === true;
   }
 
+  function getSamplerControls(state, hasUsableRecording = false, validation = null) {
+    const isRecorded = state === "recorded" && hasUsableRecording;
+    return {
+      recordVisible: state === "ready" || state === "recording" || state === "processing",
+      recordDisabled: state === "processing",
+      recordMode: state === "recording" ? "stop" : "record",
+      reviewVisible: isRecorded,
+      nextDisabled: !canAcceptRecording(state, hasUsableRecording, validation),
+      reconnectVisible: state === "mic-disconnected",
+      finishDisabled: state === "finished",
+    };
+  }
+
   function isStreamUsable(stream) {
     return Boolean(stream?.active && stream.getTracks?.().some((track) => track.readyState !== "ended"));
   }
@@ -379,7 +392,7 @@
         })),
       },
       recordings,
-      grabaciónes: recordings,
+      grabaciones: recordings,
       skipped: skippedItems,
     };
   }
@@ -469,11 +482,11 @@
   }
 
   function formatWarningMessage(validation) {
-    if (!validation?.valid) return "No fue posible generar correctamente la grabación. Por favor, repitela.";
-    if (validation.warnings.includes("volume_very_low")) return "Se detectó muy poco sonido. Acércate al micrófono y vuelve a intentarlo, o acepta manualmente.";
-    if (validation.warnings.includes("recording_too_short")) return "La grabación es demasiado corta. Es posible que no se haya registrado correctamente la voz.";
-    if (validation.warnings.includes("possible_saturation")) return "El volumen parece demasiado alto. Puedes repetir o aceptar manualmente.";
-    return "Grabacion lista para escuchar.";
+    if (!validation?.valid) return "No fue posible generar correctamente la grabacion. Por favor, repitela.";
+    if (validation.warnings.includes("volume_very_low")) return "Se detecto muy poco sonido. Puedes escuchar, volver a grabar o continuar si la muestra sirve.";
+    if (validation.warnings.includes("recording_too_short")) return "La grabacion es demasiado corta. Es posible que no se haya registrado correctamente la voz.";
+    if (validation.warnings.includes("possible_saturation")) return "El volumen parece demasiado alto. Puedes escuchar, volver a grabar o continuar si la muestra sirve.";
+    return "Grabacion lista. Puedes escucharla o avanzar a la siguiente muestra.";
   }
 
   function bootUI() {
@@ -502,15 +515,15 @@
     const summary = doc.getElementById("summary-output");
 
     const recordBtn = doc.getElementById("record-btn");
-    const stopBtn = doc.getElementById("stop-btn");
     const playBtn = doc.getElementById("play-btn");
     const retryBtn = doc.getElementById("retry-btn");
-    const acceptBtn = doc.getElementById("accept-btn");
-    const skipBtn = doc.getElementById("skip-btn");
-    const pauseBtn = doc.getElementById("pause-btn");
+    const nextBtn = doc.getElementById("next-btn");
     const reconnectBtn = doc.getElementById("reconnect-btn");
-    const cancelBtn = doc.getElementById("cancel-btn");
     const finishBtn = doc.getElementById("finish-btn");
+    const finishConfirm = doc.getElementById("finish-confirm");
+    const finishIncludeBtn = doc.getElementById("finish-include-btn");
+    const finishExcludeBtn = doc.getElementById("finish-exclude-btn");
+    const finishCancelBtn = doc.getElementById("finish-cancel-btn");
     const downloadBtn = doc.getElementById("download-btn");
 
     let state = "idle";
@@ -531,35 +544,40 @@
     let skippedItems = [];
     let repeatedTakes = 0;
     let zipBlob = null;
+    let safetyStopId = 0;
+    let finishChoiceResolver = null;
 
     function setState(next) {
       state = next;
-      const canUseRecording = Boolean(currentBlob) && state !== "recording" && state !== "stopping";
-      recordBtn.disabled = !["ready", "recorded"].includes(state);
-      stopBtn.disabled = state !== "recording";
-      playBtn.disabled = !canUseRecording;
-      retryBtn.disabled = !canUseRecording;
-      acceptBtn.disabled = !canAcceptRecording(state, currentBlob, currentValidation);
-      skipBtn.disabled = state === "recording" || state === "stopping" || state === "finished";
-      pauseBtn.disabled = state === "recording" || state === "stopping" || state === "finished";
-      cancelBtn.disabled = state === "recording" || state === "stopping" || state === "finished";
-      finishBtn.disabled = state === "recording" || state === "stopping" || state === "finished";
-      micState.textContent = state === "stopping" ? "Cerrando grabación" : micState.textContent;
+      const controls = getSamplerControls(state, Boolean(currentBlob), currentValidation);
+      recordBtn.hidden = !controls.recordVisible;
+      recordBtn.disabled = controls.recordDisabled || state === "mic-disconnected";
+      recordBtn.textContent = controls.recordMode === "stop" ? "DETENER" : state === "processing" ? "PROCESANDO" : "GRABAR";
+      recordBtn.classList.toggle("is-recording", controls.recordMode === "stop");
+      playBtn.hidden = !controls.reviewVisible;
+      retryBtn.hidden = !controls.reviewVisible;
+      nextBtn.hidden = !controls.reviewVisible;
+      playBtn.disabled = !controls.reviewVisible;
+      retryBtn.disabled = !controls.reviewVisible;
+      nextBtn.disabled = controls.nextDisabled;
+      reconnectBtn.hidden = !controls.reconnectVisible;
+      finishBtn.disabled = controls.finishDisabled;
+      if (state === "processing") micState.textContent = "Cerrando grabacion";
     }
 
     function setMicrophoneConnected() {
-      micState.textContent = "🎙 Micrófono conectado";
+      micState.textContent = "Microfono conectado";
       reconnectBtn.hidden = true;
       if (state === "mic-disconnected") setState(currentBlob ? "recorded" : "ready");
     }
 
     function setMicrophoneDisconnected() {
-      micState.textContent = "⚠ Micrófono desconectado";
+      micState.textContent = "Microfono desconectado";
       reconnectBtn.hidden = false;
       recordBtn.disabled = true;
       setState("mic-disconnected");
       recordBtn.disabled = true;
-      feedback.textContent = "El micrófono se desconectó. Conservamos las muestras aceptadas; reconecta manualmente para continuar.";
+      feedback.textContent = "El microfono se desconecto. Conservamos las muestras aceptadas; reconecta manualmente para continuar.";
     }
 
     function watchSessionStream(stream) {
@@ -574,10 +592,8 @@
       return sequence[index];
     }
 
-    function maxDurationForItem(item) {
-      if (item?.sublevel === "shortSentences" || item?.sublevel === "longSentences") return 10000;
-      if (item?.sublevel === "segmentedWords" || item?.sublevel === "simpleWords" || item?.sublevel === "complexWords") return 5000;
-      return 3000;
+    function safetyDurationForItem() {
+      return 10 * 60 * 1000;
     }
 
     function renderSublevels(category) {
@@ -633,18 +649,18 @@
       targetText.textContent = item.displayText.toUpperCase();
       targetText.classList.toggle("sentence-target", item.category === "sentences");
       feedback.textContent = index > 0 && index % 30 === 0
-        ? `Buen trabajo. Ya llevas ${index} grabaciones; puedes tomar un pequeño descanso.`
+        ? `Buen trabajo. Ya llevas ${index} grabaciones; puedes tomar un pequeno descanso.`
         : "Listo para grabar.";
-      technical.textContent = "Sin grabación.";
+      technical.textContent = "Sin grabacion.";
       clearCurrentRecording();
       setState("ready");
     }
 
     async function connectSessionMicrophone(forceReconnect = false) {
-      if (!global.MediaRecorder) throw new Error("MediaRecorder no está disponible en este navegador.");
-      if (!navigator.mediaDevices?.getUserMedia) throw new Error("Este navegador no permite acceder al micrófono.");
+      if (!global.MediaRecorder) throw new Error("MediaRecorder no esta disponible en este navegador.");
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error("Este navegador no permite acceder al microfono.");
       if (isStreamUsable(sessionStream)) return sessionStream;
-      if (sessionStream && !forceReconnect) throw new Error("Micrófono desconectado. Usa Reconectar micrófono para continuar.");
+      if (sessionStream && !forceReconnect) throw new Error("Microfono desconectado. Usa Reconectar microfono para continuar.");
       if (sessionStream && forceReconnect) stopSessionStream(sessionStream);
       sessionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       watchSessionStream(sessionStream);
@@ -655,7 +671,7 @@
     async function ensureSessionStream() {
       if (isStreamUsable(sessionStream)) return sessionStream;
       setMicrophoneDisconnected();
-      throw new Error("Micrófono desconectado. Usa Reconectar micrófono para continuar.");
+      throw new Error("Microfono desconectado. Usa Reconectar microfono para continuar.");
     }
 
     function waitForRecorderStop(activeRecorder) {
@@ -679,24 +695,26 @@
         recorder.start();
         feedback.textContent = "Grabando...";
         setState("recording");
-        global.setTimeout(() => {
+        safetyStopId = global.setTimeout(() => {
           if (state === "recording" && recorder?.state === "recording") stopRecording();
-        }, maxDurationForItem(currentItem()));
+        }, safetyDurationForItem(currentItem()));
       } catch (error) {
-        feedback.textContent = error.message || "No se pudo iniciar el micrófono.";
+        feedback.textContent = error.message || "No se pudo iniciar el microfono.";
       }
     }
 
     async function stopRecording() {
       if (!recorder || recorder.state !== "recording") return;
-      setState("stopping");
+      if (safetyStopId) global.clearTimeout?.(safetyStopId);
+      safetyStopId = 0;
+      setState("processing");
       recorder.stop();
       try {
         await stopPromise;
         await finalizeRecording();
       } catch {
         currentValidation = { valid: false, reason: "recorder_failed", warnings: [] };
-        feedback.textContent = "No fue posible generar correctamente la grabación. Por favor, repitela.";
+        feedback.textContent = "No fue posible generar correctamente la grabacion. Por favor, repitela.";
         setState("ready");
       }
     }
@@ -722,10 +740,10 @@
       setState(currentValidation.valid ? "recorded" : "ready");
     }
 
-    function acceptCurrent() {
+    function storeCurrentRecording() {
       if (!canAcceptRecording(state, currentBlob, currentValidation)) {
         feedback.textContent = "Primero graba una muestra valida.";
-        return;
+        return false;
       }
       const item = currentItem();
       const file = makeRecordingFileName(index + 1, item, item.repetition, currentBlob.type);
@@ -745,20 +763,17 @@
         },
         recordedAt: new Date().toISOString(),
       });
-      setState("accepted");
-      index += 1;
-      renderCurrent();
+      return true;
     }
 
-    function skipCurrent() {
-      const item = currentItem();
-      skippedItems.push({ ...item, skippedAt: new Date().toISOString() });
+    function acceptCurrent() {
+      if (!storeCurrentRecording()) return;
       index += 1;
       renderCurrent();
     }
 
     function retryCurrent() {
-      if (state === "stopping") return;
+      if (state === "processing") return;
       if (currentBlob) repeatedTakes += 1;
       clearCurrentRecording();
       feedback.textContent = "Toma descartada. Graba nuevamente el mismo objetivo.";
@@ -774,12 +789,35 @@
       };
     }
 
-    async function finishSession() {
+    function resolveFinishChoice(choice) {
+      if (!finishChoiceResolver) return;
+      finishConfirm.hidden = true;
+      const resolver = finishChoiceResolver;
+      finishChoiceResolver = null;
+      resolver(choice);
+    }
+
+    function requestFinishChoice() {
+      finishConfirm.hidden = false;
+      return new Promise((resolve) => {
+        finishChoiceResolver = resolve;
+      });
+    }
+
+    async function finishSession(options = {}) {
+      if (state === "recording") {
+        await stopRecording();
+      }
+      if (state === "recorded" && currentBlob && !options.skipPendingChoice) {
+        const choice = await requestFinishChoice();
+        if (choice === "cancel") return;
+        if (choice === "include") storeCurrentRecording();
+      }
       setState("finished");
       stopSessionStream(sessionStream);
       sessionStream = null;
-      micState.textContent = "Micrófono liberado";
-      reconnectBtn.hidden = true;
+      micState.textContent = "Microfono liberado";
+      finishConfirm.hidden = true;
       const metadata = buildMetadata({ participant, session, sequence, acceptedRecordings, skippedItems, repeatedTakes });
       const files = [
         { name: "metadata.json", blob: new Blob([JSON.stringify(metadata, null, 2)], { type: "application/json" }) },
@@ -788,7 +826,7 @@
       try {
         zipBlob = await createZipBlob(files);
         summary.textContent = JSON.stringify({
-          sesión: "completada",
+          sesion: "completada",
           categoria: STRUCTURE[metadata.session.category]?.label || metadata.session.category,
           subnivel: STRUCTURE[metadata.session.category]?.sublevels?.[metadata.session.sublevel]?.label || metadata.session.sublevel,
           planeadas: sequence.length,
@@ -843,47 +881,32 @@
         repeatedTakes = 0;
         renderCurrent();
       } catch (error) {
-        setupFeedback.textContent = error.message || "No se pudo acceder al micrófono.";
+        setupFeedback.textContent = error.message || "No se pudo acceder al microfono.";
       }
     });
 
-    recordBtn.addEventListener("click", startRecording);
-    stopBtn.addEventListener("click", stopRecording);
+    recordBtn.addEventListener("click", () => {
+      if (state === "recording") {
+        stopRecording();
+        return;
+      }
+      if (state === "ready") startRecording();
+    });
     playBtn.addEventListener("click", () => audio.play());
     retryBtn.addEventListener("click", retryCurrent);
-    acceptBtn.addEventListener("click", acceptCurrent);
-    skipBtn.addEventListener("click", skipCurrent);
+    nextBtn.addEventListener("click", acceptCurrent);
     reconnectBtn.addEventListener("click", async () => {
       try {
         await connectSessionMicrophone(true);
-        feedback.textContent = "Micrófono reconectado. Puedes continuar.";
+        feedback.textContent = "Microfono reconectado. Puedes continuar.";
       } catch (error) {
-        feedback.textContent = error.message || "No se pudo reconectar el micrófono.";
-      }
-    });
-    cancelBtn.addEventListener("click", () => {
-      stopSessionStream(sessionStream);
-      sessionStream = null;
-      clearCurrentRecording();
-      setupPanel.hidden = false;
-      capturePanel.hidden = true;
-      summaryPanel.hidden = true;
-      micState.textContent = "Micrófono liberado";
-      reconnectBtn.hidden = true;
-      setState("idle");
-    });
-    pauseBtn.addEventListener("click", () => {
-      if (state === "paused") {
-        feedback.textContent = "Sesión reanudada.";
-        pauseBtn.textContent = "Pausar sesión";
-        setState(currentBlob ? "recorded" : "ready");
-      } else {
-        feedback.textContent = "Sesión pausada.";
-        pauseBtn.textContent = "Continuar";
-        setState("paused");
+        feedback.textContent = error.message || "No se pudo reconectar el microfono.";
       }
     });
     finishBtn.addEventListener("click", finishSession);
+    finishIncludeBtn.addEventListener("click", () => resolveFinishChoice("include"));
+    finishExcludeBtn.addEventListener("click", () => resolveFinishChoice("exclude"));
+    finishCancelBtn.addEventListener("click", () => resolveFinishChoice("cancel"));
     downloadBtn.addEventListener("click", () => {
       if (!zipBlob) return;
       const url = URL.createObjectURL(zipBlob);
@@ -920,6 +943,7 @@
     validateAudioMetrics,
     validateRecordingBlob,
     canAcceptRecording,
+    getSamplerControls,
     isStreamUsable,
     stopSessionStream,
     getMicrophoneStatus,
