@@ -9,9 +9,9 @@
 
   const STRUCTURE = {
     syllables: {
-      label: "SILABAS",
+      label: "SÍLABAS",
       sublevels: {
-        syllables: { label: "Silabas" },
+        syllables: { label: "Sílabas" },
         segmentedWords: { label: "Palabras silabeadas" },
       },
     },
@@ -97,7 +97,7 @@
     }
     const lessons = content?.lessons || {};
     const keyMap = {
-      syllables: "silabas",
+      syllables: "sílabas",
       segmentedWords: "segmentedWords",
       simpleWords: "palabras_cortas",
       complexWords: "palabras_largas",
@@ -379,7 +379,7 @@
         })),
       },
       recordings,
-      grabaciones: recordings,
+      grabaciónes: recordings,
       skipped: skippedItems,
     };
   }
@@ -469,9 +469,9 @@
   }
 
   function formatWarningMessage(validation) {
-    if (!validation?.valid) return "No fue posible generar correctamente la grabacion. Por favor, repitela.";
-    if (validation.warnings.includes("volume_very_low")) return "Se detecto muy poco sonido. Acercate al microfono y vuelve a intentarlo, o acepta manualmente.";
-    if (validation.warnings.includes("recording_too_short")) return "La grabacion es demasiado corta. Es posible que no se haya registrado correctamente la voz.";
+    if (!validation?.valid) return "No fue posible generar correctamente la grabación. Por favor, repitela.";
+    if (validation.warnings.includes("volume_very_low")) return "Se detectó muy poco sonido. Acércate al micrófono y vuelve a intentarlo, o acepta manualmente.";
+    if (validation.warnings.includes("recording_too_short")) return "La grabación es demasiado corta. Es posible que no se haya registrado correctamente la voz.";
     if (validation.warnings.includes("possible_saturation")) return "El volumen parece demasiado alto. Puedes repetir o aceptar manualmente.";
     return "Grabacion lista para escuchar.";
   }
@@ -544,22 +544,22 @@
       pauseBtn.disabled = state === "recording" || state === "stopping" || state === "finished";
       cancelBtn.disabled = state === "recording" || state === "stopping" || state === "finished";
       finishBtn.disabled = state === "recording" || state === "stopping" || state === "finished";
-      micState.textContent = state === "stopping" ? "Cerrando grabacion" : micState.textContent;
+      micState.textContent = state === "stopping" ? "Cerrando grabación" : micState.textContent;
     }
 
     function setMicrophoneConnected() {
-      micState.textContent = "🎙 Microfono conectado";
+      micState.textContent = "🎙 Micrófono conectado";
       reconnectBtn.hidden = true;
       if (state === "mic-disconnected") setState(currentBlob ? "recorded" : "ready");
     }
 
     function setMicrophoneDisconnected() {
-      micState.textContent = "⚠ Microfono desconectado";
+      micState.textContent = "⚠ Micrófono desconectado";
       reconnectBtn.hidden = false;
       recordBtn.disabled = true;
       setState("mic-disconnected");
       recordBtn.disabled = true;
-      feedback.textContent = "El microfono se desconecto. Conservamos las muestras aceptadas; reconecta manualmente para continuar.";
+      feedback.textContent = "El micrófono se desconectó. Conservamos las muestras aceptadas; reconecta manualmente para continuar.";
     }
 
     function watchSessionStream(stream) {
@@ -633,18 +633,18 @@
       targetText.textContent = item.displayText.toUpperCase();
       targetText.classList.toggle("sentence-target", item.category === "sentences");
       feedback.textContent = index > 0 && index % 30 === 0
-        ? `Buen trabajo. Ya llevas ${index} grabaciones; puedes tomar un pequeno descanso.`
+        ? `Buen trabajo. Ya llevas ${index} grabaciones; puedes tomar un pequeño descanso.`
         : "Listo para grabar.";
-      technical.textContent = "Sin grabacion.";
+      technical.textContent = "Sin grabación.";
       clearCurrentRecording();
       setState("ready");
     }
 
     async function connectSessionMicrophone(forceReconnect = false) {
-      if (!global.MediaRecorder) throw new Error("MediaRecorder no esta disponible en este navegador.");
-      if (!navigator.mediaDevices?.getUserMedia) throw new Error("Este navegador no permite acceder al microfono.");
+      if (!global.MediaRecorder) throw new Error("MediaRecorder no está disponible en este navegador.");
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error("Este navegador no permite acceder al micrófono.");
       if (isStreamUsable(sessionStream)) return sessionStream;
-      if (sessionStream && !forceReconnect) throw new Error("Microfono desconectado. Usa Reconectar microfono para continuar.");
+      if (sessionStream && !forceReconnect) throw new Error("Micrófono desconectado. Usa Reconectar micrófono para continuar.");
       if (sessionStream && forceReconnect) stopSessionStream(sessionStream);
       sessionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       watchSessionStream(sessionStream);
@@ -655,7 +655,7 @@
     async function ensureSessionStream() {
       if (isStreamUsable(sessionStream)) return sessionStream;
       setMicrophoneDisconnected();
-      throw new Error("Microfono desconectado. Usa Reconectar microfono para continuar.");
+      throw new Error("Micrófono desconectado. Usa Reconectar micrófono para continuar.");
     }
 
     function waitForRecorderStop(activeRecorder) {
@@ -683,7 +683,7 @@
           if (state === "recording" && recorder?.state === "recording") stopRecording();
         }, maxDurationForItem(currentItem()));
       } catch (error) {
-        feedback.textContent = error.message || "No se pudo iniciar el microfono.";
+        feedback.textContent = error.message || "No se pudo iniciar el micrófono.";
       }
     }
 
@@ -696,7 +696,7 @@
         await finalizeRecording();
       } catch {
         currentValidation = { valid: false, reason: "recorder_failed", warnings: [] };
-        feedback.textContent = "No fue posible generar correctamente la grabacion. Por favor, repitela.";
+        feedback.textContent = "No fue posible generar correctamente la grabación. Por favor, repitela.";
         setState("ready");
       }
     }
@@ -778,7 +778,7 @@
       setState("finished");
       stopSessionStream(sessionStream);
       sessionStream = null;
-      micState.textContent = "Microfono liberado";
+      micState.textContent = "Micrófono liberado";
       reconnectBtn.hidden = true;
       const metadata = buildMetadata({ participant, session, sequence, acceptedRecordings, skippedItems, repeatedTakes });
       const files = [
@@ -788,7 +788,7 @@
       try {
         zipBlob = await createZipBlob(files);
         summary.textContent = JSON.stringify({
-          sesion: "completada",
+          sesión: "completada",
           categoria: STRUCTURE[metadata.session.category]?.label || metadata.session.category,
           subnivel: STRUCTURE[metadata.session.category]?.sublevels?.[metadata.session.sublevel]?.label || metadata.session.sublevel,
           planeadas: sequence.length,
@@ -843,7 +843,7 @@
         repeatedTakes = 0;
         renderCurrent();
       } catch (error) {
-        setupFeedback.textContent = error.message || "No se pudo acceder al microfono.";
+        setupFeedback.textContent = error.message || "No se pudo acceder al micrófono.";
       }
     });
 
@@ -856,9 +856,9 @@
     reconnectBtn.addEventListener("click", async () => {
       try {
         await connectSessionMicrophone(true);
-        feedback.textContent = "Microfono reconectado. Puedes continuar.";
+        feedback.textContent = "Micrófono reconectado. Puedes continuar.";
       } catch (error) {
-        feedback.textContent = error.message || "No se pudo reconectar el microfono.";
+        feedback.textContent = error.message || "No se pudo reconectar el micrófono.";
       }
     });
     cancelBtn.addEventListener("click", () => {
@@ -868,17 +868,17 @@
       setupPanel.hidden = false;
       capturePanel.hidden = true;
       summaryPanel.hidden = true;
-      micState.textContent = "Microfono liberado";
+      micState.textContent = "Micrófono liberado";
       reconnectBtn.hidden = true;
       setState("idle");
     });
     pauseBtn.addEventListener("click", () => {
       if (state === "paused") {
-        feedback.textContent = "Sesion reanudada.";
-        pauseBtn.textContent = "Pausar sesion";
+        feedback.textContent = "Sesión reanudada.";
+        pauseBtn.textContent = "Pausar sesión";
         setState(currentBlob ? "recorded" : "ready");
       } else {
-        feedback.textContent = "Sesion pausada.";
+        feedback.textContent = "Sesión pausada.";
         pauseBtn.textContent = "Continuar";
         setState("paused");
       }

@@ -63,7 +63,7 @@ const backupFileInput = document.querySelector("#backup-file-input");
 
 const sublevelsByCategory = {
   syllables: [
-    { id: "syllables", label: "Silabas" },
+    { id: "syllables", label: "Sílabas" },
     { id: "segmentedWords", label: "Palabras silabeadas" },
   ],
   words: [
@@ -140,7 +140,7 @@ function renderStudents() {
   studentList.innerHTML = "";
   studentCount.textContent = students.length;
   studentsEmpty.hidden = filtered.length > 0;
-  studentsEmpty.textContent = students.length ? "No hay alumnos con esa busqueda." : "Todavia no hay alumnos registrados.";
+  studentsEmpty.textContent = students.length ? "No hay alumnos con esa búsqueda." : "Todavía no hay alumnos registrados.";
 
   filtered.forEach((student) => {
     const status = TeacherControl.getStudentStatus(student, records);
@@ -302,11 +302,11 @@ function renderMissionPreview() {
   const student = getSelectedStudent();
   const config = readConfigFromForm();
   const consonants = config.consonants.map((letter) => String(letter).toUpperCase()).join(" • ");
-  missionPreviewTitle.textContent = student ? `MISION DE ${student.name.toUpperCase()}` : "MISION";
+  missionPreviewTitle.textContent = student ? `MISIÓN DE ${student.name.toUpperCase()}` : "MISIÓN";
   missionPreview.innerHTML = `
     <p><strong>${TeacherControl.getCategoryLabel(config.category)}</strong><br />${TeacherControl.getLevelLabel(config.levelStart)}</p>
     <p>Meta: ${config.sessionGoal} ejercicios<br />Intentos: ${config.maxAttemptsPerChunk}<br />Orden: ${config.shuffleSyllables ? "Aleatorio" : "Secuencial"}</p>
-    ${shouldShowConsonants() ? `<p>Consonantes:<br />${escapeHtml(consonants || "Ninguna seleccionada")}</p>` : ""}
+    ${shouldShowConsonants() ? `<p>Consonantes:<br />${escapeHtml(consonants || "Ningúna seleccionada")}</p>` : ""}
   `;
 }
 
@@ -338,14 +338,14 @@ function renderProgress() {
   progressSummary.innerHTML = `
     <p>${escapeHtml(formatStudentMeta(student))}</p>
     <div class="progress-stats">
-      <span>Ultima mision<strong>${latest ? `${TeacherControl.getCategoryLabel(Content.getLevelDefinition?.(latest.level)?.category)} • ${TeacherControl.getLevelLabel(latest.level)}` : "--"}</strong></span>
+      <span>Última misión<strong>${latest ? `${TeacherControl.getCategoryLabel(Content.getLevelDefinition?.(latest.level)?.category)} • ${TeacherControl.getLevelLabel(latest.level)}` : "--"}</strong></span>
       <span>Precision<strong>${progress.accuracy ?? "--"}%</strong></span>
       <span>Correctas<strong>${progress.correct}</strong></span>
       <span>Aproximadas<strong>${progress.approximate}</strong></span>
       <span>Incorrectas<strong>${progress.incorrect}</strong></span>
       <span>Sin evaluar<strong>${progress.unevaluated}</strong></span>
     </div>
-    ${progress.weakChunks.length ? `<h3>Requiere practica</h3><p class="weak-list">${progress.weakChunks.map(escapeHtml).join(" • ")}</p>` : ""}
+    ${progress.weakChunks.length ? `<h3>Requiere práctica</h3><p class="weak-list">${progress.weakChunks.map(escapeHtml).join(" • ")}</p>` : ""}
   `;
 }
 
@@ -391,7 +391,7 @@ function renderBackupState(message) {
   } else if (state.lastSavedAt) {
     backupStatus.textContent = `Guardado automaticamente: ${new Date(state.lastSavedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
   } else {
-    backupStatus.textContent = state.hasOpenedFile ? `Archivo conectado: ${state.fileName}` : "Ningun archivo abierto";
+    backupStatus.textContent = state.hasOpenedFile ? `Archivo conectado: ${state.fileName}` : "Ningún archivo abierto";
   }
 }
 

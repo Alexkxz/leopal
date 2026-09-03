@@ -54,7 +54,7 @@
       if (!Recognition) {
         state = "error";
         options.setFeedback("Este navegador no soporta reconocimiento de voz. Usa Chrome o Edge.");
-        options.setStartLabel("Permitir microfono y comenzar");
+        options.setStartLabel("Permitir micrófono y comenzar");
         return;
       }
 
@@ -76,8 +76,8 @@
         fatalError = true;
         state = "error";
         clearRestartTimer();
-        options.setStatus("Microfono detenido", false);
-        options.setStartLabel("Permitir microfono y comenzar");
+        options.setStatus("Micrófono detenido", false);
+        options.setStartLabel("Permitir micrófono y comenzar");
         options.setFeedback(getMicrophoneErrorMessage(error));
         return;
       }
@@ -96,8 +96,8 @@
         fatalError = true;
         state = "error";
         clearRestartTimer();
-        options.setStatus("Microfono detenido", false);
-        options.setStartLabel("Permitir microfono y comenzar");
+        options.setStatus("Micrófono detenido", false);
+        options.setStartLabel("Permitir micrófono y comenzar");
         options.setFeedback(getMicrophoneErrorMessage(error));
         return { ok: false, error: getMicrophoneErrorMessage(error) };
       }
@@ -121,8 +121,8 @@
       clearRestartTimer();
       stopRecognition();
       state = micStream ? "ready" : "stopped";
-      options.setStatus(micStream ? "Microfono listo" : "Microfono detenido", false);
-      options.setStartLabel(micStream ? "Continuar lectura" : "Permitir microfono y comenzar");
+      options.setStatus(micStream ? "Micrófono listo" : "Micrófono detenido", false);
+      options.setStartLabel(micStream ? "Continuar lectura" : "Permitir micrófono y comenzar");
       if (updateText) options.setFeedback("Lectura pausada.");
     }
 
@@ -134,8 +134,8 @@
       stopRecognition();
       releaseMicrophone();
       state = "stopped";
-      options.setStatus("Microfono detenido", false);
-      options.setStartLabel("Permitir microfono y comenzar");
+      options.setStatus("Micrófono detenido", false);
+      options.setStartLabel("Permitir micrófono y comenzar");
       if (updateText) options.setFeedback("Lectura pausada.");
     }
 
@@ -152,7 +152,7 @@
       }
 
       state = "requesting-permission";
-      options.setStatus("Solicitando microfono", false);
+      options.setStatus("Solicitando micrófono", false);
       options.setStartLabel("Solicitando permiso...");
       micStream = await nav.mediaDevices.getUserMedia({
         audio: {
@@ -171,7 +171,7 @@
       }
       audioReady = true;
       state = "ready";
-      options.setStatus("Microfono listo", false);
+      options.setStatus("Micrófono listo", false);
       options.setStartLabel("Comenzar lectura");
     }
 
@@ -276,9 +276,9 @@
           state = "error";
           clearRestartTimer();
           releaseMicrophone();
-          options.setFeedback("Necesitamos el microfono para escuchar tu lectura.");
-          options.setStatus("Microfono detenido", false);
-          options.setStartLabel("Permitir microfono y comenzar");
+          options.setFeedback("Necesitamos el micrófono para escuchar tu lectura.");
+          options.setStatus("Micrófono detenido", false);
+          options.setStartLabel("Permitir micrófono y comenzar");
           return;
         }
 
@@ -288,15 +288,15 @@
           state = "error";
           clearRestartTimer();
           releaseMicrophone();
-          options.setFeedback("El microfono no esta disponible en este momento.");
-          options.setStatus("Microfono detenido", false);
-          options.setStartLabel("Permitir microfono y comenzar");
+          options.setFeedback("El micrófono no está disponible en este momento.");
+          options.setStatus("Micrófono detenido", false);
+          options.setStartLabel("Permitir micrófono y comenzar");
           return;
         }
 
         state = "restarting";
         options.setFeedback(`No pude escuchar bien: ${event.error}`);
-        options.setStatus("Reintentando microfono", true);
+        options.setStatus("Reintentando micrófono", true);
       };
 
       recognition.onend = (event) => {
@@ -356,7 +356,7 @@
     function scheduleRestart(scheduledGeneration = listeningGeneration) {
       if (restartTimer) return;
       state = "restarting";
-      options.setStatus("Reintentando microfono", true);
+      options.setStatus("Reintentando micrófono", true);
       restartTimer = win.setTimeout(() => {
         restartTimer = undefined;
         if (!shouldRestartRecognition(scheduledGeneration)) return;
@@ -537,12 +537,12 @@
 
     function getMicrophoneErrorMessage(error) {
       if (error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError") {
-        return "Necesitamos el microfono para escuchar tu lectura.";
+        return "Necesitamos el micrófono para escuchar tu lectura.";
       }
       if (error?.code === "microphone-unavailable" || error?.name === "NotFoundError") {
-        return "El microfono no esta disponible en este momento.";
+        return "El micrófono no está disponible en este momento.";
       }
-      return "Necesitamos el microfono para escuchar tu lectura.";
+      return "Necesitamos el micrófono para escuchar tu lectura.";
     }
 
     function isVoiceActive() {

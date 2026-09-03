@@ -2,16 +2,26 @@
   function normalizeText(value) {
     return String(value ?? "")
       .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\u00f1/g, "n")
-      .replace(/[^a-z\s]/g, "")
+      .normalize("NFC")
+      .replace(/[^a-záéíóúüñ\s]/g, "")
       .replace(/\s+/g, " ")
       .trim();
   }
 
+  // SpeechRecognition often omits written accent marks. This comparison form
+  // tolerates vowel accents while preserving Spanish letters such as ñ.
+  function normalizeForSpeechComparison(value) {
+    return normalizeText(value)
+      .replace(/[áàäâ]/g, "a")
+      .replace(/[éèëê]/g, "e")
+      .replace(/[íìïî]/g, "i")
+      .replace(/[óòöô]/g, "o")
+      .replace(/[úùû]/g, "u")
+      .replace(/ü/g, "u");
+  }
+
   function isVowel(letter) {
-    return "aeiou".includes(letter);
+    return "aeiouáéíóúü".includes(letter);
   }
 
   function syllabifyWord(word) {
@@ -60,11 +70,11 @@
   }
 
   function normalizeConsonant(value) {
-    return normalizeText(value).replace(/\s/g, "");
+    return normalizeForSpeechComparison(value).replace(/\s/g, "");
   }
 
   function getTextConsonants(text) {
-    const normalized = normalizeText(text);
+    const normalized = normalizeForSpeechComparison(text);
     const consonants = [];
 
     for (let index = 0; index < normalized.length; index += 1) {
@@ -89,7 +99,7 @@
       }
 
       const letter = normalized[index];
-      if (letter >= "a" && letter <= "z" && !isVowel(letter)) {
+      if (((letter >= "a" && letter <= "z") || letter === "ñ") && !isVowel(letter)) {
         consonants.push(letter);
       }
     }
@@ -116,8 +126,8 @@
   }
 
   function scoreMatch(spoken, expected) {
-    const cleanSpoken = normalizeText(spoken);
-    const cleanExpected = normalizeText(expected);
+    const cleanSpoken = normalizeForSpeechComparison(spoken);
+    const cleanExpected = normalizeForSpeechComparison(expected);
     const phoneticSpoken = phoneticKey(cleanSpoken);
     const phoneticExpected = phoneticKey(cleanExpected);
 
@@ -135,9 +145,11 @@
   function evaluateReading(spoken, expected) {
     const normalizedSpoken = normalizeText(spoken);
     const normalizedExpected = normalizeText(expected);
-    const phoneticSpoken = phoneticKey(normalizedSpoken);
-    const phoneticExpected = phoneticKey(normalizedExpected);
-    const score = scoreMatch(normalizedSpoken, normalizedExpected);
+    const comparableSpoken = normalizeForSpeechComparison(spoken);
+    const comparableExpected = normalizeForSpeechComparison(expected);
+    const phoneticSpoken = phoneticKey(comparableSpoken);
+    const phoneticExpected = phoneticKey(comparableExpected);
+    const score = scoreMatch(comparableSpoken, comparableExpected);
     const details = {
       spoken: normalizedSpoken,
       expected: normalizedExpected,
@@ -165,6 +177,15 @@
       };
     }
 
+    if (comparableSpoken === comparableExpected) {
+      return {
+        ...details,
+        status: "correct",
+        score: 1,
+        reason: "accent_tolerant_match",
+      };
+    }
+
     if (phoneticSpoken === phoneticExpected) {
       return {
         ...details,
@@ -174,7 +195,7 @@
       };
     }
 
-    if (isExpectedInsideSpokenCandidate(normalizedSpoken, normalizedExpected, phoneticSpoken, phoneticExpected)) {
+    if (isExpectedInsideSpokenCandidate(comparableSpoken, comparableExpected, phoneticSpoken, phoneticExpected)) {
       return {
         ...details,
         status: "correct",
@@ -182,7 +203,7 @@
       };
     }
 
-    if (isApproximateReading(normalizedSpoken, normalizedExpected, phoneticSpoken, phoneticExpected, score)) {
+    if (isApproximateReading(comparableSpoken, comparableExpected, phoneticSpoken, phoneticExpected, score)) {
       return {
         ...details,
         status: "approximate",
@@ -255,7 +276,7 @@
   }
 
   function phoneticKey(value) {
-    return normalizeText(value)
+    return normalizeForSpeechComparison(value)
       .replace(/ch/g, "x")
       .replace(/ll/g, "y")
       .replace(/rr/g, "r")
@@ -345,6 +366,7 @@
 
   const api = {
     normalizeText,
+    normalizeForSpeechComparison,
     isVowel,
     syllabifyWord,
     splitIntoChunks,

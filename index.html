@@ -11,7 +11,7 @@
       <form class="login-card" id="login-form">
         <p class="eyebrow">Lectura divertida</p>
         <h1>LectoVoz</h1>
-        <p class="login-copy">Escribe tu nombre para comenzar tu practica.</p>
+        <p class="login-copy">Escribe tu nombre para comenzar tu práctica.</p>
         <label for="student-name">Alumno</label>
         <input id="student-name" autocomplete="name" required placeholder="Nombre del alumno" />
         <label for="student-group">Grupo</label>
@@ -23,9 +23,9 @@
     <section class="calibration-screen hidden" id="calibration-screen" aria-labelledby="calibration-title">
       <div class="calibration-card">
         <p class="eyebrow">Antes de jugar</p>
-        <h1 id="calibration-title">Calibremos el microfono</h1>
+        <h1 id="calibration-title">Calibremos el micrófono</h1>
         <p class="login-copy" id="calibration-instruction">
-          Primero escuchare el ambiente. Despues lee unas muestras cortas para afinar la deteccion.
+          Primero escucharé el ambiente. Después lee unas muestras cortas para afinar la detección.
         </p>
         <div class="calibration-target" id="calibration-target">Silencio</div>
         <div class="calibration-progress">
@@ -33,12 +33,12 @@
           <div class="meter" aria-hidden="true"><div id="calibration-meter-fill"></div></div>
         </div>
         <p class="calibration-status" id="calibration-status" role="status">
-          Presiona comenzar para permitir el microfono.
+          ¿Listo? Presiona comenzar para permitir el micrófono.
         </p>
         <div class="calibration-actions">
-          <button class="primary" id="calibration-start-btn" type="button">Permitir microfono y calibrar</button>
+          <button class="primary" id="calibration-start-btn" type="button">Permitir micrófono y calibrar</button>
           <button class="primary" id="calibration-record-btn" type="button" hidden>Escuchar muestra</button>
-          <button class="secondary" id="calibration-skip-btn" type="button">Saltar calibracion</button>
+          <button class="secondary" id="calibration-skip-btn" type="button">Saltar calibración</button>
         </div>
       </div>
     </section>
@@ -49,7 +49,7 @@
           <div class="student-greeting">
             <p class="eyebrow">LectoVoz</p>
             <h1 id="app-title">Hola, <span id="current-student">Invitado</span></h1>
-            <p class="activity-pill" id="current-activity">Silabas</p>
+            <p class="activity-pill" id="current-activity">Sílabas</p>
           </div>
           <div class="student-score" aria-label="Puntos obtenidos">
             <span aria-hidden="true">&#9733;</span>
@@ -62,8 +62,8 @@
           <h2 id="practice-title">¿Qué quieres practicar?</h2>
           <div class="practice-category-grid">
             <div class="practice-category">
-              <strong>SILABAS</strong>
-              <button class="practice-option active" type="button" data-practice-level="syllables">Silabas</button>
+              <strong>SÍLABAS</strong>
+              <button class="practice-option active" type="button" data-practice-level="syllables">Sílabas</button>
               <button class="practice-option" type="button" data-practice-level="segmentedWords">Palabras silabeadas</button>
             </div>
             <div class="practice-category">
@@ -94,7 +94,7 @@
           </div>
 
           <p class="feedback" id="feedback" role="status">
-            Presiona comenzar y permite el microfono. Despues lee en voz alta.
+            Presiona comenzar y permite el micrófono. Después lee en voz alta.
           </p>
           <div class="heard-transcript" id="heard-feedback" hidden>
             Escuch&eacute;: <strong></strong>
@@ -107,7 +107,7 @@
 
           <section class="student-progress" aria-labelledby="goal-title">
             <div class="goal-row">
-              <h2 id="goal-title">MISION</h2>
+              <h2 id="goal-title">MISIÓN</h2>
               <span id="session-progress-text">0 / 10</span>
             </div>
             <div class="meter" aria-hidden="true">
@@ -121,7 +121,7 @@
               <small>COMBO x</small>
               <strong id="streak-count">0</strong>
             </div>
-            <div class="status" id="mic-status">Microfono detenido</div>
+            <div class="status" id="mic-status">Micrófono detenido</div>
           </div>
 
           <div class="controls student-controls">
@@ -132,7 +132,7 @@
           <section class="mission-card" id="mission-card" hidden aria-live="polite">
             <div>
               <p class="mission-icon" aria-hidden="true">&#127881;</p>
-              <h2>&#127942; MISION COMPLETADA</h2>
+              <h2>&#127942; MISIÓN COMPLETADA</h2>
               <p>Hiciste <strong id="mission-count">0</strong> ejercicios y ganaste <strong id="mission-score">0</strong> puntos.</p>
               <p>&iexcl;Muy bien! Tu lectura sigue subiendo de nivel.</p>
             </div>
@@ -148,7 +148,7 @@
         <div class="level-row">
           <label for="level-select">Nivel</label>
           <select id="level-select">
-            <option value="syllables">Silabas</option>
+            <option value="syllables">Sílabas</option>
             <option value="segmentedWords">Palabras silabeadas</option>
             <option value="simpleWords">Palabras simples</option>
             <option value="complexWords">Palabras complejas</option>

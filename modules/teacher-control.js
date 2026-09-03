@@ -93,13 +93,13 @@
 
   function getLevelLabel(level) {
     const labels = {
-      syllables: "Silabas",
+      syllables: "Sílabas",
       segmentedWords: "Palabras silabeadas",
       simpleWords: "Simples",
       complexWords: "Complejas",
       shortSentences: "Cortas",
       longSentences: "Amplias",
-      silabas: "Silabas",
+      silabas: "Sílabas",
       palabras_cortas: "Simples",
       palabras_medianas: "Simples",
       palabras_largas: "Complejas",
@@ -112,7 +112,7 @@
 
   function getCategoryLabel(category) {
     return {
-      syllables: "SILABAS",
+      syllables: "SÍLABAS",
       words: "PALABRAS",
       sentences: "ORACIONES",
     }[category] || "LECTURA";

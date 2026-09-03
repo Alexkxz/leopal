@@ -212,8 +212,8 @@ function showCalibrationScreen() {
   calibrationRecordBtn.hidden = true;
   calibrationTargetEl.textContent = "Silencio";
   calibrationStepEl.textContent = `Paso 1 de ${calibrationPrompts.length + 1}`;
-  calibrationInstructionEl.textContent = "Primero escuchare el ambiente. Despues lee unas muestras cortas para afinar la deteccion.";
-  calibrationStatusEl.textContent = "Presiona comenzar para permitir el microfono.";
+  calibrationInstructionEl.textContent = "Primero escucharé el ambiente. Después lee unas muestras cortas para afinar la detección.";
+  calibrationStatusEl.textContent = "¿Listo? Presiona comenzar para permitir el micrófono.";
   calibrationMeterFill.style.width = "0%";
 }
 
@@ -238,9 +238,9 @@ function summarizeCalibration() {
   const lowVoiceCount = calibrationSamples.length - enoughVoiceCount;
   if (!calibrationSamples.length) return "Calibracion omitida. Puedes comenzar a leer.";
   if (lowVoiceCount) {
-    return "Listo. Si aparece amarillo con frecuencia, intenta hablar un poco mas cerca del microfono.";
+    return "Listo. Si aparece amarillo con frecuencia, intenta hablar un poco más cerca del micrófono.";
   }
-  return "Listo. El microfono detecto bien las muestras.";
+  return "Listo. El micrófono detectó bien las muestras.";
 }
 
 async function startCalibration() {
@@ -248,12 +248,12 @@ async function startCalibration() {
   calibrationStartBtn.disabled = true;
   calibrationSkipBtn.disabled = true;
   calibrationStatusEl.textContent = speechController.isAudioReady?.()
-    ? "Microfono listo. Preparando muestras..."
+    ? "Micrófono listo. Preparando muestras..."
     : "Solicitando permiso y escuchando el ambiente...";
   calibrationStartingPromise = (async () => {
     const result = await speechController.prepareMicrophone?.();
     if (!result?.ok) {
-      calibrationStatusEl.textContent = result?.error || "No se pudo acceder al microfono.";
+      calibrationStatusEl.textContent = result?.error || "No se pudo acceder al micrófono.";
       calibrationStartBtn.disabled = false;
       calibrationSkipBtn.disabled = false;
       return;
@@ -495,7 +495,7 @@ function setMicrophoneLabel(value) {
 
 function getLevelLabel(level) {
   const labels = {
-    syllables: "Silabas",
+    syllables: "Sílabas",
     segmentedWords: "Palabras silabeadas",
     simpleWords: "Palabras simples",
     complexWords: "Palabras complejas",
@@ -542,7 +542,7 @@ function setLesson(exercise, options = {}) {
   heardEl.textContent = "-";
   openChunkListeningWindow();
   hideMissionComplete();
-  setFeedbackState("neutral", "Lee en voz alta. El microfono ira siguiendo tu lectura.");
+  setFeedbackState("neutral", "Lee en voz alta. El micrófono irá siguiendo tu lectura.");
   renderPrompt();
 }
 
@@ -921,7 +921,7 @@ function finishSentenceTranscript(lastEvaluation) {
 
   if (currentIndex >= chunks.length) {
     advancingToNextLesson = true;
-    setFeedbackState("correct", "\u2713 Â¡Muy bien!");
+    setFeedbackState("correct", "\u2713 ¡Muy bien!");
     savePracticeRecord("completed");
     completedInSession += 1;
     updateMeter();

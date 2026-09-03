@@ -90,6 +90,34 @@ function assertJson(actual, expected) {
   assert.deepStrictEqual(JSON.parse(JSON.stringify(actual)), JSON.parse(JSON.stringify(expected)));
 }
 
+const textFiles = [
+  "index.html",
+  "teacher.html",
+  "teacher-control.html",
+  "mic-diagnostic.html",
+  "offline-audio-analyzer.html",
+  "voice-sampler.html",
+  "app.js",
+  "teacher.js",
+  "teacher-control.js",
+  "styles.css",
+  "modules/content.js",
+  "modules/evaluation.js",
+  "modules/speech-recognition.js",
+  "modules/teacher-control.js",
+  "modules/voice-sampler.js",
+];
+
+for (const file of textFiles) {
+  const text = fs.readFileSync(file, "utf8");
+  assert.strictEqual(/[\u00c3\u00c2]/.test(text), false);
+  if (file.endsWith(".html")) {
+    assert.ok(/<meta\s+charset=["']UTF-8["']\s*\/?>/i.test(text));
+  }
+}
+assert.ok(fs.readFileSync("app.js", "utf8").includes("¡Muy bien!"));
+assert.ok(fs.readFileSync("index.html", "utf8").includes("¿Listo?"));
+
 assertArray(Object.keys(content.contentTree), ["syllables", "words", "sentences"]);
 assert.strictEqual(Object.keys(content.contentTree.syllables.sublevels).length, 2);
 assert.strictEqual(Object.keys(content.contentTree.words.sublevels).length, 2);
@@ -100,9 +128,24 @@ assert.strictEqual(content.lessons.simpleWords.length >= 80, true);
 assert.strictEqual(content.lessons.complexWords.length >= 80, true);
 assert.strictEqual(content.lessons.shortSentences.length >= 40, true);
 assert.strictEqual(content.lessons.longSentences.length >= 40, true);
+assert.ok(content.lessons.simpleWords.some((item) => item.expectedText === "niño"));
+assert.ok(content.lessons.simpleWords.some((item) => item.expectedText === "mamá"));
+assert.ok(content.lessons.simpleWords.some((item) => item.expectedText === "canción"));
+assert.ok(content.lessons.simpleWords.some((item) => item.expectedText === "árbol"));
+assert.ok(content.lessons.complexWords.some((item) => item.expectedText === "mañana"));
+assert.ok(content.lessons.complexWords.some((item) => item.expectedText === "pingüino"));
 const segmentedCamioneta = content.lessons.segmentedWords.find((item) => item.expectedText === "camioneta");
 assert.strictEqual(segmentedCamioneta.displayText, "ca-mio-ne-ta");
 assert.strictEqual(segmentedCamioneta.expectedText, "camioneta");
+const segmentedJardin = content.lessons.segmentedWords.find((item) => item.expectedText === "jardín");
+assert.strictEqual(segmentedJardin.displayText, "jar-dín");
+assert.strictEqual(segmentedJardin.expectedText, "jardín");
+assert.strictEqual(context.window.LectoVozEvaluation.normalizeText("Niño, mañana, mamá, canción, árbol, pingüino."), "niño mañana mamá canción árbol pingüino");
+assert.strictEqual(context.window.LectoVozEvaluation.normalizeForSpeechComparison("mamá canción árbol pingüino"), "mama cancion arbol pinguino");
+assert.strictEqual(context.window.LectoVozEvaluation.normalizeForSpeechComparison("niño mañana"), "niño mañana");
+assert.strictEqual(context.window.LectoVozEvaluation.evaluateReading("mama", "mamá").status, "correct");
+assert.strictEqual(context.window.LectoVozEvaluation.evaluateReading("nino", "niño").status, "incorrect");
+assert.strictEqual(context.window.LectoVozEvaluation.evaluateReading("manana", "mañana").status !== "correct", true);
 assert.strictEqual(content.normalizeLevelId("palabras_largas"), "complexWords");
 assert.strictEqual(content.normalizeLevelId("frases_cortas"), "shortSentences");
 
@@ -475,7 +518,7 @@ assert.strictEqual(control.replaceStudentConfig([student], "student-id", { level
 const normalizedStudent = control.replaceStudentConfig([student], "student-id", { ...student.config, maxAttemptsPerChunk: 9 })[0];
 assert.strictEqual(normalizedStudent.config.maxAttemptsPerChunk, 3);
 assertJson(control.deleteStudentById([student], "student-id"), []);
-assert.strictEqual(control.getCategoryLabel("syllables"), "SILABAS");
+assert.strictEqual(control.getCategoryLabel("syllables"), "SÍLABAS");
 assert.strictEqual(control.getCategoryLabel("words"), "PALABRAS");
 assert.strictEqual(control.getCategoryLabel("sentences"), "ORACIONES");
 assert.strictEqual(control.getLevelLabel("segmentedWords"), "Palabras silabeadas");
@@ -766,7 +809,7 @@ async function runSpeechControllerTests() {
     },
   });
   await denied.controller.start();
-  assert.ok(denied.events.some((event) => event[0] === "feedback" && event[1].includes("Necesitamos el microfono")));
+  assert.ok(denied.events.some((event) => event[0] === "feedback" && event[1].includes("Necesitamos el micrófono")));
   assert.strictEqual(denied.controller.isListening(), false);
 
   let recognitionInstance;
@@ -853,13 +896,13 @@ async function runSpeechControllerTests() {
   assert.strictEqual(controllerHarness.controller.isListening(), false);
   assert.strictEqual(track.stopped, false);
   assert.strictEqual(audioMetrics.closeCalls, 0);
-  assert.ok(controllerHarness.events.some((event) => event[0] === "status" && event[1] === "Microfono listo"));
+  assert.ok(controllerHarness.events.some((event) => event[0] === "status" && event[1] === "Micrófono listo"));
 
   await controllerHarness.controller.start();
   recognitionInstance.onerror({ error: "no-speech" });
   assert.ok(controllerHarness.events.some((event) => event[0] === "uncertain" && event[1] === "no_speech"));
   recognitionInstance.onerror({ error: "network" });
-  assert.ok(controllerHarness.events.some((event) => event[0] === "status" && event[1] === "Reintentando microfono"));
+  assert.ok(controllerHarness.events.some((event) => event[0] === "status" && event[1] === "Reintentando micrófono"));
   recognitionInstance.onerror({ error: "aborted" });
   recognitionInstance.onend();
   assert.ok(recognitionInstance.startCalls >= 2);
@@ -910,7 +953,7 @@ async function runSpeechControllerTests() {
     navigator: {},
   });
   await unavailable.controller.start();
-  assert.ok(unavailable.events.some((event) => event[0] === "feedback" && event[1].includes("microfono no esta disponible")));
+  assert.ok(unavailable.events.some((event) => event[0] === "feedback" && event[1].includes("micrófono no está disponible")));
 
   const fragmentedVoice = createSpeechHarness({ recognitionCtor: function Recognition() {} });
   fragmentedVoice.controller.debugSetNoiseFloor(0.01);

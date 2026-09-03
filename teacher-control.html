@@ -17,7 +17,7 @@
         </div>
         <nav class="teacher-actions control-actions" aria-label="Accesos secundarios">
           <button class="secondary nav-button" id="settings-toggle" type="button" aria-expanded="false" aria-controls="settings-panel">
-            <span aria-hidden="true">⚙</span> Configuracion
+            <span aria-hidden="true">⚙</span> Configuración
           </button>
           <button class="secondary nav-button" type="button" data-tab-link="progress">
             <span aria-hidden="true">📊</span> Progreso
@@ -31,7 +31,7 @@
           <span aria-hidden="true">👥</span> JUGADORES
         </button>
         <button class="tab-button" type="button" data-tab="missions">
-          <span aria-hidden="true">🎯</span> MISIONES
+          <span aria-hidden="true">🎯</span> MISIÓNES
         </button>
         <button class="tab-button" type="button" data-tab="progress">
           <span aria-hidden="true">📊</span> PROGRESO
@@ -44,14 +44,14 @@
             <h2><span aria-hidden="true">💾</span> RESPALDO DE DATOS</h2>
             <span id="backup-file-badge">JSON</span>
           </div>
-          <p class="config-note" id="backup-status">Ningun archivo abierto</p>
+          <p class="config-note" id="backup-status">Ningún archivo abierto</p>
           <div class="settings-grid">
-            <label for="backup-import-mode">Modo de importacion</label>
+            <label for="backup-import-mode">Modo de importación</label>
             <select id="backup-import-mode">
               <option value="merge">Combinar datos</option>
               <option value="replace">Reemplazar datos</option>
             </select>
-            <label for="backup-autosave">Guardado automatico</label>
+            <label for="backup-autosave">Guardado automático</label>
             <select id="backup-autosave">
               <option value="enabled">Activado</option>
               <option value="disabled">Desactivado</option>
@@ -90,7 +90,7 @@
                 <button class="primary full" type="submit">Registrar jugador</button>
               </form>
               <div class="student-list" id="student-list"></div>
-              <p class="empty-state" id="students-empty">Todavia no hay alumnos registrados.</p>
+              <p class="empty-state" id="students-empty">Todavía no hay alumnos registrados.</p>
             </article>
           </section>
 
@@ -117,11 +117,11 @@
             </article>
 
             <article class="config-section">
-              <h2><span aria-hidden="true">🎯</span> CONFIGURAR MISION</h2>
+              <h2><span aria-hidden="true">🎯</span> CONFIGURAR MISIÓN</h2>
               <div class="category-card-grid" id="category-card-grid" role="radiogroup" aria-label="Categorias">
                 <button class="category-card active" type="button" data-category="syllables" role="radio" aria-checked="true">
                   <span aria-hidden="true">🔤</span>
-                  <strong>SILABAS</strong>
+                  <strong>SÍLABAS</strong>
                 </button>
                 <button class="category-card" type="button" data-category="words" role="radio" aria-checked="false">
                   <span aria-hidden="true">🔠</span>
@@ -138,7 +138,7 @@
                 <h3>Subnivel</h3>
                 <div class="sublevel-grid" id="sublevel-grid" role="radiogroup" aria-label="Subniveles"></div>
                 <select id="level-start" class="sr-only" aria-label="Subnivel">
-                  <option value="syllables" data-category="syllables">Silabas</option>
+                  <option value="syllables" data-category="syllables">Sílabas</option>
                   <option value="segmentedWords" data-category="syllables">Palabras silabeadas</option>
                   <option value="simpleWords" data-category="words">Simples</option>
                   <option value="complexWords" data-category="words">Complejas</option>
@@ -149,7 +149,7 @@
             </article>
 
             <article class="config-section">
-              <h2><span aria-hidden="true">⚙</span> CONFIGURACION DE PARTIDA</h2>
+              <h2><span aria-hidden="true">⚙</span> CONFIGURACIÓN DE PARTIDA</h2>
               <div class="settings-grid mission-settings">
                 <div>
                   <label for="session-goal">Meta</label>
@@ -169,7 +169,7 @@
                     <button type="button" data-attempts="2">2</button>
                     <button type="button" data-attempts="3">3</button>
                   </div>
-                  <select id="max-attempts-per-chunk" aria-label="Intentos maximos por ejercicio">
+                  <select id="max-attempts-per-chunk" aria-label="Intentos máximos por ejercicio">
                     <option value="1">1 intento</option>
                     <option value="2">2 intentos</option>
                     <option value="3">3 intentos</option>
@@ -191,7 +191,7 @@
                 <h2>Consonantes</h2>
                 <button class="secondary small-button" id="select-all-consonants" type="button">Todas</button>
               </div>
-              <p class="config-note">Solo aparece para SILABAS cuando corresponde.</p>
+              <p class="config-note">Solo aparece para SÍLABAS cuando corresponde.</p>
               <div class="consonant-grid" id="consonant-grid"></div>
             </article>
           </section>
@@ -199,20 +199,20 @@
           <aside class="mission-side">
             <article class="mission-preview">
               <p class="eyebrow">Vista previa</p>
-              <h2 id="mission-preview-title">MISION</h2>
+              <h2 id="mission-preview-title">MISIÓN</h2>
               <div id="mission-preview"></div>
               <button class="primary full launch-save" id="save-config-btn" type="button" disabled>
-                <span aria-hidden="true">🚀</span> GUARDAR MISION
+                <span aria-hidden="true">🚀</span> GUARDAR MISIÓN
               </button>
               <p class="save-feedback" id="save-feedback" role="status" aria-live="polite"></p>
             </article>
 
             <article class="config-section bulk-section">
               <div class="panel-title-row">
-                <h2><span aria-hidden="true">⚡</span> CONFIGURACION MASIVA</h2>
+                <h2><span aria-hidden="true">⚡</span> CONFIGURACIÓN MASIVA</h2>
                 <span id="bulk-count">0</span>
               </div>
-              <p class="config-note">Aplica la mision actual a varios jugadores.</p>
+              <p class="config-note">Aplica la misión actual a varios jugadores.</p>
               <div class="bulk-list" id="bulk-student-list"></div>
               <button class="secondary full" id="apply-bulk-config-btn" type="button" disabled>Aplicar a seleccionados</button>
             </article>

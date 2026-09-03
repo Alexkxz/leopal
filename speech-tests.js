@@ -249,12 +249,15 @@ function assertArray(actual, expected) {
   assert.deepStrictEqual(Array.from(actual), expected);
 }
 
-assert.strictEqual(context.normalizeText("Ni\u00f1a, mam\u00e1."), "nina mama");
-assert.strictEqual(context.normalizeText("  \u00a1Hola, NI\u00d1O! 123  "), "hola nino");
+assert.strictEqual(context.normalizeText("Ni\u00f1a, mam\u00e1."), "ni\u00f1a mam\u00e1");
+assert.strictEqual(context.normalizeText("  \u00a1Hola, NI\u00d1O! 123  "), "hola ni\u00f1o");
+assert.strictEqual(context.normalizeText("ping\u00fcino canci\u00f3n \u00e1rbol"), "ping\u00fcino canci\u00f3n \u00e1rbol");
+assert.strictEqual(context.window.LectoVozEvaluation.normalizeForSpeechComparison("mam\u00e1 canci\u00f3n \u00e1rbol ping\u00fcino"), "mama cancion arbol pinguino");
+assert.strictEqual(context.window.LectoVozEvaluation.normalizeForSpeechComparison("ni\u00f1o ma\u00f1ana"), "ni\u00f1o ma\u00f1ana");
 assert.strictEqual(context.normalizeText(null), "");
-assertArray(context.syllabifyWord("mama"), ["ma", "ma"]);
+assertArray(context.syllabifyWord("mam\u00e1"), ["ma", "m\u00e1"]);
 assertArray(context.syllabifyWord("pelota"), ["pe", "lo", "ta"]);
-assertArray(context.splitIntoChunks("Mi mama me quiere"), ["mi", "mama", "me", "quiere"]);
+assertArray(context.splitIntoChunks("Mi mam\u00e1 me quiere"), ["mi", "mam\u00e1", "me", "quiere"]);
 
 assert.strictEqual(context.window.LectoVozContent.lessons.syllables.length, 19);
 assert.ok(context.getLessonList("syllables").length >= 18);
@@ -270,7 +273,7 @@ assertArray(context.splitIntoChunks("ca-mio-ne-ta"), ["camioneta"]);
 assert.strictEqual(context.evaluateReading("camioneta", "ca-mio-ne-ta").status, "correct");
 
 levelSelect.value = "shortSentences";
-assertArray(context.splitIntoChunks("Mi mama me quiere"), ["mi", "mama", "me", "quiere"]);
+assertArray(context.splitIntoChunks("Mi mam\u00e1 me quiere"), ["mi", "mam\u00e1", "me", "quiere"]);
 
 assert.strictEqual(context.canAdvanceWithTranscript("ma me mi", "ma"), true);
 assert.strictEqual(context.canAdvanceWithTranscript("ma me mi", "me"), true);
@@ -285,6 +288,8 @@ assert.strictEqual(context.chunkMatches("keso", "queso"), true);
 assert.strictEqual(context.chunkMatches("caza", "casa"), true);
 assert.strictEqual(context.chunkMatches("pelota", "pelota"), true);
 assert.strictEqual(context.chunkMatches("mesa", "luna"), false);
+assert.strictEqual(context.chunkMatches("nino", "ni\u00f1o"), false);
+assert.strictEqual(context.chunkMatches("mama", "mam\u00e1"), true);
 assert.strictEqual(context.phoneticKey("vaca"), context.phoneticKey("baca"));
 assert.strictEqual(context.phoneticKey("queso"), context.phoneticKey("keso"));
 assert.strictEqual(context.diceSimilarity("casa", "casa"), 1);
@@ -311,6 +316,7 @@ assertEvaluation("CASA", "casa", "correct");
 assertEvaluation("arbol", "\u00e1rbol", "correct");
 assertEvaluation("camion", "cami\u00f3n", "correct");
 assertEvaluation("mama", "mam\u00e1", "correct");
+assertEvaluation("nino", "ni\u00f1o", "incorrect");
 assertEvaluation("baca", "vaca", "correct");
 assertEvaluation("keso", "queso", "correct");
 assertEvaluation("caza", "casa", "correct");
@@ -326,7 +332,7 @@ assertEvaluation("mariposal", "mariposa", "approximate");
 assert.strictEqual(context.chunkMatches("marposa", "mariposa"), false);
 assert.strictEqual(context.canAdvanceWithTranscript("marposa", "mariposa"), false);
 assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mi"), true);
-assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mama"), true);
+assert.strictEqual(context.canAdvanceWithTranscript("mi mama me quiere", "mam\u00e1"), true);
 
 const styles = fs.readFileSync("styles.css", "utf8");
 assert.ok(styles.includes(".student-page .feedback-correct"));
@@ -366,7 +372,7 @@ assert.ok(styles.includes(".student-page .feedback-incorrect"));
 
   context.stopListening(false);
   assert.strictEqual(mediaTrack.stopped, false);
-  assert.strictEqual(statusEl.textContent, "Microfono listo");
+  assert.strictEqual(statusEl.textContent, "Micrófono listo");
 
   context.showMissionComplete();
   assert.strictEqual(missionCard.hidden, false);
