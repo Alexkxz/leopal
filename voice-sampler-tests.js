@@ -31,6 +31,9 @@ context.window.Uint8Array = Uint8Array;
 context.window.DataView = DataView;
 context.window.ArrayBuffer = ArrayBuffer;
 context.window.Math = Math;
+context.window.setTimeout = (callback) => {
+  callback();
+};
 
 vm.createContext(context);
 vm.runInContext(fs.readFileSync("modules/content.js", "utf8"), context);
@@ -50,6 +53,7 @@ const dataset = sampler.getSamplerDataset(content);
 assert.ok(samplerHtml.includes('id="record-btn"'));
 assert.ok(samplerHtml.includes('id="next-btn"'));
 assert.ok(samplerHtml.includes('id="finish-btn"'));
+assert.ok(samplerHtml.includes('id="sample-limit"'));
 ["stop-btn", "accept-btn", "skip-btn", "pause-btn", "cancel-btn"].forEach((id) => {
   assert.strictEqual(samplerHtml.includes(`id="${id}"`), false);
 });
@@ -98,10 +102,19 @@ const simpleQuick = sampler.buildRecordingSequence({ sublevel: "simpleWords", mo
 assert.strictEqual(simpleQuick.length, 24);
 assert.strictEqual(simpleQuick[0].displayText.includes("-"), false);
 assert.strictEqual(simpleQuick[0].repetitions, 1);
+const limitedSyllables = sampler.buildRecordingSequence({ sublevel: "syllables", mode: "quick", syllableRepetitions: 3, sampleLimit: 5, randomOrder: false }, dataset);
+assert.strictEqual(limitedSyllables.length, 15);
+assert.strictEqual(new Set(limitedSyllables.map((item) => item.expectedText)).size, 5);
+const limitedWords = sampler.buildRecordingSequence({ sublevel: "simpleWords", mode: "quick", sampleLimit: 7, randomOrder: false }, dataset);
+assert.strictEqual(limitedWords.length, 7);
 
 const sentenceQuick = sampler.buildRecordingSequence({ sublevel: "shortSentences", mode: "quick", randomOrder: false }, dataset);
 assert.strictEqual(sentenceQuick.length, 12);
 assert.ok(sentenceQuick[0].displayText.split(/\s+/).length >= 4);
+const limitedSentences = sampler.buildRecordingSequence({ sublevel: "shortSentences", mode: "quick", sampleLimit: 4, randomOrder: false }, dataset);
+assert.strictEqual(limitedSentences.length, 4);
+const invalidLimitKeepsDefault = sampler.buildRecordingSequence({ sublevel: "simpleWords", mode: "quick", sampleLimit: "nope", randomOrder: false }, dataset);
+assert.strictEqual(invalidLimitKeepsDefault.length, 24);
 
 const completeBySublevel = {
   syllables: sampler.buildRecordingSequence({ sublevel: "syllables", mode: "complete", syllableRepetitions: 3 }, dataset).length,
@@ -177,6 +190,47 @@ assert.deepStrictEqual(plain(lowVolumeResult.warnings), ["volume_very_low"]);
 assert.strictEqual(sampler.getSamplerControls("recorded", true, lowVolumeResult).nextDisabled, false);
 assert.strictEqual(sampler.getSamplerControls("mic-disconnected", false, null).reconnectVisible, true);
 assert.strictEqual(sampler.getSamplerControls("finished", false, null).finishDisabled, true);
+
+{
+  const createdLinks = [];
+  const revokedUrls = [];
+  context.window.URL = {
+    createObjectURL(blob) {
+      assert.strictEqual(blob.size, 3);
+      return "blob:zip-test";
+    },
+    revokeObjectURL(url) {
+      revokedUrls.push(url);
+    },
+  };
+  const fakeDoc = {
+    body: {
+      appendChild(link) {
+        createdLinks.push(link);
+      },
+    },
+    createElement(tag) {
+      assert.strictEqual(tag, "a");
+      return {
+        clicks: 0,
+        click() {
+          this.clicks += 1;
+        },
+        remove() {
+          this.removed = true;
+        },
+      };
+    },
+  };
+  assert.strictEqual(sampler.triggerBlobDownload(fakeDoc, new Blob([new Uint8Array([1, 2, 3])]), "muestra.zip"), true);
+  assert.strictEqual(createdLinks.length, 1);
+  assert.strictEqual(createdLinks[0].href, "blob:zip-test");
+  assert.strictEqual(createdLinks[0].download, "muestra.zip");
+  assert.strictEqual(createdLinks[0].hidden, true);
+  assert.strictEqual(createdLinks[0].clicks, 1);
+  assert.strictEqual(createdLinks[0].removed, true);
+  assert.deepStrictEqual(revokedUrls, ["blob:zip-test"]);
+}
 
 function makeStream(label = "stream") {
   const track = {

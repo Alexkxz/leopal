@@ -152,15 +152,23 @@
     return [1, 2, 3].includes(numeric) ? numeric : fallback;
   }
 
+  function normalizeSampleLimit(value) {
+    if (value === "" || value === null || value === undefined) return null;
+    const numeric = Math.floor(Number(value));
+    return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+  }
+
   function getSublevelItems(config = {}, dataset = getSamplerDataset()) {
     const sublevel = config.sublevel || "syllables";
     const mode = config.mode || "quick";
+    const sampleLimit = normalizeSampleLimit(config.sampleLimit);
+    const applyLimit = (items) => (sampleLimit ? items.slice(0, sampleLimit) : items);
     if (mode === "general") {
-      return Object.entries(GENERAL_LIMITS).flatMap(([key, limit]) => (dataset[key] || []).slice(0, limit));
+      return applyLimit(Object.entries(GENERAL_LIMITS).flatMap(([key, limit]) => (dataset[key] || []).slice(0, limit)));
     }
     const items = dataset[sublevel] || [];
-    if (mode === "complete") return items;
-    return items.slice(0, QUICK_LIMITS[sublevel] || 24);
+    if (mode === "complete") return applyLimit(items);
+    return applyLimit(items.slice(0, QUICK_LIMITS[sublevel] || 24));
   }
 
   function repetitionsForItem(item, config = {}) {
@@ -374,6 +382,7 @@
         category: session.category || SUBLEVEL_CATEGORY[session.sublevel] || "general",
         sublevel: session.sublevel || "general",
         mode: session.mode || "quick",
+        sampleLimit: normalizeSampleLimit(session.sampleLimit),
         repetitionsConfigured: Number(session.syllableRepetitions || 3),
         syllableRepetitions: Number(session.syllableRepetitions || 3),
         itemRepetitions: Number(session.itemRepetitions || 1),
@@ -479,6 +488,22 @@
     writeUint32(eocdView, 16, centralOffset);
     chunks.push(eocd);
     return new Blob(chunks, { type: "application/zip" });
+  }
+
+  function triggerBlobDownload(doc, blob, filename) {
+    if (!doc || !blob || !filename || !global.URL?.createObjectURL) return false;
+    const url = global.URL.createObjectURL(blob);
+    const link = doc.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.hidden = true;
+    doc.body?.appendChild?.(link);
+    link.click();
+    global.setTimeout?.(() => {
+      link.remove?.();
+      global.URL.revokeObjectURL?.(url);
+    }, 1000);
+    return true;
   }
 
   function formatWarningMessage(validation) {
@@ -825,6 +850,7 @@
       ];
       try {
         zipBlob = await createZipBlob(files);
+        const zipName = makeZipName(participant.id, session);
         summary.textContent = JSON.stringify({
           sesion: "completada",
           categoria: STRUCTURE[metadata.session.category]?.label || metadata.session.category,
@@ -834,10 +860,13 @@
           omitidas: skippedItems.length,
           repetidas: repeatedTakes,
           advertencias: summarizeWarnings(),
-          archivoZip: makeZipName(participant.id, session),
+          archivoZip: zipName,
         }, null, 2);
         capturePanel.hidden = true;
         summaryPanel.hidden = false;
+        if (triggerBlobDownload(doc, zipBlob, zipName)) {
+          feedback.textContent = `Sesion finalizada. Se preparo la descarga de ${zipName}.`;
+        }
       } catch (error) {
         feedback.textContent = `Error al crear ZIP: ${error.message || error}`;
         setState("ready");
@@ -862,6 +891,7 @@
         category: categoryInput.value,
         sublevel: sublevelInput.value,
         mode: modeInput.value,
+        sampleLimit: normalizeSampleLimit(doc.getElementById("sample-limit").value),
         syllableRepetitions: normalizeRepetitions(doc.getElementById("syllable-repetitions").value, 3),
         itemRepetitions: 1,
         randomOrder: doc.getElementById("random-order").checked,
@@ -909,12 +939,7 @@
     finishCancelBtn.addEventListener("click", () => resolveFinishChoice("cancel"));
     downloadBtn.addEventListener("click", () => {
       if (!zipBlob) return;
-      const url = URL.createObjectURL(zipBlob);
-      const link = doc.createElement("a");
-      link.href = url;
-      link.download = makeZipName(participant.id, session);
-      link.click();
-      URL.revokeObjectURL(url);
+      triggerBlobDownload(doc, zipBlob, makeZipName(participant.id, session));
     });
     global.addEventListener?.("pagehide", () => {
       stopSessionStream(sessionStream);
@@ -934,6 +959,7 @@
     getSamplerDataset,
     getOfficialItems,
     normalizeSamplerItem,
+    normalizeSampleLimit,
     buildRecordingSequence,
     sanitizeIdentifier,
     makeRecordingFileName,
@@ -951,6 +977,7 @@
     calculateBlobMetrics,
     buildMetadata,
     createZipBlob,
+    triggerBlobDownload,
   };
 
   if (global.document) {

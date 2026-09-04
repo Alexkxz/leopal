@@ -2621,30 +2621,39 @@ body.student-page::after {
   font-weight: 900;
 }
 
+.student-reader {
+  justify-items: center;
+}
+
+.leo-space,
+.leo-placeholder,
+.leo-name,
+.leo-face {
+  display: none;
+}
+
 .student-page .prompt-shell {
+  width: min(100%, 58rem);
+  min-height: clamp(12rem, 38vh, 20rem);
   border: 2px solid rgba(93, 247, 255, 0.42);
-  border-radius: clamp(1rem, 5vw, 1.5rem);
+  border-radius: clamp(0.9rem, 4vw, 1.25rem);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
-    radial-gradient(circle at 50% 42%, rgba(30, 167, 255, 0.16), transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.02)),
     var(--student-panel);
   box-shadow:
-    0 0 0 0.22rem rgba(93, 247, 255, 0.055),
-    0 1.3rem 3rem rgba(0, 0, 0, 0.38),
-    inset 0 0 2rem rgba(93, 247, 255, 0.08);
+    0 1rem 2.4rem rgba(0, 0, 0, 0.34),
+    inset 0 0 1.4rem rgba(93, 247, 255, 0.06);
 }
 
 .student-page .prompt-shell::before {
-  display: block;
-  inset: 0.65rem;
-  border: 1px dashed rgba(255, 216, 77, 0.23);
-  border-radius: 1rem;
+  display: none;
 }
 
 .read-label {
-  color: var(--student-muted);
+  color: #dbeafe;
   text-transform: uppercase;
   letter-spacing: 0;
+  font-weight: 900;
 }
 
 .student-page .chunk {
